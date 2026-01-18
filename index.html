@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weekly Task Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>📋 Weekly Task Tracker</h1>
+        <div class="header-controls">
+          <button id="clearAllBtn" class="btn btn-secondary">
+            Clear All Data
+          </button>
+          <button id="exportBtn" class="btn btn-primary">Export Report</button>
+        </div>
+      </header>
+
+      <div class="week-summary">
+        <h2>Weekly Summary</h2>
+        <div class="summary-cards">
+          <div class="summary-card">
+            <div class="summary-value" id="totalTasks">0</div>
+            <div class="summary-label">Total Tasks</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-value" id="completedTasks">0</div>
+            <div class="summary-label">Completed</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-value" id="activeTasks">0</div>
+            <div class="summary-label">Active Now</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-value" id="totalTime">0h 0m</div>
+            <div class="summary-label">Total Time</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="days-container">
+        <div class="day-card" data-day="monday">
+          <div class="day-header">
+            <h3>Monday</h3>
+            <div class="day-stats">
+              <span class="day-time">0h 0m</span>
+              <span class="day-count">0 tasks</span>
+            </div>
+          </div>
+          <div class="add-task-section">
+            <input
+              type="text"
+              class="task-input"
+              placeholder="Add new task..."
+            />
+            <button class="btn-add">+</button>
+          </div>
+          <div class="tasks-list"></div>
+        </div>
+
+        <div class="day-card" data-day="tuesday">
+          <div class="day-header">
+            <h3>Tuesday</h3>
+            <div class="day-stats">
+              <span class="day-time">0h 0m</span>
+              <span class="day-count">0 tasks</span>
+            </div>
+          </div>
+          <div class="add-task-section">
+            <input
+              type="text"
+              class="task-input"
+              placeholder="Add new task..."
+            />
+            <button class="btn-add">+</button>
+          </div>
+          <div class="tasks-list"></div>
+        </div>
+
+        <div class="day-card" data-day="wednesday">
+          <div class="day-header">
+            <h3>Wednesday</h3>
+            <div class="day-stats">
+              <span class="day-time">0h 0m</span>
+              <span class="day-count">0 tasks</span>
+            </div>
+          </div>
+          <div class="add-task-section">
+            <input
+              type="text"
+              class="task-input"
+              placeholder="Add new task..."
+            />
+            <button class="btn-add">+</button>
+          </div>
+          <div class="tasks-list"></div>
+        </div>
+
+        <div class="day-card" data-day="thursday">
+          <div class="day-header">
+            <h3>Thursday</h3>
+            <div class="day-stats">
+              <span class="day-time">0h 0m</span>
+              <span class="day-count">0 tasks</span>
+            </div>
+          </div>
+          <div class="add-task-section">
+            <input
+              type="text"
+              class="task-input"
+              placeholder="Add new task..."
+            />
+            <button class="btn-add">+</button>
+          </div>
+          <div class="tasks-list"></div>
+        </div>
+
+        <div class="day-card" data-day="friday">
+          <div class="day-header">
+            <h3>Friday</h3>
+            <div class="day-stats">
+              <span class="day-time">0h 0m</span>
+              <span class="day-count">0 tasks</span>
+            </div>
+          </div>
+          <div class="add-task-section">
+            <input
+              type="text"
+              class="task-input"
+              placeholder="Add new task..."
+            />
+            <button class="btn-add">+</button>
+          </div>
+          <div class="tasks-list"></div>
+        </div>
+
+        <div class="day-card" data-day="saturday">
+          <div class="day-header">
+            <h3>Saturday</h3>
+            <div class="day-stats">
+              <span class="day-time">0h 0m</span>
+              <span class="day-count">0 tasks</span>
+            </div>
+          </div>
+          <div class="add-task-section">
+            <input
+              type="text"
+              class="task-input"
+              placeholder="Add new task..."
+            />
+            <button class="btn-add">+</button>
+          </div>
+          <div class="tasks-list"></div>
+        </div>
+
+        <div class="day-card" data-day="sunday">
+          <div class="day-header">
+            <h3>Sunday</h3>
+            <div class="day-stats">
+              <span class="day-time">0h 0m</span>
+              <span class="day-count">0 tasks</span>
+            </div>
+          </div>
+          <div class="add-task-section">
+            <input
+              type="text"
+              class="task-input"
+              placeholder="Add new task..."
+            />
+            <button class="btn-add">+</button>
+          </div>
+          <div class="tasks-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
