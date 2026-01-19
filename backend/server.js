@@ -15,8 +15,8 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://tasktracker.vercel.app', // Replace with your actual Vercel URL
-    'https://tasktracker-*.vercel.app' // For preview deployments
+    'https://tasktracker-frontend.vercel.app', // Your frontend URL
+    'https://tasktracker-frontend-*.vercel.app' // Preview deployments
   ],
   credentials: true
 }));
