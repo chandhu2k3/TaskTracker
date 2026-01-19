@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import DatePicker from "../components/DatePicker";
 import CategoryManager from "../components/CategoryManager";
 import TemplateSetup from "../components/TemplateSetup";
 import DayCard from "../components/DayCard";
@@ -80,10 +79,10 @@ const Dashboard = () => {
     loadCategories();
     loadTemplates();
     checkActiveSleep();
-    
+
     // Request notification permission on mount
     notificationService.requestPermission();
-    
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -140,7 +139,7 @@ const Dashboard = () => {
       const data = await taskService.getTasksByWeek(
         selectedDate.year,
         selectedDate.month,
-        selectedDate.week
+        selectedDate.week,
       );
       console.log("Tasks loaded:", data);
       setTasks(data);
@@ -178,18 +177,18 @@ const Dashboard = () => {
         data = await taskService.getWeeklyAnalytics(
           selectedDate.year,
           selectedDate.month,
-          selectedDate.week
+          selectedDate.week,
         );
       } else if (analyticsType === "month") {
         console.log("Loading month analytics:", selectedDate);
         data = await taskService.getMonthlyAnalytics(
           selectedDate.year,
-          selectedDate.month
+          selectedDate.month,
         );
       } else if (analyticsType === "category" && selectedAnalyticsCategory) {
         console.log("Loading category analytics:", selectedAnalyticsCategory);
         data = await taskService.getCategoryAnalytics(
-          selectedAnalyticsCategory
+          selectedAnalyticsCategory,
         );
       }
       console.log("Analytics data loaded:", data);
@@ -198,7 +197,7 @@ const Dashboard = () => {
       console.error("Analytics error:", error);
       toast.error(
         "Failed to load analytics: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
       );
     }
   };
@@ -258,10 +257,10 @@ const Dashboard = () => {
     plannedTime = 0,
     isAutomated = false,
     scheduledStartTime = null,
-    scheduledEndTime = null
+    scheduledEndTime = null,
   ) => {
     try {
-      const newTask = await taskService.createTask({
+      await taskService.createTask({
         name,
         date,
         category: categoryId,
@@ -290,12 +289,12 @@ const Dashboard = () => {
       // If trying to start a task, check if another task is running
       if (isActive) {
         const currentlyActiveTask = tasks.find(
-          (task) => task.isActive && task._id !== taskId
+          (task) => task.isActive && task._id !== taskId,
         );
 
         if (currentlyActiveTask) {
           const shouldStop = window.confirm(
-            `"${currentlyActiveTask.name}" is currently running. Do you want to stop it and start this task?\n\nClick OK to stop the previous task, or Cancel to keep both running.`
+            `"${currentlyActiveTask.name}" is currently running. Do you want to stop it and start this task?\n\nClick OK to stop the previous task, or Cancel to keep both running.`,
           );
 
           if (shouldStop) {
@@ -307,7 +306,7 @@ const Dashboard = () => {
         }
       }
 
-      const updatedTask = await taskService.updateTask(taskId, { isActive });
+      await taskService.updateTask(taskId, { isActive });
 
       // Reload all tasks to get fresh data
       await loadTasks();
@@ -329,10 +328,14 @@ const Dashboard = () => {
   };
 
   const handleDeleteDayTasks = async (date) => {
-    if (!window.confirm(`Delete all tasks for ${new Date(date).toLocaleDateString()}?`)) {
+    if (
+      !window.confirm(
+        `Delete all tasks for ${new Date(date).toLocaleDateString()}?`,
+      )
+    ) {
       return;
     }
-    
+
     try {
       await taskService.deleteTasksByDay(date);
       setTasks(tasks.filter((task) => task.date !== date));
@@ -343,10 +346,12 @@ const Dashboard = () => {
   };
 
   const handleResetWeek = async () => {
-    if (!window.confirm("Delete all tasks for this week? This cannot be undone!")) {
+    if (
+      !window.confirm("Delete all tasks for this week? This cannot be undone!")
+    ) {
       return;
     }
-    
+
     try {
       const { year, month, week } = selectedDate;
       await taskService.deleteTasksByWeek(year, month, week);
@@ -357,7 +362,11 @@ const Dashboard = () => {
     }
   };
 
-  const handleToggleNotification = async (taskId, enabled, notificationTime) => {
+  const handleToggleNotification = async (
+    taskId,
+    enabled,
+    notificationTime,
+  ) => {
     try {
       // Request permission if enabling and don't have it
       if (enabled && !notificationService.hasPermission()) {
@@ -369,21 +378,21 @@ const Dashboard = () => {
       }
 
       const updateData = { notificationsEnabled: enabled };
-      
+
       // Update notification time if provided
       if (notificationTime !== undefined) {
         updateData.notificationTime = notificationTime;
       }
 
       await taskService.updateTask(taskId, updateData);
-      
+
       // Update local state
-      setTasks(tasks.map(task => 
-        task._id === taskId 
-          ? { ...task, ...updateData }
-          : task
-      ));
-      
+      setTasks(
+        tasks.map((task) =>
+          task._id === taskId ? { ...task, ...updateData } : task,
+        ),
+      );
+
       if (enabled) {
         const timeLabel = notificationTime || tasks.notificationTime || 30;
         toast.success(`Notifications enabled (${timeLabel} min before)`);
@@ -421,7 +430,7 @@ const Dashboard = () => {
     // Update order in backend for each task
     try {
       const updates = reorderedTasks.map((task, index) =>
-        taskService.updateTask(task._id, { order: index })
+        taskService.updateTask(task._id, { order: index }),
       );
       await Promise.all(updates);
     } catch (error) {
@@ -452,7 +461,7 @@ const Dashboard = () => {
         selectedTemplateForApply,
         selectedDate.year,
         selectedDate.month,
-        selectedDate.week
+        selectedDate.week,
       );
       toast.success("Template applied successfully!");
       setShowTemplateModal(false);
@@ -579,7 +588,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Failed to toggle sleep mode"
+        error.response?.data?.message || "Failed to toggle sleep mode",
       );
     }
   };

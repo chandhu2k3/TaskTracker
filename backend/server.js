@@ -12,14 +12,16 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://tasktracker-frontend.vercel.app', // Your frontend URL
-    'https://tasktracker-frontend-*.vercel.app' // Preview deployments
-  ],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://tasktracker-frontend.vercel.app", // Your frontend URL
+      "https://tasktracker-frontend-*.vercel.app", // Preview deployments
+    ],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

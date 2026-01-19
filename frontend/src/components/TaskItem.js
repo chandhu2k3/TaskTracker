@@ -13,7 +13,6 @@ const TaskItem = ({
   onDrop,
   isDragging,
 }) => {
-  const notificationSoundRef = useRef(null);
   const overtimeCheckRef = useRef(null);
 
   // Debug: Log task data
@@ -72,8 +71,9 @@ const TaskItem = ({
   const playNotificationSound = () => {
     try {
       // Create a simple beep sound using Web Audio API
-      const audioContext = new (window.AudioContext ||
-        window.webkitAudioContext)();
+      const audioContext = new (
+        window.AudioContext || window.webkitAudioContext
+      )();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
@@ -86,7 +86,7 @@ const TaskItem = ({
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(
         0.01,
-        audioContext.currentTime + 0.5
+        audioContext.currentTime + 0.5,
       );
 
       oscillator.start(audioContext.currentTime);
@@ -115,7 +115,7 @@ const TaskItem = ({
             `⚠️ Task "${task.name}" has exceeded planned time by more than 1 hour!\n\n` +
               `Planned: ${formatTime(task.plannedTime)}\n` +
               `Actual: ${formatTime(currentTime)}\n\n` +
-              `The task has been stopped. Do you want to continue working on it?`
+              `The task has been stopped. Do you want to continue working on it?`,
           );
 
           if (shouldContinue) {
@@ -139,6 +139,7 @@ const TaskItem = ({
         }
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task.isActive, task._id, task.plannedTime, task.name]);
 
   const handleDragStart = (e) => {
@@ -197,8 +198,14 @@ const TaskItem = ({
             <div className="notification-controls">
               <button
                 className={`btn-notification ${task.notificationsEnabled ? "active" : ""}`}
-                onClick={() => onToggleNotification(task._id, !task.notificationsEnabled)}
-                title={task.notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+                onClick={() =>
+                  onToggleNotification(task._id, !task.notificationsEnabled)
+                }
+                title={
+                  task.notificationsEnabled
+                    ? "Disable notifications"
+                    : "Enable notifications"
+                }
                 draggable="false"
               >
                 {task.notificationsEnabled ? "🔔" : "🔕"}
@@ -207,7 +214,13 @@ const TaskItem = ({
                 <select
                   className="notification-time-select"
                   value={task.notificationTime || 30}
-                  onChange={(e) => onToggleNotification(task._id, true, parseInt(e.target.value))}
+                  onChange={(e) =>
+                    onToggleNotification(
+                      task._id,
+                      true,
+                      parseInt(e.target.value),
+                    )
+                  }
                   onClick={(e) => e.stopPropagation()}
                   draggable="false"
                   title="Notification time before task"
@@ -240,7 +253,7 @@ const TaskItem = ({
             onClick={() => {
               if (
                 window.confirm(
-                  `Are you sure you want to delete "${task.name}"?`
+                  `Are you sure you want to delete "${task.name}"?`,
                 )
               ) {
                 onDelete(task._id);
@@ -263,7 +276,7 @@ const TaskItem = ({
                   task.plannedTime > 0
                     ? `${Math.min(
                         (calculateTime() / task.plannedTime) * 100,
-                        100
+                        100,
                       )}%`
                     : "0%",
               }}
