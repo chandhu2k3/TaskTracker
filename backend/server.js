@@ -14,11 +14,29 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://task-tracker-frontend-oyfs3m1f5-chandus-projects-8e891822.vercel.app",
-      "https://task-tracker-frontend-*.vercel.app", // Preview deployments
-    ],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Allow localhost and any Vercel deployment of task-tracker-frontend
+      const allowedOrigins = [
+        "http://localhost:3000",
+        /^https:\/\/task-tracker-frontend.*\.vercel\.app$/,
+      ];
+
+      const isAllowed = allowedOrigins.some((pattern) => {
+        if (typeof pattern === "string") {
+          return pattern === origin;
+        }
+        return pattern.test(origin);
+      });
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
 );
