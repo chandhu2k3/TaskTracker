@@ -25,7 +25,7 @@ const startSleep = async () => {
   } catch (error) {
     console.error("Start sleep error:", error.response?.data || error.message);
     throw new Error(
-      error.response?.data?.message || "Failed to start sleep tracking"
+      error.response?.data?.message || "Failed to start sleep tracking",
     );
   }
 };
@@ -36,7 +36,7 @@ const stopSleep = async () => {
     return response.data;
   } catch (error) {
     throw new Error(
-      error.response?.data?.message || "Failed to stop sleep tracking"
+      error.response?.data?.message || "Failed to stop sleep tracking",
     );
   }
 };
