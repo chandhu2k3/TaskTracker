@@ -11,35 +11,37 @@ connectDB();
 
 const app = express();
 
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Allow localhost
+    if (origin === "http://localhost:3000") {
+      return callback(null, true);
+    }
+
+    // Allow any Vercel deployment of task-tracker-frontend
+    if (
+      origin.startsWith("https://task-tracker-frontend") &&
+      origin.endsWith(".vercel.app")
+    ) {
+      return callback(null, true);
+    }
+
+    // Reject all others
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200,
+};
+
 // Middleware
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      // Allow localhost
-      if (origin === "http://localhost:3000") {
-        return callback(null, true);
-      }
-
-      // Allow any Vercel deployment of task-tracker-frontend
-      if (origin.startsWith("https://task-tracker-frontend") && origin.endsWith(".vercel.app")) {
-        return callback(null, true);
-      }
-
-      // Reject all others
-      callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 200
-  }),
-);
-
-// Handle OPTIONS requests explicitly for preflight
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
