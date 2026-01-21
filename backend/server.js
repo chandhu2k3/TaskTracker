@@ -18,24 +18,18 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      // Allow localhost and any Vercel deployment of task-tracker-frontend
-      const allowedOrigins = [
-        "http://localhost:3000",
-        /^https:\/\/task-tracker-frontend.*\.vercel\.app$/,
-      ];
-
-      const isAllowed = allowedOrigins.some((pattern) => {
-        if (typeof pattern === "string") {
-          return pattern === origin;
-        }
-        return pattern.test(origin);
-      });
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      // Allow localhost
+      if (origin === "http://localhost:3000") {
+        return callback(null, true);
       }
+
+      // Allow any Vercel deployment of task-tracker-frontend
+      if (origin.startsWith("https://task-tracker-frontend") && origin.endsWith(".vercel.app")) {
+        return callback(null, true);
+      }
+
+      // Reject all others
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   }),
