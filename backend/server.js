@@ -16,7 +16,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://task-tracker-frontend-theta-two.vercel.app",
+      "https://task-tracker-frontend-oyfs3m1f5-chandus-projects-8e891822.vercel.app",
       "https://task-tracker-frontend-*.vercel.app", // Preview deployments
     ],
     credentials: true,
