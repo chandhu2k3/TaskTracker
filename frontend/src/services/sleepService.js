@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/sleep";
+const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_URL = `${BASE_URL}/api/sleep`;
 
 const getAuthHeader = () => {
   const user = JSON.parse(localStorage.getItem("user"));
