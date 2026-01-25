@@ -105,6 +105,11 @@ const taskSchema = new mongoose.Schema({
   },
 });
 
+// Indexes for performance optimization
+taskSchema.index({ user: 1, date: 1 }); // Most common query pattern
+taskSchema.index({ user: 1, category: 1 }); // For category analytics
+taskSchema.index({ user: 1, isActive: 1 }); // For finding active tasks
+
 // Update the updatedAt field before saving
 taskSchema.pre("save", function (next) {
   this.updatedAt = Date.now();

@@ -337,35 +337,24 @@ const getWeeklyAnalytics = async (req, res) => {
       parseInt(weekNumber)
     );
 
-    const tasks = await Task.find({
-      user: req.user._id,
-      date: { $gte: startDate, $lte: endDate },
-    });
+    // Fetch tasks and sleep in parallel for speed
+    const [tasks, sleepSessions] = await Promise.all([
+      Task.find({
+        user: req.user._id,
+        date: { $gte: startDate, $lte: endDate },
+      }).lean(), // Use lean() for faster queries
+      Sleep.find({
+        user: req.user._id,
+        date: { $gte: startDate, $lte: endDate },
+        isActive: false,
+      }).lean(),
+    ]);
 
-    // Get sleep sessions for the same period
-    const sleepSessions = await Sleep.find({
-      user: req.user._id,
-      date: { $gte: startDate, $lte: endDate },
-      isActive: false, // Only completed sessions
-    });
-
-    // Get all category names and fetch category documents
-    const categoryNames = [...new Set(tasks.map((t) => t.category))];
-    const categories = await Category.find({
-      user: req.user._id,
-      name: { $in: categoryNames },
-    });
-    const categoryMap = {};
-    categories.forEach((cat) => {
-      categoryMap[cat.name] = cat.name;
-    });
-
-    // Calculate analytics
+    // Calculate analytics - optimized
     const analytics = {
       totalTasks: tasks.length,
-      completedTasks: tasks.filter((t) => !t.isActive && t.totalTime > 0)
-        .length,
-      activeTasks: tasks.filter((t) => t.isActive).length,
+      completedTasks: 0,
+      activeTasks: 0,
       totalTime: 0,
       totalPlannedTime: 0,
       byDay: {},
@@ -394,23 +383,30 @@ const getWeeklyAnalytics = async (req, res) => {
 
     tasks.forEach((task) => {
       let taskTime = task.totalTime;
-      if (task.isActive && task.startTime) {
+      const isActive = task.isActive;
+      
+      if (isActive && task.startTime) {
         taskTime += Date.now() - new Date(task.startTime).getTime();
+        analytics.activeTasks++;
+      } else if (!isActive && taskTime > 0) {
+        analytics.completedTasks++;
       }
 
+      const sessionsCount = task.sessions?.length || 0;
       analytics.totalTime += taskTime;
       analytics.totalPlannedTime += task.plannedTime || 0;
-      analytics.sessionCount += task.sessions.length + (task.isActive ? 1 : 0);
+      analytics.sessionCount += sessionsCount + (isActive ? 1 : 0);
 
       // By day
-      if (analytics.byDay[task.day]) {
-        analytics.byDay[task.day].taskCount++;
-        analytics.byDay[task.day].totalTime += taskTime;
-        analytics.byDay[task.day].plannedTime += task.plannedTime || 0;
-        analytics.byDay[task.day].sessions += task.sessions.length;
+      const dayKey = task.day;
+      if (analytics.byDay[dayKey]) {
+        analytics.byDay[dayKey].taskCount++;
+        analytics.byDay[dayKey].totalTime += taskTime;
+        analytics.byDay[dayKey].plannedTime += task.plannedTime || 0;
+        analytics.byDay[dayKey].sessions += sessionsCount;
       }
 
-      // By category - task.category is already the name string
+      // By category
       const categoryName = task.category || "Uncategorized";
       if (!analytics.byCategory[categoryName]) {
         analytics.byCategory[categoryName] = {
@@ -423,7 +419,7 @@ const getWeeklyAnalytics = async (req, res) => {
       analytics.byCategory[categoryName].taskCount++;
       analytics.byCategory[categoryName].totalTime += taskTime;
       analytics.byCategory[categoryName].plannedTime += task.plannedTime || 0;
-      analytics.byCategory[categoryName].sessions += task.sessions.length;
+      analytics.byCategory[categoryName].sessions += sessionsCount;
     });
 
     // Add sleep data to analytics
@@ -459,28 +455,18 @@ const getMonthlyAnalytics = async (req, res) => {
     const startDate = new Date(year, month, 1);
     const endDate = new Date(year, parseInt(month) + 1, 0, 23, 59, 59, 999);
 
-    const tasks = await Task.find({
-      user: req.user._id,
-      date: { $gte: startDate, $lte: endDate },
-    });
-
-    // Get sleep sessions for the same period
-    const sleepSessions = await Sleep.find({
-      user: req.user._id,
-      date: { $gte: startDate, $lte: endDate },
-      isActive: false, // Only completed sessions
-    });
-
-    // Get all category names and fetch category data
-    const categoryNames = [...new Set(tasks.map((t) => t.category))];
-    const categories = await Category.find({
-      user: req.user._id,
-      name: { $in: categoryNames },
-    });
-    const categoryMap = {};
-    categories.forEach((cat) => {
-      categoryMap[cat.name] = cat.name;
-    });
+    // Fetch tasks and sleep in parallel
+    const [tasks, sleepSessions] = await Promise.all([
+      Task.find({
+        user: req.user._id,
+        date: { $gte: startDate, $lte: endDate },
+      }).lean(),
+      Sleep.find({
+        user: req.user._id,
+        date: { $gte: startDate, $lte: endDate },
+        isActive: false,
+      }).lean(),
+    ]);
 
     const analytics = {
       totalTasks: tasks.length,
