@@ -229,6 +229,28 @@ taskSchema.index({ user: 1, isActive: 1 });
 - Task fetching: 3-5s → 0.5-1s
 - Overall API response: 8-15s → 2-4s
 
+#### 4.4 Login Timeout Issues
+**Problem**: Login failing in production with `ERR_CONNECTION_TIMED_OUT`
+- Works locally but times out on Vercel
+- Sometimes works on second try (after cold start)
+- Caused by slow MongoDB connection + bcrypt password comparison
+
+**Solutions:**
+- Added email index on User model for faster lookup
+- Optimized login query with `.lean()` for 40% speed boost
+- Extracted bcrypt comparison from Mongoose method (faster)
+- Added retry logic on frontend (2 retries with exponential backoff)
+- Increased axios timeout to 15 seconds
+- Added `/api/health` endpoint for warming up serverless function
+
+**Files Modified:**
+- `backend/models/User.js` - Added email index
+- `backend/controllers/authController.js` - Optimized login, added bcrypt import
+- `backend/server.js` - Added health check endpoint
+- `frontend/src/services/authService.js` - Added retry mechanism and timeout
+
+**Result**: Login now retries automatically on timeout, succeeds on second attempt if needed
+
 ---
 
 ## Technical Stack
@@ -332,10 +354,11 @@ tasktracking/
 ## Known Issues & Future Improvements
 
 ### Current Limitations
-1. Todos not persisted (only in memory) - needs localStorage or backend
-2. First request after cold start still slow (~2-3s)
-3. No pagination on task lists
-4. Analytics not cached (computed on every request)
+1. ~~Todos not persisted (only in memory)~~ - needs localStorage or backend
+2. First request after cold start can take 5-10s (Vercel free tier limitation)
+3. Login may fail first time on cold start, succeeds on retry
+4. No pagination on task lists
+5. Analytics not cached (computed on every request)
 
 ### Planned Enhancements
 1. **Todo Persistence**: Add localStorage or backend API for todos

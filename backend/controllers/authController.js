@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
 // Generate JWT Token
@@ -26,8 +27,8 @@ const register = async (req, res) => {
         .json({ message: "Password must be at least 6 characters" });
     }
 
-    // Check if user exists
-    const userExists = await User.findOne({ email });
+    // Check if user exists - use lean for faster query
+    const userExists = await User.findOne({ email }).lean();
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -66,10 +67,17 @@ const login = async (req, res) => {
       return res.status(400).json({ message: "Please provide all fields" });
     }
 
-    // Check for user
-    const user = await User.findOne({ email }).select("+password");
+    // Check for user - optimized query
+    const user = await User.findOne({ email }).select("+password").lean();
 
-    if (user && (await user.comparePassword(password))) {
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    
+    if (isMatch) {
       res.json({
         _id: user._id,
         name: user.name,
@@ -80,7 +88,8 @@ const login = async (req, res) => {
       res.status(401).json({ message: "Invalid credentials" });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({ message: "Server error during login. Please try again." });
   }
 };
 

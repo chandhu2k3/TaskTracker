@@ -54,7 +54,16 @@ app.use("/api/sleep", require("./routes/sleepRoutes"));
 
 // Health check
 app.get("/", (req, res) => {
-  res.json({ message: "Task Tracker API is running" });
+  res.json({ 
+    message: "Task Tracker API is running",
+    status: "healthy",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Quick health check for warming up
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 // Error handler
