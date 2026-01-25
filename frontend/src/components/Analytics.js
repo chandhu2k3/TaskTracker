@@ -1,7 +1,7 @@
 import React from "react";
 import "./Analytics.css";
 
-const Analytics = ({ analytics, type }) => {
+const Analytics = ({ analytics, type, todos = [] }) => {
   const formatTime = (milliseconds) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -13,6 +13,11 @@ const Analytics = ({ analytics, type }) => {
       return `${minutes}m`;
     }
   };
+
+  // Calculate todo stats
+  const totalTodos = todos.length;
+  const completedTodos = todos.filter(todo => todo.completed).length;
+  const missedTodos = todos.filter(todo => !todo.completed).length;
 
   const formatPercentage = (value, total) => {
     if (total === 0) return "0%";
@@ -47,6 +52,14 @@ const Analytics = ({ analytics, type }) => {
                 {formatTime(analytics.totalPlannedTime || 0)}
               </div>
               <div className="stat-label">Planned Time</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{completedTodos}/{totalTodos}</div>
+              <div className="stat-label">Quick Todos</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{missedTodos}</div>
+              <div className="stat-label">Missed Todos</div>
             </div>
           </div>
 

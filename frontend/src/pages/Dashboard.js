@@ -52,12 +52,14 @@ const Dashboard = () => {
       const newSelection = dateToWeekSelection(dateString);
       setSelectedDate(newSelection);
       setDisplayDate(dateString);
+      setSelectedDayDate(dateString); // Update day view selected date
       setScrollToDate(dateString);
     }
   };
 
   const [selectedDate, setSelectedDate] = useState(getCurrentWeek());
   const [displayDate, setDisplayDate] = useState(getTodayDateString());
+  const [selectedDayDate, setSelectedDayDate] = useState(getTodayDateString()); // For day view
   const [scrollToDate, setScrollToDate] = useState(null);
   const dayCardRefs = useRef({});
   const [tasks, setTasks] = useState([]);
@@ -251,6 +253,19 @@ const Dashboard = () => {
     const firstDayOfWeek = 1 + (newWeek - 1) * 7;
     const newDate = new Date(newYear, newMonth, firstDayOfWeek);
     setDisplayDate(newDate.toISOString().split("T")[0]);
+  };
+
+  const navigateDay = (direction) => {
+    const currentDate = new Date(selectedDayDate);
+    currentDate.setDate(currentDate.getDate() + direction);
+    
+    const newDateString = currentDate.toISOString().split("T")[0];
+    setSelectedDayDate(newDateString);
+    setDisplayDate(newDateString);
+    
+    // Update week selection for the new date
+    const newSelection = dateToWeekSelection(newDateString);
+    setSelectedDate(newSelection);
   };
 
   const handleAddTask = async (
@@ -876,10 +891,10 @@ const Dashboard = () => {
                   <div className="week-navigation">
                     <button
                       className="btn-week-nav"
-                      onClick={() => navigateWeek(-1)}
-                      title="Previous Week"
+                      onClick={() => viewMode === "day" ? navigateDay(-1) : navigateWeek(-1)}
+                      title={viewMode === "day" ? "Previous Day" : "Previous Week"}
                     >
-                      ← Previous Week
+                      ← {viewMode === "day" ? "Previous Day" : "Previous Week"}
                     </button>
                     <input
                       type="date"
@@ -890,10 +905,10 @@ const Dashboard = () => {
                     />
                     <button
                       className="btn-week-nav"
-                      onClick={() => navigateWeek(1)}
-                      title="Next Week"
+                      onClick={() => viewMode === "day" ? navigateDay(1) : navigateWeek(1)}
+                      title={viewMode === "day" ? "Next Day" : "Next Week"}
                     >
-                      Next Week →
+                      {viewMode === "day" ? "Next Day" : "Next Week"} →
                     </button>
                   </div>
                   <div className="week-actions-right">
@@ -920,23 +935,23 @@ const Dashboard = () => {
                       {(() => {
                         const today = new Date();
                         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-                        const todayTask = weekDays.find(day => day.date === todayStr);
-                        return todayTask ? (
+                        const selectedTask = weekDays.find(day => day.date === selectedDayDate);
+                        return selectedTask ? (
                           <DayCard
-                            key={todayTask.date}
-                            ref={(el) => (dayCardRefs.current[todayTask.date] = el)}
-                            date={todayTask.date}
-                            dayName={todayTask.displayName}
-                            tasks={groupedTasks[todayTask.date] || []}
+                            key={selectedTask.date}
+                            ref={(el) => (dayCardRefs.current[selectedTask.date] = el)}
+                            date={selectedTask.date}
+                            dayName={selectedTask.displayName}
+                            tasks={groupedTasks[selectedTask.date] || []}
                             categories={categories}
                             onAddTask={handleAddTask}
                             onToggleTask={handleToggleTask}
                             onDeleteTask={handleDeleteTask}
                             onDeleteDayTasks={handleDeleteDayTasks}
-                            isToday={true}
+                            isToday={selectedTask.date === todayStr}
                           />
                         ) : (
-                          <div className="empty-state">No tasks for today</div>
+                          <div className="empty-state">No tasks for this date</div>
                         );
                       })()}
                     </div>
@@ -1092,7 +1107,7 @@ const Dashboard = () => {
               )}
             </div>
             {analyticsData ? (
-              <Analytics analytics={analyticsData} type={analyticsType} />
+              <Analytics analytics={analyticsData} type={analyticsType} todos={todos} />
             ) : (
               <div className="empty-state-large">
                 <div className="empty-icon">📊</div>
