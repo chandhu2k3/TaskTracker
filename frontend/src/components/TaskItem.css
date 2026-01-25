@@ -1,14 +1,12 @@
 .task-item {
-  background: rgba(255, 200, 179, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 200, 179, 0.3);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 10px;
   transition: all 0.3s;
   animation: slideIn 0.3s ease;
-  box-shadow: 0 4px 16px rgba(255, 200, 179, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   cursor: grab;
 }
 
@@ -23,9 +21,9 @@
 }
 
 .task-item.active {
-  border-color: rgba(16, 185, 129, 0.5);
-  background: rgba(16, 185, 129, 0.15);
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.15);
 }
 
 .task-header {

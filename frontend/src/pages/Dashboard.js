@@ -5,6 +5,7 @@ import CategoryManager from "../components/CategoryManager";
 import TemplateSetup from "../components/TemplateSetup";
 import DayCard from "../components/DayCard";
 import Analytics from "../components/Analytics";
+import TodoList from "../components/TodoList";
 import taskService from "../services/taskService";
 import categoryService from "../services/categoryService";
 import templateService from "../services/templateService";
@@ -64,6 +65,7 @@ const Dashboard = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("week"); // week, categories, template, analytics
+  const [viewMode, setViewMode] = useState("day"); // day or week
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsType, setAnalyticsType] = useState("week"); // week, month, category
   const [selectedAnalyticsCategory, setSelectedAnalyticsCategory] =
@@ -74,6 +76,7 @@ const Dashboard = () => {
   const [sleepMode, setSleepMode] = useState(false);
   const [activeSleepSession, setActiveSleepSession] = useState(null);
   const [sleepDuration, setSleepDuration] = useState(0);
+  const [todos, setTodos] = useState([]);
 
   useEffect(() => {
     loadCategories();
@@ -673,6 +676,26 @@ const Dashboard = () => {
   console.log("Week Days:", weekDays);
   console.log("Grouped Tasks:", groupedTasks);
 
+  // Todo handlers
+  const handleAddTodo = (text) => {
+    const newTodo = {
+      id: Date.now(),
+      text,
+      completed: false,
+    };
+    setTodos([...todos, newTodo]);
+  };
+
+  const handleToggleTodo = (id) => {
+    setTodos(todos.map((todo) => 
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    ));
+  };
+
+  const handleDeleteTodo = (id) => {
+    setTodos(todos.filter((todo) => todo.id !== id));
+  };
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -834,6 +857,22 @@ const Dashboard = () => {
             ) : (
               <>
                 <div className="week-actions">
+                  <div className="view-mode-toggle">
+                    <button
+                      className={`view-mode-btn ${viewMode === "day" ? "active" : ""}`}
+                      onClick={() => setViewMode("day")}
+                      title="Day View"
+                    >
+                      📅 Day
+                    </button>
+                    <button
+                      className={`view-mode-btn ${viewMode === "week" ? "active" : ""}`}
+                      onClick={() => setViewMode("week")}
+                      title="Week View"
+                    >
+                      📆 Week
+                    </button>
+                  </div>
                   <div className="week-navigation">
                     <button
                       className="btn-week-nav"
@@ -841,18 +880,6 @@ const Dashboard = () => {
                       title="Previous Week"
                     >
                       ← Previous Week
-                    </button>
-                    <button
-                      className="btn-current-week"
-                      onClick={() => {
-                        const current = getCurrentWeek();
-                        setSelectedDate(current);
-                        setDisplayDate(getTodayDateString());
-                        setScrollToDate(getTodayDateString());
-                      }}
-                      title="Jump to current week"
-                    >
-                      📅 Today
                     </button>
                     <input
                       type="date"
@@ -887,6 +914,41 @@ const Dashboard = () => {
                 </div>
                 {loading ? (
                   <div className="loading">Loading tasks...</div>
+                ) : viewMode === "day" ? (
+                  <div className="day-with-todos">
+                    <div className="day-section">
+                      {(() => {
+                        const today = new Date();
+                        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+                        const todayTask = weekDays.find(day => day.date === todayStr);
+                        return todayTask ? (
+                          <DayCard
+                            key={todayTask.date}
+                            ref={(el) => (dayCardRefs.current[todayTask.date] = el)}
+                            date={todayTask.date}
+                            dayName={todayTask.displayName}
+                            tasks={groupedTasks[todayTask.date] || []}
+                            categories={categories}
+                            onAddTask={handleAddTask}
+                            onToggleTask={handleToggleTask}
+                            onDeleteTask={handleDeleteTask}
+                            onDeleteDayTasks={handleDeleteDayTasks}
+                            isToday={true}
+                          />
+                        ) : (
+                          <div className="empty-state">No tasks for today</div>
+                        );
+                      })()}
+                    </div>
+                    <div className="todos-section">
+                      <TodoList
+                        todos={todos}
+                        onAddTodo={handleAddTodo}
+                        onToggleTodo={handleToggleTodo}
+                        onDeleteTodo={handleDeleteTodo}
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <div className="days-grid">
                     {weekDays.map((day) => (
