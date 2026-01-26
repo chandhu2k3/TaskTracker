@@ -735,6 +735,8 @@ const Dashboard = () => {
   console.log("Week Days:", weekDays);
   console.log("Grouped Tasks:", groupedTasks);
 
+  
+
   // Todo handlers
   const handleAddTodo = (text) => {
     const today = getLocalDateString();
