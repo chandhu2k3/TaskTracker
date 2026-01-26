@@ -16,6 +16,7 @@ const TemplateSetup = ({
   const [templateTasks, setTemplateTasks] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [draggedTaskIndex, setDraggedTaskIndex] = useState(null);
+  const [selectedEditDay, setSelectedEditDay] = useState("monday"); // Track which day is being edited
 
   const days = [
     "monday",
@@ -65,7 +66,7 @@ const TemplateSetup = ({
       {
         name: "",
         category: categories[0].name,
-        day: "monday",
+        day: selectedEditDay, // Add to currently selected day
         plannedTime: 0,
         isAutomated: false,
         scheduledStartTime: null,
@@ -301,20 +302,37 @@ const TemplateSetup = ({
               </div>
 
               <div className="modal-body">
+                {/* Day selector tabs */}
+                <div className="day-tabs">
+                  {days.map((day) => (
+                    <button
+                      key={day}
+                      className={`day-tab ${selectedEditDay === day ? "active" : ""}`}
+                      onClick={() => setSelectedEditDay(day)}
+                    >
+                      {day.charAt(0).toUpperCase() + day.slice(1)}
+                      <span className="day-task-count">
+                        ({templateTasks.filter(t => t.day === day).length})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
                 <div className="template-tasks-list">
                   <div className="tasks-header">
-                    <h4>Tasks</h4>
+                    <h4>{selectedEditDay.charAt(0).toUpperCase() + selectedEditDay.slice(1)} Tasks</h4>
                     <button onClick={addTask} className="btn-add-task">
                       + Add Task
                     </button>
                   </div>
 
-                  {templateTasks.length === 0 ? (
+                  {templateTasks.filter(t => t.day === selectedEditDay).length === 0 ? (
                     <p className="no-tasks">
-                      No tasks yet. Add your first task!
+                      No tasks for {selectedEditDay}. Add your first task!
                     </p>
                   ) : (
-                    templateTasks.map((task, index) => (
+                    templateTasks.map((task, index) => 
+                      task.day === selectedEditDay ? (
                       <div
                         key={index}
                         className={`template-task-row ${
@@ -350,19 +368,6 @@ const TemplateSetup = ({
                           {categories.map((cat) => (
                             <option key={cat._id} value={cat.name}>
                               {cat.icon} {cat.name}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={task.day}
-                          onChange={(e) =>
-                            updateTask(index, "day", e.target.value)
-                          }
-                          className="task-day-select"
-                        >
-                          {days.map((day) => (
-                            <option key={day} value={day}>
-                              {day.charAt(0).toUpperCase() + day.slice(1)}
                             </option>
                           ))}
                         </select>
@@ -418,7 +423,8 @@ const TemplateSetup = ({
                           ×
                         </button>
                       </div>
-                    ))
+                    ) : null
+                    )
                   )}
                 </div>
               </div>

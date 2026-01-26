@@ -151,6 +151,100 @@
   font-weight: 600;
 }
 
+/* Day tabs */
+.day-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.day-tab {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #555;
+  transition: all 0.3s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.day-tab:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.day-tab.active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.3);
+}
+
+.day-task-count {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+/* Day tabs */
+.day-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.day-tab {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #555;
+  transition: all 0.3s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.day-tab:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.day-tab.active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.3);
+}
+
+.day-task-count {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  font-weight: 600;
+}
+
 .btn-add-task {
   padding: 8px 14px;
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
@@ -177,15 +271,16 @@
 
 .template-task-row {
   display: grid;
-  grid-template-columns: 30px 1fr 150px 120px 80px 90px 40px;
-  gap: 12px;
+  grid-template-columns: 30px 1fr 150px 80px 90px 80px 40px 80px 40px;
+  gap: 10px;
   margin-bottom: 12px;
   align-items: center;
   cursor: grab;
   transition: all 0.3s;
   padding: 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .template-task-row:hover {
