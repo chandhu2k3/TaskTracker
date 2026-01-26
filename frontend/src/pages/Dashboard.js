@@ -16,6 +16,14 @@ import "./Dashboard.css";
 const Dashboard = () => {
   const navigate = useNavigate();
 
+  // Helper function to get local date string (not UTC)
+  const getLocalDateString = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Calculate current week on component mount
   const getCurrentWeek = () => {
     const now = new Date();
@@ -31,8 +39,7 @@ const Dashboard = () => {
 
   // Get today's date string for the date input
   const getTodayDateString = () => {
-    const now = new Date();
-    return now.toISOString().split("T")[0];
+    return getLocalDateString();
   };
 
   // Convert date object to week selection
@@ -79,6 +86,43 @@ const Dashboard = () => {
   const [activeSleepSession, setActiveSleepSession] = useState(null);
   const [sleepDuration, setSleepDuration] = useState(0);
   const [todos, setTodos] = useState([]);
+
+  // Load todos from localStorage and handle carryover
+  useEffect(() => {
+    const loadTodos = () => {
+      const savedTodos = localStorage.getItem('todos');
+      if (savedTodos) {
+        const parsedTodos = JSON.parse(savedTodos);
+        const today = getLocalDateString();
+        
+        // Mark overdue todos and update their dates to today
+        const updatedTodos = parsedTodos.map(todo => {
+          if (todo.date < today && !todo.completed) {
+            return { ...todo, date: today, isOverdue: true };
+          }
+          return todo;
+        });
+        
+        // Filter to show only today's todos
+        const todayTodos = updatedTodos.filter(todo => todo.date === today);
+        setTodos(todayTodos);
+        
+        // Save back to localStorage if we updated dates
+        if (JSON.stringify(updatedTodos) !== savedTodos) {
+          localStorage.setItem('todos', JSON.stringify(updatedTodos));
+        }
+      }
+    };
+    
+    loadTodos();
+  }, []);
+
+  // Save todos to localStorage whenever they change
+  useEffect(() => {
+    if (todos.length >= 0) {
+      localStorage.setItem('todos', JSON.stringify(todos));
+    }
+  }, [todos]);
 
   useEffect(() => {
     loadCategories();
@@ -252,14 +296,14 @@ const Dashboard = () => {
     // Update display date to first day of the new week
     const firstDayOfWeek = 1 + (newWeek - 1) * 7;
     const newDate = new Date(newYear, newMonth, firstDayOfWeek);
-    setDisplayDate(newDate.toISOString().split("T")[0]);
+    setDisplayDate(getLocalDateString(newDate));
   };
 
   const navigateDay = (direction) => {
     const currentDate = new Date(selectedDayDate);
     currentDate.setDate(currentDate.getDate() + direction);
     
-    const newDateString = currentDate.toISOString().split("T")[0];
+    const newDateString = getLocalDateString(currentDate);
     setSelectedDayDate(newDateString);
     setDisplayDate(newDateString);
     
@@ -678,9 +722,9 @@ const Dashboard = () => {
   const weekDays = getWeekDays();
   const groupedTasks = weekDays.reduce((acc, day) => {
     acc[day.date] = tasks.filter((task) => {
-      // Convert task date to YYYY-MM-DD format for comparison
+      // Convert task date to YYYY-MM-DD format for comparison (use local date)
       const taskDate = task.date
-        ? new Date(task.date).toISOString().split("T")[0]
+        ? getLocalDateString(new Date(task.date))
         : null;
       return taskDate === day.date;
     });
@@ -693,10 +737,13 @@ const Dashboard = () => {
 
   // Todo handlers
   const handleAddTodo = (text) => {
+    const today = getLocalDateString();
     const newTodo = {
       id: Date.now(),
       text,
       completed: false,
+      date: today,
+      isOverdue: false,
     };
     setTodos([...todos, newTodo]);
   };
@@ -934,7 +981,7 @@ const Dashboard = () => {
                     <div className="day-section">
                       {(() => {
                         const today = new Date();
-                        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+                        const todayStr = getLocalDateString(today);
                         const selectedTask = weekDays.find(day => day.date === selectedDayDate);
                         return selectedTask ? (
                           <DayCard

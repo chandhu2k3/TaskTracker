@@ -96,6 +96,19 @@ A comprehensive task tracking application with time tracking, analytics, and pro
 2. Side-by-side layout: 60% tasks, 40% todos
 3. Simple checkbox interface for quick tasks
 4. State managed in Dashboard component
+5. **Persistent storage** with localStorage
+6. **Automatic carryover** of incomplete todos to next day
+7. **Red "OVERDUE" tag** for todos carried over from previous days
+
+**Features:**
+- Todos saved to localStorage and persist across sessions
+- Each todo has a date field
+- On app load, incomplete todos from previous days are:
+  - Automatically updated to today's date
+  - Marked with `isOverdue: true` flag
+  - Display animated red "OVERDUE" tag
+- Only today's todos are shown
+- Completed todos remain with the date they were completed
 
 **Files Created:**
 - `frontend/src/components/TodoList.js` - New component
@@ -354,7 +367,7 @@ tasktracking/
 ## Known Issues & Future Improvements
 
 ### Current Limitations
-1. ~~Todos not persisted (only in memory)~~ - needs localStorage or backend
+1. ✅ ~~Todos not persisted (only in memory)~~ - **FIXED: localStorage with carryover**
 2. First request after cold start can take 5-10s (Vercel free tier limitation)
 3. Login may fail first time on cold start, succeeds on retry
 4. No pagination on task lists

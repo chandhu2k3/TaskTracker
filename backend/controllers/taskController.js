@@ -88,16 +88,33 @@ const getTasksByWeek = async (req, res) => {
           task.totalTime === 0 &&
           task.sessions.length === 0
         ) {
+          // Use scheduled time or default to start of day
+          let startTime;
+          let endTime;
+          
+          if (task.scheduledStartTime && task.scheduledEndTime) {
+            // Parse scheduled time (format: "HH:MM")
+            const [startHour, startMin] = task.scheduledStartTime.split(':').map(Number);
+            const [endHour, endMin] = task.scheduledEndTime.split(':').map(Number);
+            
+            startTime = new Date(taskDate);
+            startTime.setHours(startHour, startMin, 0, 0);
+            
+            endTime = new Date(taskDate);
+            endTime.setHours(endHour, endMin, 0, 0);
+          } else {
+            // No scheduled time - complete at start of day
+            startTime = new Date(taskDate.getTime() + 1 * 60 * 60 * 1000); // 1 AM
+            endTime = new Date(startTime.getTime() + task.plannedTime);
+          }
+
           // Mark as completed automatically with planned time
-          const completionTime = task.plannedTime;
           task.sessions.push({
-            startTime: new Date(taskDate.getTime() + 9 * 60 * 60 * 1000), // 9 AM
-            endTime: new Date(
-              taskDate.getTime() + 9 * 60 * 60 * 1000 + completionTime
-            ),
-            duration: completionTime,
+            startTime: startTime,
+            endTime: endTime,
+            duration: task.plannedTime,
           });
-          task.totalTime = completionTime;
+          task.totalTime = task.plannedTime;
           task.completionCount = (task.completionCount || 0) + 1;
           await task.save();
         }
@@ -165,15 +182,32 @@ const createTask = async (req, res) => {
       checkDate.setHours(0, 0, 0, 0);
 
       if (checkDate <= today) {
-        const completionTime = task.plannedTime;
+        // Use scheduled time or default to start of day
+        let startTime;
+        let endTime;
+        
+        if (task.scheduledStartTime && task.scheduledEndTime) {
+          // Parse scheduled time (format: "HH:MM")
+          const [startHour, startMin] = task.scheduledStartTime.split(':').map(Number);
+          const [endHour, endMin] = task.scheduledEndTime.split(':').map(Number);
+          
+          startTime = new Date(checkDate);
+          startTime.setHours(startHour, startMin, 0, 0);
+          
+          endTime = new Date(checkDate);
+          endTime.setHours(endHour, endMin, 0, 0);
+        } else {
+          // No scheduled time - complete at start of day
+          startTime = new Date(checkDate.getTime() + 1 * 60 * 60 * 1000); // 1 AM
+          endTime = new Date(startTime.getTime() + task.plannedTime);
+        }
+
         task.sessions.push({
-          startTime: new Date(checkDate.getTime() + 9 * 60 * 60 * 1000), // 9 AM
-          endTime: new Date(
-            checkDate.getTime() + 9 * 60 * 60 * 1000 + completionTime
-          ),
-          duration: completionTime,
+          startTime: startTime,
+          endTime: endTime,
+          duration: task.plannedTime,
         });
-        task.totalTime = completionTime;
+        task.totalTime = task.plannedTime;
         task.completionCount = 1;
         await task.save();
       }

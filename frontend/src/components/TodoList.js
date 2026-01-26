@@ -50,7 +50,12 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                 onChange={() => onToggleTodo(todo.id)}
                 className="todo-checkbox"
               />
-              <span className="todo-text">{todo.text}</span>
+              <span className="todo-text">
+                {todo.isOverdue && !todo.completed && (
+                  <span className="overdue-tag">OVERDUE</span>
+                )}
+                {todo.text}
+              </span>
               <button
                 onClick={() => onDeleteTodo(todo.id)}
                 className="todo-delete-btn"
