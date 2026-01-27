@@ -22,7 +22,7 @@ const getTemplates = async (req, res) => {
   try {
     const templates = await TaskTemplate.find({ user: req.user._id }).sort({
       createdAt: -1,
-    });
+    }).lean();
     res.json(templates);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -37,7 +37,7 @@ const getTemplate = async (req, res) => {
     const template = await TaskTemplate.findOne({
       _id: req.params.id,
       user: req.user._id,
-    });
+    }).lean();
 
     if (!template) {
       return res.status(404).json({ message: "Template not found" });

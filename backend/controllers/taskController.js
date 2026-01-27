@@ -27,11 +27,11 @@ const getWeekDates = (year, month, weekNumber) => {
 };
 
 // @desc    Get tasks by date range
-// @route   GET /api/tasks/range?startDate=...&endDate=...
+// @route   GET /api/tasks/range?startDate=...&endDate=...&page=1&limit=50
 // @access  Private
 const getTasksByDateRange = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, page = 1, limit = 50 } = req.query;
 
     if (!startDate || !endDate) {
       return res
@@ -39,15 +39,40 @@ const getTasksByDateRange = async (req, res) => {
         .json({ message: "Please provide startDate and endDate" });
     }
 
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
     const tasks = await Task.find({
       user: req.user._id,
       date: {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       },
-    }).sort({ date: 1, createdAt: 1 });
+    })
+      .sort({ date: 1, createdAt: 1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
 
-    res.json(tasks);
+    // Get total count for pagination info
+    const total = await Task.countDocuments({
+      user: req.user._id,
+      date: {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      },
+    });
+
+    res.json({
+      tasks,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -71,7 +96,7 @@ const getTasksByWeek = async (req, res) => {
         $gte: startDate,
         $lte: endDate,
       },
-    }).sort({ date: 1, order: 1, createdAt: 1 });
+    }).sort({ date: 1, order: 1, createdAt: 1 }).lean();
 
     // Auto-complete automated tasks for today and past dates
     const today = new Date();
@@ -578,7 +603,7 @@ const getCategoryAnalytics = async (req, res) => {
       };
     }
 
-    const tasks = await Task.find(query).sort({ date: 1 });
+    const tasks = await Task.find(query).sort({ date: 1 }).lean();
 
     // Category is already the name string
     const categoryName = category || "Unknown";

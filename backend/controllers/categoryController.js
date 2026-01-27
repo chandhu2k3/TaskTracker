@@ -7,7 +7,7 @@ const getCategories = async (req, res) => {
   try {
     const categories = await Category.find({ user: req.user._id }).sort({
       createdAt: 1,
-    });
+    }).lean();
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -9,7 +9,7 @@ const startSleep = async (req, res) => {
     const activeSleep = await Sleep.findOne({
       user: req.user._id,
       isActive: true,
-    });
+    }).lean();
 
     if (activeSleep) {
       return res
@@ -38,7 +38,7 @@ const stopSleep = async (req, res) => {
     const activeSleep = await Sleep.findOne({
       user: req.user._id,
       isActive: true,
-    });
+    }); // Not lean, we need to update and save
 
     if (!activeSleep) {
       return res.status(404).json({ message: "No active sleep session found" });

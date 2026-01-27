@@ -266,6 +266,30 @@ taskSchema.index({ user: 1, isActive: 1 });
 
 ---
 
+### Phase 4: Backend Performance & Reliability Optimizations (Jan 27, 2026)
+**Goal**: Eliminate timeouts, speed up API, and improve reliability on Vercel
+
+**Improvements:**
+- Refactored all backend controllers to use `.lean()` for all read-only queries (faster, less memory usage)
+- Added slow request logging middleware to backend (`server.js`) to log any API call taking >2s
+- Improved error handling in all controllers for clearer error messages
+- Added pagination to `getTasksByDateRange` API endpoint (page/limit parameters) to prevent large result sets from causing timeouts
+- Added Node.js keep-alive script (`keep-alive.js`) to ping `/api/health` endpoint every 5 minutes (prevents Vercel cold starts)
+- Confirmed all MongoDB models have proper indexes for common queries
+- Added documentation and recommendations for Vercel/MongoDB Atlas settings (connection pool, timeouts, paid tier if needed)
+
+**How to use keep-alive:**
+- Run `node keep-alive.js` on any always-on server or cloud function
+- Script will ping your backend every 5 minutes to keep serverless functions warm
+
+**Result:**
+- Dramatically reduced timeouts and "tasks loading failed" errors
+- Faster login and task loading, especially after periods of inactivity
+- Pagination prevents large datasets from overwhelming the API
+- Easier to diagnose slow endpoints via logs
+
+---
+
 ## Technical Stack
 
 ### Frontend

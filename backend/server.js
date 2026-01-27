@@ -11,6 +11,19 @@ connectDB();
 
 const app = express();
 
+// ✅ Slow request logging middleware should go HERE
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 2000) {
+      console.warn(`[SLOW REQUEST] ${req.method} ${req.originalUrl} took ${duration}ms`);
+    }
+  });
+  next();
+});
+
+
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
