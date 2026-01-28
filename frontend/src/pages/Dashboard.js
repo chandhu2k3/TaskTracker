@@ -764,7 +764,10 @@ const Dashboard = () => {
     <div className="dashboard">
       <div className="dashboard-header">
         <div className="header-left">
-          <h1>� Task Tracker Pro</h1>
+          <div className="logo-container">
+            <img src="\logo.svg" alt="Task Tracker Pro Logo" className="app-logo" />
+            <h1>Task Tracker</h1>
+          </div>
         </div>
         {/* Hamburger Menu Button - Mobile Only */}
         <button
@@ -997,6 +1000,8 @@ const Dashboard = () => {
                             onToggleTask={handleToggleTask}
                             onDeleteTask={handleDeleteTask}
                             onDeleteDayTasks={handleDeleteDayTasks}
+                            onToggleNotification={handleToggleNotification}
+                            onReorderTasks={handleReorderTasks}
                             isToday={selectedTask.date === todayStr}
                           />
                         ) : (
