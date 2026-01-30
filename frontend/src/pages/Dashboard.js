@@ -10,6 +10,7 @@ import taskService from "../services/taskService";
 import categoryService from "../services/categoryService";
 import templateService from "../services/templateService";
 import sleepService from "../services/sleepService";
+import todoService from "../services/todoService";
 import notificationService from "../services/notificationService";
 import "./Dashboard.css";
 
@@ -87,47 +88,21 @@ const Dashboard = () => {
   const [sleepDuration, setSleepDuration] = useState(0);
   const [todos, setTodos] = useState([]);
 
-  // Load todos from localStorage and handle carryover
-  useEffect(() => {
-    const loadTodos = () => {
-      const savedTodos = localStorage.getItem('todos');
-      if (savedTodos) {
-        const parsedTodos = JSON.parse(savedTodos);
-        const today = getLocalDateString();
-        
-        // Mark overdue todos and update their dates to today
-        const updatedTodos = parsedTodos.map(todo => {
-          if (todo.date < today && !todo.completed) {
-            return { ...todo, date: today, isOverdue: true };
-          }
-          return todo;
-        });
-        
-        // Filter to show only today's todos
-        const todayTodos = updatedTodos.filter(todo => todo.date === today);
-        setTodos(todayTodos);
-        
-        // Save back to localStorage if we updated dates
-        if (JSON.stringify(updatedTodos) !== savedTodos) {
-          localStorage.setItem('todos', JSON.stringify(updatedTodos));
-        }
-      }
-    };
-    
-    loadTodos();
-  }, []);
-
-  // Save todos to localStorage whenever they change
-  useEffect(() => {
-    if (todos.length >= 0) {
-      localStorage.setItem('todos', JSON.stringify(todos));
+  // Load todos from API
+  const loadTodos = async () => {
+    try {
+      const data = await todoService.getTodos();
+      setTodos(data);
+    } catch (error) {
+      console.log("Failed to load todos:", error.message);
     }
-  }, [todos]);
+  };
 
   useEffect(() => {
     loadCategories();
     loadTemplates();
     checkActiveSleep();
+    loadTodos();
 
     // Request notification permission on mount
     notificationService.requestPermission();
@@ -737,27 +712,35 @@ const Dashboard = () => {
 
   
 
-  // Todo handlers
-  const handleAddTodo = (text) => {
-    const today = getLocalDateString();
-    const newTodo = {
-      id: Date.now(),
-      text,
-      completed: false,
-      date: today,
-      isOverdue: false,
-    };
-    setTodos([...todos, newTodo]);
+  // Todo handlers - API-based
+  const handleAddTodo = async (text) => {
+    try {
+      const newTodo = await todoService.createTodo(text);
+      setTodos([...todos, newTodo]);
+    } catch (error) {
+      toast.error("Failed to add todo");
+    }
   };
 
-  const handleToggleTodo = (id) => {
-    setTodos(todos.map((todo) => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+  const handleToggleTodo = async (id) => {
+    try {
+      const todo = todos.find((t) => t._id === id);
+      if (todo) {
+        const updated = await todoService.toggleTodo(id, !todo.completed);
+        setTodos(todos.map((t) => (t._id === id ? updated : t)));
+      }
+    } catch (error) {
+      toast.error("Failed to update todo");
+    }
   };
 
-  const handleDeleteTodo = (id) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+  const handleDeleteTodo = async (id) => {
+    try {
+      await todoService.deleteTodo(id);
+      setTodos(todos.filter((todo) => todo._id !== id));
+    } catch (error) {
+      toast.error("Failed to delete todo");
+    }
   };
 
   return (

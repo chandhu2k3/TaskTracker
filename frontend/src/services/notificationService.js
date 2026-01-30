@@ -1,7 +1,9 @@
 // Browser Notification Service
 class NotificationService {
   constructor() {
-    this.permission = Notification.permission;
+    // Safely check for Notification API support (not available on iOS Safari web)
+    this.isSupported = typeof window !== 'undefined' && 'Notification' in window;
+    this.permission = this.isSupported ? Notification.permission : 'denied';
     this.checkInterval = null;
   }
 

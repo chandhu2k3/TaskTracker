@@ -64,6 +64,7 @@ app.use("/api/tasks", require("./routes/tasks"));
 app.use("/api/categories", require("./routes/categories"));
 app.use("/api/templates", require("./routes/templates"));
 app.use("/api/sleep", require("./routes/sleepRoutes"));
+app.use("/api/todos", require("./routes/todos"));
 
 // Health check
 app.get("/", (req, res) => {
