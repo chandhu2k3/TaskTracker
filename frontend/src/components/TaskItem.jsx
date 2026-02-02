@@ -167,13 +167,18 @@ const TaskItem = ({
       onDrop={(e) => onDrop(e, task)}
       onMouseDown={handleMouseDown}
     >
-      <div className="task-header">
+    <div className="task-header">
         <div className="task-name">
           <span className="drag-handle" title="Drag to reorder">
             ⋮⋮
           </span>
           <span className="task-category-icon">{categoryIcon || "📋"}</span>
           {task.name}
+          {totalSessionCount > 0 && (
+            <span className="task-sessions">
+              🔄 {totalSessionCount} session{totalSessionCount > 1 ? "s" : ""}
+            </span>
+          )}
           {task.scheduledStartTime && task.scheduledEndTime && (
             <span className="time-slot-badge" title="Scheduled time">
               🕐 {task.scheduledStartTime}-{task.scheduledEndTime}
@@ -289,19 +294,6 @@ const TaskItem = ({
           </div>
           <span className="planned-time-label">
             🎯 {formatTime(task.plannedTime || 0)}
-          </span>
-        </div>
-
-        <div className="task-meta">
-          {totalSessionCount > 0 && (
-            <span className="task-sessions">
-              🔄 {totalSessionCount} session{totalSessionCount > 1 ? "s" : ""}
-            </span>
-          )}
-          <span
-            className={`task-status ${task.isActive ? "running" : "stopped"}`}
-          >
-            {task.isActive ? "🟢 Running" : "⏸️ Stopped"}
           </span>
         </div>
       </div>

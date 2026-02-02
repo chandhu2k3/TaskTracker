@@ -1,0 +1,221 @@
+.onboarding-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.onboarding-modal {
+  background: linear-gradient(135deg, #ffffff 0%, #fef3e2 100%);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 480px;
+  width: 100%;
+  position: relative;
+  box-shadow: 
+    0 25px 80px rgba(139, 69, 19, 0.3),
+    0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.onboarding-skip {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.onboarding-skip:hover {
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.onboarding-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.onboarding-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.onboarding-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #78350f;
+  margin-bottom: 15px;
+  background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.onboarding-description {
+  font-size: 1rem;
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.onboarding-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(180, 83, 9, 0.1) 100%);
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.tip-icon {
+  font-size: 1.2rem;
+}
+
+.tip-text {
+  font-size: 0.9rem;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 25px 0;
+}
+
+.progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(139, 69, 19, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.progress-dot:hover {
+  background: rgba(139, 69, 19, 0.4);
+  transform: scale(1.2);
+}
+
+.progress-dot.active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: scale(1.3);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.4);
+}
+
+.progress-dot.completed {
+  background: #92400e;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.onboarding-btn {
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-prev {
+  background: rgba(0, 0, 0, 0.05);
+  color: #64748b;
+}
+
+.btn-prev:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+  color: #475569;
+}
+
+.btn-prev:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-next {
+  background: linear-gradient(135deg, #92400e 0%, #78350f 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(139, 69, 19, 0.3);
+}
+
+.btn-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 69, 19, 0.4);
+}
+
+@media (max-width: 768px) {
+  .onboarding-modal {
+    padding: 30px 20px;
+    margin: 10px;
+    border-radius: 20px;
+  }
+
+  .onboarding-icon {
+    font-size: 3rem;
+  }
+
+  .onboarding-title {
+    font-size: 1.3rem;
+  }
+
+  .onboarding-description {
+    font-size: 0.95rem;
+  }
+
+  .onboarding-actions {
+    flex-direction: column;
+  }
+
+  .onboarding-btn {
+    width: 100%;
+  }
+}

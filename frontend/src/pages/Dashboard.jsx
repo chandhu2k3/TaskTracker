@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CategoryManager from "../components/CategoryManager";
@@ -12,6 +13,7 @@ import templateService from "../services/templateService";
 import sleepService from "../services/sleepService";
 import todoService from "../services/todoService";
 import notificationService from "../services/notificationService";
+import Onboarding from "../components/Onboarding";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -87,6 +89,23 @@ const Dashboard = () => {
   const [activeSleepSession, setActiveSleepSession] = useState(null);
   const [sleepDuration, setSleepDuration] = useState(0);
   const [todos, setTodos] = useState([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if user needs onboarding (first time)
+  useEffect(() => {
+    const onboardingComplete = localStorage.getItem('onboardingComplete');
+    const isNewUser = sessionStorage.getItem('isNewRegistration');
+    
+    // Show onboarding for new registrations or if never completed
+    if (isNewUser === 'true' || !onboardingComplete) {
+      setShowOnboarding(true);
+      sessionStorage.removeItem('isNewRegistration');
+    }
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
 
   // Load todos from API
   const loadTodos = async () => {
@@ -323,6 +342,19 @@ const Dashboard = () => {
 
   const handleToggleTask = async (taskId, isActive) => {
     try {
+      // If trying to start a task while sleep mode is active, prompt to turn off sleep
+      if (isActive && sleepMode) {
+        const shouldWakeUp = window.confirm(
+          '😴 Sleep mode is currently active!\n\nYou cannot start tasks while sleeping. Would you like to turn off sleep mode and start this task?'
+        );
+        
+        if (shouldWakeUp) {
+          await toggleSleepMode(); // Turn off sleep mode
+        } else {
+          return; // Don't start the task
+        }
+      }
+      
       // If trying to start a task, check if another task is running
       if (isActive) {
         const currentlyActiveTask = tasks.find(
@@ -744,7 +776,23 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard">
+    <div className={`dashboard ${sleepMode ? 'sleep-mode-active' : ''}`}>
+      {/* Sleep Mode Overlay */}
+      {sleepMode && (
+        <div className="sleep-mode-overlay">
+          <div className="sleep-mode-indicator">
+            <span className="sleep-icon">😴</span>
+            <span className="sleep-text">Sleep Mode Active</span>
+            <span className="sleep-duration">{sleepDuration} min</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Onboarding Modal for new users */}
+      {showOnboarding && (
+        <Onboarding onComplete={handleOnboardingComplete} />
+      )}
+      
       <div className="dashboard-header">
         <div className="header-left">
           <div className="logo-container">
@@ -752,14 +800,23 @@ const Dashboard = () => {
             <h1>Task Tracker</h1>
           </div>
         </div>
-        {/* Hamburger Menu Button - Mobile Only */}
-        <button
-          className="hamburger-menu"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? "✕" : "☰"}
-        </button>{" "}
+        {/* Mobile right side: Sleep + Hamburger */}
+        <div className="mobile-header-actions">
+          <button
+            className={`btn-sleep-mode ${sleepMode ? "active" : ""}`}
+            onClick={toggleSleepMode}
+            title={sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"}
+          >
+            {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
+          </button>
+          <button
+            className="hamburger-menu"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
+        </div>
         <div className="header-nav">
           <button
             className={`nav-btn ${activeTab === "week" ? "active" : ""}`}
@@ -786,13 +843,6 @@ const Dashboard = () => {
             📈 Analytics
           </button>
         </div>
-        <button
-          className={`btn-sleep-mode ${sleepMode ? "active" : ""}`}
-          onClick={toggleSleepMode}
-          title={sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"}
-        >
-          {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
-        </button>
         <button className="btn-logout desktop-only" onClick={handleLogout}>
           Logout
         </button>
@@ -844,15 +894,6 @@ const Dashboard = () => {
             }}
           >
             📈 Analytics
-          </button>
-          <button
-            className={`mobile-menu-item ${sleepMode ? "active" : ""}`}
-            onClick={() => {
-              toggleSleepMode();
-              setMobileMenuOpen(false);
-            }}
-          >
-            {sleepMode ? `😴 Sleep: ${sleepDuration}m` : "💤 Start Sleep"}
           </button>
           <button
             className="mobile-menu-item logout-item"
@@ -1024,54 +1065,6 @@ const Dashboard = () => {
               </>
             )}
 
-            {showTemplateModal && (
-              <div
-                className="modal-overlay"
-                onClick={() => setShowTemplateModal(false)}
-              >
-                <div
-                  className="modal-content"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3>Select Template to Apply</h3>
-                  <div className="form-group">
-                    <label>Choose a template:</label>
-                    <select
-                      value={selectedTemplateForApply}
-                      onChange={(e) =>
-                        setSelectedTemplateForApply(e.target.value)
-                      }
-                      className="template-select"
-                    >
-                      <option value="">Select a template...</option>
-                      {templates.map((template) => (
-                        <option key={template._id} value={template._id}>
-                          {template.name} ({template.tasks?.length || 0} tasks)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="modal-actions">
-                    <button
-                      onClick={() => {
-                        setShowTemplateModal(false);
-                        setSelectedTemplateForApply("");
-                      }}
-                      className="btn-cancel"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleApplyTemplate}
-                      className="btn-save"
-                      disabled={!selectedTemplateForApply}
-                    >
-                      Apply Template
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1158,6 +1151,57 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Template Modal - rendered via Portal to appear above all content */}
+      {showTemplateModal && ReactDOM.createPortal(
+        <div
+          className="modal-overlay"
+          onClick={() => setShowTemplateModal(false)}
+        >
+          <div
+            className="modal-content template-apply-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Select Template to Apply</h3>
+            <div className="form-group">
+              <label>Choose a template:</label>
+              <select
+                value={selectedTemplateForApply}
+                onChange={(e) =>
+                  setSelectedTemplateForApply(e.target.value)
+                }
+                className="template-select"
+              >
+                <option value="">Select a template...</option>
+                {templates.map((template) => (
+                  <option key={template._id} value={template._id}>
+                    {template.name} ({template.tasks?.length || 0} tasks)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button
+                onClick={() => {
+                  setShowTemplateModal(false);
+                  setSelectedTemplateForApply("");
+                }}
+                className="btn-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApplyTemplate}
+                className="btn-save"
+                disabled={!selectedTemplateForApply}
+              >
+                Apply Template
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

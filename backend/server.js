@@ -1,10 +1,28 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 const connectDB = require("./config/db");
 
-// Load env vars
-dotenv.config();
+// Load environment config
+// For local development, use .env.development if it exists
+// For production (Vercel), use environment variables from Vercel dashboard
+const devEnvPath = path.join(__dirname, '.env.development');
+const defaultEnvPath = path.join(__dirname, '.env');
+
+if (fs.existsSync(devEnvPath)) {
+  dotenv.config({ path: devEnvPath });
+  console.log('📦 Loaded: .env.development');
+} else if (fs.existsSync(defaultEnvPath)) {
+  dotenv.config({ path: defaultEnvPath });
+  console.log('📦 Loaded: .env');
+} else {
+  console.log('📦 Using Vercel environment variables');
+}
+
+console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🗄️ Database: ${process.env.MONGODB_URI?.includes('localhost') ? 'Local MongoDB' : 'MongoDB Atlas'}`);
 
 // Connect to database
 connectDB();

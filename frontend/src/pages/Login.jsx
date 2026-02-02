@@ -39,7 +39,10 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>📋 Task Tracker</h1>
+        <div className="auth-logo">
+          <img src="/logo.svg" alt="Task Tracker Logo" />
+        </div>
+        <h1>Task Tracker</h1>
         <h2>Welcome Back</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">

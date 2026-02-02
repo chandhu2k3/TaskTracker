@@ -52,12 +52,12 @@
 .btn-apply-template {
   background: linear-gradient(
     135deg,
-    rgba(16, 185, 129, 0.2) 0%,
-    rgba(5, 150, 105, 0.2) 100%
+    rgba(217, 119, 6, 0.15) 0%,
+    rgba(180, 83, 9, 0.15) 100%
   );
   backdrop-filter: blur(10px);
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #92400e;
+  border: 1px solid rgba(217, 119, 6, 0.3);
   padding: 8px 16px;
   border-radius: 10px;
   cursor: pointer;
@@ -69,11 +69,11 @@
 .btn-apply-template:hover {
   background: linear-gradient(
     135deg,
-    rgba(16, 185, 129, 0.3) 0%,
-    rgba(5, 150, 105, 0.3) 100%
+    rgba(217, 119, 6, 0.25) 0%,
+    rgba(180, 83, 9, 0.25) 100%
   );
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.25);
 }
 
 .template-preview {
@@ -247,7 +247,7 @@
 
 .btn-add-task {
   padding: 8px 14px;
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -259,7 +259,7 @@
 
 .btn-add-task:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4);
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.4);
 }
 
 .no-tasks {
@@ -364,8 +364,8 @@
 .task-day-select:focus,
 .task-time-input:focus {
   outline: none;
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.05);
+  border-color: rgba(217, 119, 6, 0.3);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.08);
   background: rgba(255, 255, 255, 1);
 }
 
@@ -458,8 +458,8 @@
 
 .template-dropdown:focus {
   outline: none;
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.05);
+  border-color: rgba(217, 119, 6, 0.3);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.08);
 }
 
 .template-actions-inline {
@@ -484,18 +484,18 @@
 .btn-edit-small {
   background: linear-gradient(
     135deg,
-    rgba(99, 102, 241, 0.15) 0%,
-    rgba(79, 70, 229, 0.15) 100%
+    rgba(217, 119, 6, 0.15) 0%,
+    rgba(180, 83, 9, 0.15) 100%
   );
-  color: #6366f1;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #92400e;
+  border: 1px solid rgba(217, 119, 6, 0.2);
 }
 
 .btn-edit-small:hover {
   background: linear-gradient(
     135deg,
-    rgba(99, 102, 241, 0.25) 0%,
-    rgba(79, 70, 229, 0.25) 100%
+    rgba(217, 119, 6, 0.25) 0%,
+    rgba(180, 83, 9, 0.25) 100%
   );
   transform: scale(1.08);
 }

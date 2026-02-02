@@ -10,15 +10,37 @@
   scroll-margin-top: 20px;
 }
 
+/* Today's Card - Elegant & Cohesive */
 .day-card.today {
-  background: #f1f5f9;
-  border: 2px solid #64748b;
-  box-shadow: 0 4px 16px rgba(100, 116, 139, 0.15);
+  background: linear-gradient(145deg, #fffbf5 0%, #fef3e2 100%);
+  border: 2px solid rgba(180, 83, 9, 0.4);
+  box-shadow: 
+    0 8px 32px rgba(180, 83, 9, 0.15),
+    0 0 0 4px rgba(217, 119, 6, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  position: relative;
+}
+
+.day-card.today::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #d97706 0%, #b45309 50%, #d97706 100%);
+  background-size: 200% 100%;
+  animation: shimmerTop 3s ease-in-out infinite;
+}
+
+@keyframes shimmerTop {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
 }
 
 .day-card.today .day-header {
-  background: #64748b;
-  border-bottom: 1px solid #475569;
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  border-bottom: 1px solid rgba(139, 69, 19, 0.5);
 }
 
 .day-card.today .day-header h3 {
@@ -26,18 +48,26 @@
 }
 
 .day-card.today .day-stats {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .day-card.today .add-task-section {
-  background: #e2e8f0;
-  border-bottom: 1px solid #cbd5e1;
+  background: rgba(217, 119, 6, 0.06);
+  border-bottom: 1px solid rgba(180, 83, 9, 0.15);
 }
 
 .day-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 35px rgba(139, 69, 19, 0.3);
+}
+
+.day-card.today:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 12px 40px rgba(180, 83, 9, 0.2),
+    0 0 0 4px rgba(217, 119, 6, 0.12);
 }
 
 .day-header {
@@ -106,6 +136,108 @@
   border-bottom: 1px solid rgba(139, 69, 19, 0.3);
   background: rgba(139, 69, 19, 0.1);
   backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* Collapsed State */
+.add-task-section.collapsed {
+  padding: 10px 14px;
+  background: rgba(139, 69, 19, 0.05);
+}
+
+/* Expand Button - Shown when collapsed */
+.btn-expand-add-task {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(180, 83, 9, 0.15) 100%);
+  border: 2px dashed rgba(217, 119, 6, 0.4);
+  border-radius: 12px;
+  color: #92400e;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-expand-add-task:hover {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.2) 0%, rgba(180, 83, 9, 0.25) 100%);
+  border-color: rgba(217, 119, 6, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+}
+
+.btn-expand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: white;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.btn-expand-add-task:hover .btn-expand-icon {
+  transform: rotate(90deg);
+}
+
+/* Expanded Form Header */
+.add-task-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.add-task-title {
+  font-weight: 600;
+  color: #78350f;
+  font-size: 0.9rem;
+}
+
+.btn-collapse-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 8px;
+  color: #888;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-collapse-form:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  transform: scale(1.1);
+}
+
+/* Expanded State Animation */
+.add-task-section.expanded {
+  animation: expandForm 0.3s ease-out;
+}
+
+@keyframes expandForm {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .category-row {

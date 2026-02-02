@@ -317,6 +317,63 @@ taskSchema.index({ user: 1, isActive: 1 });
 
 ---
 
+### Phase 6: iOS Compatibility & Login Page Redesign (Jan 30, 2026)
+**Goal**: Fix iOS Safari rendering issue and redesign authentication pages with premium brown theme
+
+#### 6.1 iOS Safari Compatibility Fix
+**Problem**: Website showing only gradient background on iOS devices (Chrome and Safari), no content rendering at all. Works fine on Android and desktop.
+
+**Root Cause Analysis**:
+- The `notificationService.js` was accessing `Notification.permission` directly in the class constructor
+- On iOS Safari, the Web Notification API is **not available** in browser context (only in PWA/service worker mode)
+- This caused a JavaScript `ReferenceError` that crashed the entire React app before it could mount
+- Only the CSS body gradient background was visible since HTML/CSS loads before JS executes
+
+**Solution**:
+```javascript
+// Before (crashes on iOS):
+constructor() {
+  this.permission = Notification.permission;  // ❌
+}
+
+// After (safe):
+constructor() {
+  this.isSupported = typeof window !== 'undefined' && 'Notification' in window;
+  this.permission = this.isSupported ? Notification.permission : 'denied';  // ✅
+}
+```
+
+**Files Modified:**
+- `frontend/src/services/notificationService.js` - Added `isSupported` feature detection flag
+
+**Result**: Application now loads correctly on iOS Safari and Chrome
+
+#### 6.2 Login/Register Page Redesign
+**Changes**:
+- Replaced purple gradient with dark-to-brown gradient matching header theme
+- Added animated background effects (floating particles, radial gradients)
+- Integrated `logo.svg` with floating animation effect
+- Applied glassmorphism to auth card with enhanced shadows
+- Added shimmer effect on submit button hover
+- Added underline animation on auth-switch links
+- Optimized for iOS (prevents zoom on input focus with 16px font-size)
+
+**Design Details**:
+- Background: Dark brown gradient (`#1a0a00` → `#92400e`)
+- Card: Frosted glass effect with `backdrop-filter: blur(20px)`
+- Button: Gradient brown with shimmer overlay animation
+- Logo: Floating animation (3s ease-in-out infinite)
+- Animations: Card appear, background float, sparkle particles
+
+**Files Modified:**
+- `frontend/src/pages/Auth.css` - Complete redesign (~215 lines)
+- `frontend/src/pages/Login.js` - Added logo container with image
+- `frontend/src/pages/Register.js` - Added logo container with image
+
+**Result**: Premium, professional authentication flow matching dashboard theme
+
+---
+
 ## Technical Stack
 
 ### Frontend
@@ -512,5 +569,6 @@ Vercel auto-deploys on push to main branch.
 **v1.0** - Initial deployment with core features  
 **v2.0** - UI redesign, day/week toggle, quick todos  
 **v2.1** - Performance optimizations for Vercel  
+**v2.2** - iOS Safari compatibility fix, premium login page redesign
 
-*Last Updated: January 25, 2026*
+*Last Updated: January 30, 2026*

@@ -39,7 +39,13 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
             <p>No todos yet. Add one above!</p>
           </div>
         ) : (
-          todos.map((todo) => (
+          [...todos]
+            .sort((a, b) => {
+              // Pending todos first, completed todos at bottom
+              if (a.completed === b.completed) return 0;
+              return a.completed ? 1 : -1;
+            })
+            .map((todo) => (
             <div
               key={todo._id}
               className={`todo-item ${todo.completed ? "completed" : ""}`}

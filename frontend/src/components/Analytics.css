@@ -19,7 +19,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #d97706, #b45309);
   padding: 20px;
   border-radius: 12px;
   text-align: center;
@@ -94,7 +94,7 @@
 .day-time,
 .category-time {
   font-weight: 600;
-  color: #6366f1;
+  color: #92400e;
   min-width: 60px;
   text-align: right;
 }
@@ -121,7 +121,7 @@
 
 .week-details span:first-child {
   font-weight: 600;
-  color: #6366f1;
+  color: #92400e;
 }
 
 .week-details span:last-child {
@@ -194,8 +194,8 @@
 }
 
 .date-stat:hover {
-  background: #f1f5f9;
-  transform: translateX(5px);
+  background: #fef3e2;
+  transform: translateX(3px);
 }
 
 .date-label {
@@ -233,12 +233,11 @@
   color: #64748b;
 }
 
-/* Day stat with detailed bars */
 .day-stat-detailed {
   padding: 15px;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #d97706;
 }
 
 .day-stat-detailed .day-name {

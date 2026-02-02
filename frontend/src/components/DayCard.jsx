@@ -25,6 +25,7 @@ const DayCard = forwardRef(
     const [scheduledStartTime, setScheduledStartTime] = useState("");
     const [scheduledEndTime, setScheduledEndTime] = useState("");
     const [draggedTask, setDraggedTask] = useState(null);
+    const [isAddFormExpanded, setIsAddFormExpanded] = useState(false);
 
     const handleDragStart = (e, task) => {
       setDraggedTask(task);
@@ -74,6 +75,7 @@ const DayCard = forwardRef(
         setIsAutomated(false);
         setScheduledStartTime("");
         setScheduledEndTime("");
+        setIsAddFormExpanded(false); // Collapse after adding
       }
     };
 
@@ -148,78 +150,102 @@ const DayCard = forwardRef(
             )}
           </div>
         </div>
-        <div className="add-task-section">
-          <div className="category-row">
-            <select
-              className="category-select"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+        {/* Collapsible Add Task Section */}
+        <div className={`add-task-section ${isAddFormExpanded ? 'expanded' : 'collapsed'}`}>
+          {!isAddFormExpanded ? (
+            <button 
+              className="btn-expand-add-task"
+              onClick={() => setIsAddFormExpanded(true)}
             >
-              <option value="">Select Category</option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat._id}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              className="time-input"
-              placeholder="Time (min)"
-              value={plannedTime}
-              onChange={(e) => setPlannedTime(e.target.value)}
-              onKeyPress={handleKeyPress}
-              min="0"
-            />
-          </div>
-          <div className="task-input-row">
-            <input
-              type="text"
-              className="task-input"
-              placeholder="Add new task..."
-              value={taskInput}
-              onChange={(e) => setTaskInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-            />
-            <label
-              className="automated-checkbox"
-              title="Automated tasks are tracked daily"
-            >
-              <input
-                type="checkbox"
-                checked={isAutomated}
-                onChange={(e) => setIsAutomated(e.target.checked)}
-              />
-              <span>🔄 Auto</span>
-            </label>
-            <button
-              className="btn-add"
-              onClick={handleAddTask}
-              disabled={!taskInput.trim() || !selectedCategory}
-            >
-              +
+              <span className="btn-expand-icon">+</span>
+              <span>Add Task</span>
             </button>
-          </div>
-          <div className="time-slot-row">
-            <input
-              type="time"
-              className="time-slot-input"
-              placeholder="Start"
-              value={scheduledStartTime}
-              onChange={(e) => setScheduledStartTime(e.target.value)}
-              title="Optional: Scheduled start time"
-            />
-            <span className="time-slot-separator">-</span>
-            <input
-              type="time"
-              className="time-slot-input"
-              placeholder="End"
-              value={scheduledEndTime}
-              onChange={(e) => setScheduledEndTime(e.target.value)}
-              title="Optional: Scheduled end time"
-            />
-            <span className="time-slot-hint">⏰ Optional time slot</span>
-          </div>
+          ) : (
+            <>
+              <div className="add-task-form-header">
+                <span className="add-task-title">➕ New Task</span>
+                <button 
+                  className="btn-collapse-form"
+                  onClick={() => setIsAddFormExpanded(false)}
+                  title="Collapse"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="category-row">
+                <select
+                  className="category-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  className="time-input"
+                  placeholder="Time (min)"
+                  value={plannedTime}
+                  onChange={(e) => setPlannedTime(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  min="0"
+                />
+              </div>
+              <div className="task-input-row">
+                <input
+                  type="text"
+                  className="task-input"
+                  placeholder="Add new task..."
+                  value={taskInput}
+                  onChange={(e) => setTaskInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  autoFocus
+                />
+                <label
+                  className="automated-checkbox"
+                  title="Automated tasks are tracked daily"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isAutomated}
+                    onChange={(e) => setIsAutomated(e.target.checked)}
+                  />
+                  <span>🔄 Auto</span>
+                </label>
+                <button
+                  className="btn-add"
+                  onClick={handleAddTask}
+                  disabled={!taskInput.trim() || !selectedCategory}
+                >
+                  +
+                </button>
+              </div>
+              <div className="time-slot-row">
+                <input
+                  type="time"
+                  className="time-slot-input"
+                  placeholder="Start"
+                  value={scheduledStartTime}
+                  onChange={(e) => setScheduledStartTime(e.target.value)}
+                  title="Optional: Scheduled start time"
+                />
+                <span className="time-slot-separator">-</span>
+                <input
+                  type="time"
+                  className="time-slot-input"
+                  placeholder="End"
+                  value={scheduledEndTime}
+                  onChange={(e) => setScheduledEndTime(e.target.value)}
+                  title="Optional: Scheduled end time"
+                />
+                <span className="time-slot-hint">⏰ Optional time slot</span>
+              </div>
+            </>
+          )}
         </div>
         <div className="tasks-list">
           {tasks.length === 0 ? (
