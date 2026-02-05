@@ -134,14 +134,25 @@ const getTasksByWeek = async (req, res) => {
           }
 
           // Mark as completed automatically with planned time
-          task.sessions.push({
+          // Use findByIdAndUpdate since we're using lean() queries (plain objects don't have .save())
+          const newSession = {
             startTime: startTime,
             endTime: endTime,
             duration: task.plannedTime,
+          };
+          
+          await Task.findByIdAndUpdate(task._id, {
+            $push: { sessions: newSession },
+            $set: { 
+              totalTime: task.plannedTime,
+              completionCount: (task.completionCount || 0) + 1
+            }
           });
+          
+          // Update local task object for response
+          task.sessions.push(newSession);
           task.totalTime = task.plannedTime;
           task.completionCount = (task.completionCount || 0) + 1;
-          await task.save();
         }
       }
     }
