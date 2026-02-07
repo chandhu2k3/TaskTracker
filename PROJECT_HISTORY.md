@@ -569,6 +569,76 @@ Vercel auto-deploys on push to main branch.
 **v1.0** - Initial deployment with core features  
 **v2.0** - UI redesign, day/week toggle, quick todos  
 **v2.1** - Performance optimizations for Vercel  
-**v2.2** - iOS Safari compatibility fix, premium login page redesign
+**v2.2** - iOS Safari compatibility fix, premium login page redesign  
+**v2.3** - Dark mode orange theme, drag-and-drop improvements, header theme toggle
 
-*Last Updated: January 30, 2026*
+*Last Updated: February 7, 2026*
+
+---
+
+### Phase 7: Dark Mode Orange Theme & UI Refinements (Feb 6-7, 2026)
+**Goal**: Comprehensive warm orange dark mode theme across all sections, improved drag-and-drop UX, compact template layout, and header theme toggle
+
+#### 7.1 Warm Orange Dark Mode Theme
+**Implementation:**
+- Applied consistent warm orange gradient backgrounds to ALL sections in dark mode
+- Color scheme: `rgba(205, 127, 50)` (copper) and `rgba(184, 134, 11)` (dark gold)
+- Text colors: Cream (`#f5f5f5`, `#e8c49a`) and copper (`#d4a574`)
+
+**Sections Updated:**
+- **TaskItem.css** - Task cards with orange gradient, glowing borders
+- **DayCard.css** - Day headers with vibrant orange gradient
+- **Analytics.css** - Stat cards, charts, day/category rows
+- **CategoryManager.css** - Category chips, modal, icon picker
+- **TemplateSetup.css** - Day tabs, task rows, inputs, dropdowns
+- **Dashboard.css** - All containers, glass elements, week actions
+
+**Files Modified:**
+- `frontend/src/components/TaskItem.css` - Dark mode task styling
+- `frontend/src/components/DayCard.css` - Dark mode header styling
+- `frontend/src/components/Analytics.css` - 100+ lines of dark mode styles
+- `frontend/src/components/CategoryManager.css` - 85 lines of dark mode styles
+- `frontend/src/components/TemplateSetup.css` - 95 lines of dark mode styles
+- `frontend/src/pages/Dashboard.css` - 90+ lines of container dark mode styles
+
+#### 7.2 Drag-and-Drop Improvements
+**Changes:**
+- Fixed missing `onDragOver` and `onDrop` props in DayCard.jsx
+- Added "vacuum" effect: transparent slot with dashed copper border
+- Live sorting: tasks slide to make room while dragging
+- Dragged item shows at 80% opacity (minimal transparency per user request)
+- Removed grayscale filter for clearer visibility
+
+**Files Modified:**
+- `frontend/src/components/DayCard.jsx` - Restored drag props
+- `frontend/src/components/TaskItem.css` - Dragging styles with vacuum effect
+
+#### 7.3 Template Page Layout Optimization
+**Changes:**
+- Reduced spacing between days header and template content
+- Made header section more compact for better task visibility
+- Added drag-and-drop functionality to template tasks
+- Applied warm orange dark mode styling to all template elements
+
+**Files Modified:**
+- `frontend/src/components/TemplateSetup.jsx` - Compact layout, drag-drop logic
+- `frontend/src/components/TemplateSetup.css` - Reduced spacing, dark mode styles
+
+#### 7.4 Header Theme Toggle
+**Implementation:**
+- Added dedicated theme toggle button directly in header (next to Sleep)
+- Shows 🌙 in light mode, ☀️ in dark mode
+- Added to both mobile and desktop header sections
+- Minimal styling: transparent background, subtle border
+
+**Files Modified:**
+- `frontend/src/pages/Dashboard.jsx` - Added btn-theme-toggle in both header sections
+- `frontend/src/pages/Dashboard.css` - Minimal theme toggle button styling
+
+**Result:**
+- Cohesive warm orange dark mode theme across entire application
+- Smooth drag-and-drop with clear visual feedback
+- More compact template editor for better task visibility
+- One-click theme switching from header
+
+---

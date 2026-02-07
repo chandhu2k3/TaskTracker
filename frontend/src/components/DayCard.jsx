@@ -15,6 +15,7 @@ const DayCard = forwardRef(
       onDeleteDayTasks,
       onToggleNotification,
       onReorderTasks,
+      onHeaderClick,
     },
     ref
   ) => {
@@ -27,34 +28,45 @@ const DayCard = forwardRef(
     const [draggedTask, setDraggedTask] = useState(null);
     const [isAddFormExpanded, setIsAddFormExpanded] = useState(false);
 
+    const [localTasks, setLocalTasks] = useState(tasks);
+
+    // Sync localTasks with props tasks when not dragging
+    React.useEffect(() => {
+      if (!draggedTask) {
+        setLocalTasks(tasks);
+      }
+    }, [tasks, draggedTask]);
+
     const handleDragStart = (e, task) => {
       setDraggedTask(task);
       e.dataTransfer.effectAllowed = "move";
     };
 
-    const handleDragOver = (e, task) => {
+    const handleDragOver = (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
     };
 
-    const handleDrop = (e, targetTask) => {
-      e.preventDefault();
+    const handleDragEnter = (targetTask) => {
+      if (!draggedTask || draggedTask._id === targetTask._id) return;
 
-      if (!draggedTask || draggedTask._id === targetTask._id) {
-        setDraggedTask(null);
-        return;
-      }
-
-      const draggedIndex = tasks.findIndex((t) => t._id === draggedTask._id);
-      const targetIndex = tasks.findIndex((t) => t._id === targetTask._id);
+      const draggedIndex = localTasks.findIndex((t) => t._id === draggedTask._id);
+      const targetIndex = localTasks.findIndex((t) => t._id === targetTask._id);
 
       if (draggedIndex === -1 || targetIndex === -1) return;
 
-      const reorderedTasks = [...tasks];
-      const [removed] = reorderedTasks.splice(draggedIndex, 1);
-      reorderedTasks.splice(targetIndex, 0, removed);
+      const newOrder = [...localTasks];
+      const [removed] = newOrder.splice(draggedIndex, 1);
+      newOrder.splice(targetIndex, 0, removed);
 
-      onReorderTasks(date, reorderedTasks);
+      setLocalTasks(newOrder);
+    };
+
+    const handleDrop = (e) => {
+      e.preventDefault();
+      if (!draggedTask) return;
+
+      onReorderTasks(date, localTasks);
       setDraggedTask(null);
     };
 
@@ -132,7 +144,11 @@ const DayCard = forwardRef(
 
     return (
       <div className={`day-card ${isToday() ? "today" : ""}`} ref={ref}>
-        <div className="day-header">
+        <div 
+          className={`day-header ${onHeaderClick ? "clickable" : ""}`} 
+          onClick={onHeaderClick}
+          title={onHeaderClick ? "Click to view full day" : ""}
+        >
           <h3>{dayName}</h3>
           <div className="day-stats">
             <span className="day-time">{formatTime(stats.totalTime)}</span>
@@ -247,14 +263,18 @@ const DayCard = forwardRef(
             </>
           )}
         </div>
-        <div className="tasks-list">
-          {tasks.length === 0 ? (
+        <div 
+          className="tasks-list"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          {localTasks.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">📝</div>
               <p>No tasks yet. Add one above!</p>
             </div>
           ) : (
-            tasks.map((task) => {
+            localTasks.map((task) => {
               const categoryInfo = getCategoryInfo(task.category);
               return (
                 <TaskItem
@@ -267,7 +287,9 @@ const DayCard = forwardRef(
                   onToggleNotification={onToggleNotification}
                   onDragStart={handleDragStart}
                   onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
                   onDrop={handleDrop}
+                  draggedTask={draggedTask}
                   isDragging={draggedTask?._id === task._id}
                 />
               );

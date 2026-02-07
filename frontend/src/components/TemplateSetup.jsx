@@ -100,24 +100,24 @@ const TemplateSetup = ({
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDragOver = (e, index) => {
+  const handleDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e, targetIndex) => {
-    e.preventDefault();
-
-    if (draggedTaskIndex === null || draggedTaskIndex === targetIndex) {
-      setDraggedTaskIndex(null);
-      return;
-    }
+  const handleDragEnter = (targetIndex) => {
+    if (draggedTaskIndex === null || draggedTaskIndex === targetIndex) return;
 
     const reordered = [...templateTasks];
     const [removed] = reordered.splice(draggedTaskIndex, 1);
     reordered.splice(targetIndex, 0, removed);
 
     setTemplateTasks(reordered);
+    setDraggedTaskIndex(targetIndex); // Update index since item moved
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
     setDraggedTaskIndex(null);
   };
 
@@ -340,8 +340,9 @@ const TemplateSetup = ({
                         }`}
                         draggable="true"
                         onDragStart={(e) => handleDragStart(e, index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDrop={(e) => handleDrop(e, index)}
+                        onDragOver={handleDragOver}
+                        onDragEnter={() => handleDragEnter(index)}
+                        onDrop={handleDrop}
                       >
                         <span
                           className="drag-handle-template"

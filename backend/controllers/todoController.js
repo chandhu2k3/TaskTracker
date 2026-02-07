@@ -1,19 +1,13 @@
 const Todo = require("../models/Todo");
-
-// Helper function to get local date string
-const getLocalDateString = (date = new Date()) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+const tz = require("../utils/timezone");
 
 // @desc    Get todos for today (with overdue carryover)
 // @route   GET /api/todos
 // @access  Private
 const getTodos = async (req, res) => {
   try {
-    const today = getLocalDateString();
+    const timezone = tz.getTimezoneFromRequest(req);
+    const today = tz.getTodayString(timezone);
 
     // Get all incomplete todos from past dates (overdue) and today's todos
     const todos = await Todo.find({
@@ -58,7 +52,8 @@ const createTodo = async (req, res) => {
       return res.status(400).json({ message: "Please provide todo text" });
     }
 
-    const today = getLocalDateString();
+    const timezone = tz.getTimezoneFromRequest(req);
+    const today = tz.getTodayString(timezone);
 
     const todo = await Todo.create({
       user: req.user._id,

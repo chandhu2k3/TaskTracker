@@ -10,7 +10,9 @@ const TaskItem = ({
   categoryIcon,
   onDragStart,
   onDragOver,
+  onDragEnter,
   onDrop,
+  draggedTask,
   isDragging,
 }) => {
   const overtimeCheckRef = useRef(null);
@@ -145,7 +147,13 @@ const TaskItem = ({
   const handleDragStart = (e) => {
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", task._id);
+    // Add opacity to the dragging element for visual effect
+    e.currentTarget.style.opacity = '0.5';
     onDragStart(e, task);
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = '1';
   };
 
   const handleMouseDown = (e) => {
@@ -163,7 +171,9 @@ const TaskItem = ({
       style={{ borderLeft: `4px solid ${categoryColor || "#6366f1"}` }}
       draggable="true"
       onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onDragOver={(e) => onDragOver(e, task)}
+      onDragEnter={() => onDragEnter(task)}
       onDrop={(e) => onDrop(e, task)}
       onMouseDown={handleMouseDown}
     >

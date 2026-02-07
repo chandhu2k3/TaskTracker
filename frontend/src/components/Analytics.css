@@ -323,3 +323,106 @@
     text-align: left;
   }
 }
+
+/* Dark Mode Styles */
+body[data-theme="dark"] .analytics-container {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+body[data-theme="dark"] .analytics-loading {
+  color: #d4a574;
+}
+
+body[data-theme="dark"] .stat-card {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.25) 0%, rgba(184, 134, 11, 0.15) 100%);
+  border: 1px solid rgba(205, 127, 50, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(205, 127, 50, 0.1);
+}
+
+body[data-theme="dark"] .stat-value {
+  color: #f5f5f5;
+  text-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
+}
+
+body[data-theme="dark"] .stat-label {
+  color: #e8c49a;
+}
+
+body[data-theme="dark"] .analytics-section {
+  background: transparent;
+}
+
+body[data-theme="dark"] .analytics-section h4 {
+  color: #e8c49a;
+}
+
+body[data-theme="dark"] .day-stat,
+body[data-theme="dark"] .category-stat,
+body[data-theme="dark"] .week-stat,
+body[data-theme="dark"] .date-stat,
+body[data-theme="dark"] .day-stat-detailed {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(184, 134, 11, 0.08) 100%);
+  border: 1px solid rgba(205, 127, 50, 0.25);
+}
+
+body[data-theme="dark"] .day-stat:hover,
+body[data-theme="dark"] .date-stat:hover {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.22) 0%, rgba(184, 134, 11, 0.12) 100%);
+  border-color: rgba(205, 127, 50, 0.35);
+}
+
+body[data-theme="dark"] .day-name,
+body[data-theme="dark"] .category-name-analytics,
+body[data-theme="dark"] .week-label,
+body[data-theme="dark"] .date-label {
+  color: #f5f5f5;
+}
+
+body[data-theme="dark"] .day-bar-container,
+body[data-theme="dark"] .category-bar-container,
+body[data-theme="dark"] .week-bar-container,
+body[data-theme="dark"] .date-bar-container,
+body[data-theme="dark"] .bar-wrapper {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(205, 127, 50, 0.15);
+}
+
+body[data-theme="dark"] .day-time,
+body[data-theme="dark"] .category-time,
+body[data-theme="dark"] .date-details span:first-child,
+body[data-theme="dark"] .week-details span:first-child {
+  color: #e8c49a;
+}
+
+body[data-theme="dark"] .day-sessions,
+body[data-theme="dark"] .category-tasks,
+body[data-theme="dark"] .date-details span:last-child,
+body[data-theme="dark"] .week-details span:last-child {
+  color: #d4a574;
+}
+
+body[data-theme="dark"] .legend-label {
+  color: #d4a574;
+}
+
+body[data-theme="dark"] .bar-label {
+  color: #d4a574;
+}
+
+body[data-theme="dark"] .bar-value {
+  color: #f5f5f5;
+}
+
+body[data-theme="dark"] .day-meta {
+  color: #d4a574;
+}
+
+body[data-theme="dark"] .day-stat-detailed {
+  border-left-color: #cd7f32;
+}
+
+body[data-theme="dark"] .pie-chart-container {
+  background: transparent;
+}

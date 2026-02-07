@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./Analytics.css";
 
 const Analytics = ({ analytics, type, todos = [] }) => {
@@ -23,6 +23,8 @@ const Analytics = ({ analytics, type, todos = [] }) => {
     if (total === 0) return "0%";
     return `${Math.round((value / total) * 100)}%`;
   };
+
+  const [hoveredCategory, setHoveredCategory] = useState(null);
 
   if (!analytics) {
     return <div className="analytics-loading">Loading analytics...</div>;
@@ -181,29 +183,69 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                     let cumulativeAngle = 0;
 
                     return categoryData.map(([category, data], index) => {
-                      const percentage = (data.totalTime / total) * 100;
-                      const angle = (percentage / 100) * 360;
+                      const percentageValue = (data.totalTime / total) * 100;
+                      const angle = (percentageValue / 100) * 360;
                       const startAngle = cumulativeAngle - 90;
                       const endAngle = startAngle + angle;
 
                       const startRadians = (startAngle * Math.PI) / 180;
                       const endRadians = (endAngle * Math.PI) / 180;
+                      const midAngle = startAngle + angle / 2;
+                      const midRadians = (midAngle * Math.PI) / 180;
 
-                      const x1 = 100 + 80 * Math.cos(startRadians);
-                      const y1 = 100 + 80 * Math.sin(startRadians);
-                      const x2 = 100 + 80 * Math.cos(endRadians);
-                      const y2 = 100 + 80 * Math.sin(endRadians);
+                      const radius = 80;
+                      const x1 = 100 + radius * Math.cos(startRadians);
+                      const y1 = 100 + radius * Math.sin(startRadians);
+                      const x2 = 100 + radius * Math.cos(endRadians);
+                      const y2 = 100 + radius * Math.sin(endRadians);
+
+                      // Calculate offset for pop-out effect
+                      const isHovered = hoveredCategory === category;
+                      const offset = isHovered ? 8 : 0;
+                      const offsetX = offset * Math.cos(midRadians);
+                      const offsetY = offset * Math.sin(midRadians);
+
+                      // Label position
+                      const labelRadius = radius * 0.7;
+                      const lx = 100 + labelRadius * Math.cos(midRadians) + offsetX;
+                      const ly = 100 + labelRadius * Math.sin(midRadians) + offsetY;
 
                       const largeArc = angle > 180 ? 1 : 0;
-
                       cumulativeAngle += angle;
 
                       return (
-                        <path
-                          key={category}
-                          d={`M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                          fill={colors[index % colors.length]}
-                        />
+                        <g key={category}>
+                          <path
+                            d={`M 100 100 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                            fill={colors[index % colors.length]}
+                            style={{ 
+                              transform: `translate(${offsetX}px, ${offsetY}px)`,
+                              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                              cursor: 'pointer',
+                              filter: isHovered ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' : 'none'
+                            }}
+                            onMouseEnter={() => setHoveredCategory(category)}
+                            onMouseLeave={() => setHoveredCategory(null)}
+                          />
+                          {percentageValue > 5 && (
+                            <text
+                              x={lx}
+                              y={ly}
+                              textAnchor="middle"
+                              alignmentBaseline="middle"
+                              fill="#fff"
+                              fontSize="10"
+                              fontWeight="700"
+                              style={{ 
+                                pointerEvents: 'none',
+                                opacity: isHovered ? 1 : 0.8,
+                                transition: 'all 0.3s'
+                              }}
+                            >
+                              {Math.round(percentageValue)}%
+                            </text>
+                          )}
+                        </g>
                       );
                     });
                   })()}
@@ -229,7 +271,17 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                             : 0;
 
                         return (
-                          <div key={category} className="legend-item">
+                          <div 
+                            key={category} 
+                            className={`legend-item ${hoveredCategory === category ? 'active' : ''}`}
+                            onMouseEnter={() => setHoveredCategory(category)}
+                            onMouseLeave={() => setHoveredCategory(null)}
+                            style={{ 
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              transform: hoveredCategory === category ? 'translateX(5px)' : 'none'
+                            }}
+                          >
                             <span
                               className="legend-color"
                               style={{

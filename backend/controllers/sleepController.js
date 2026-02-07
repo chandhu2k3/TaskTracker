@@ -1,10 +1,13 @@
 const Sleep = require("../models/Sleep");
+const tz = require("../utils/timezone");
 
 // @desc    Start sleep session
 // @route   POST /api/sleep/start
 // @access  Private
 const startSleep = async (req, res) => {
   try {
+    const timezone = tz.getTimezoneFromRequest(req);
+    
     // Check if there's already an active sleep session
     const activeSleep = await Sleep.findOne({
       user: req.user._id,
@@ -17,10 +20,12 @@ const startSleep = async (req, res) => {
         .json({ message: "Sleep session already in progress" });
     }
 
+    const now = tz.getNow(timezone).toJSDate();
+
     const sleep = await Sleep.create({
       user: req.user._id,
-      startTime: new Date(),
-      date: new Date(),
+      startTime: now,
+      date: now,
       isActive: true,
     });
 
@@ -35,6 +40,8 @@ const startSleep = async (req, res) => {
 // @access  Private
 const stopSleep = async (req, res) => {
   try {
+    const timezone = tz.getTimezoneFromRequest(req);
+    
     const activeSleep = await Sleep.findOne({
       user: req.user._id,
       isActive: true,
@@ -44,7 +51,7 @@ const stopSleep = async (req, res) => {
       return res.status(404).json({ message: "No active sleep session found" });
     }
 
-    const endTime = new Date();
+    const endTime = tz.getNow(timezone).toJSDate();
     const duration = endTime - new Date(activeSleep.startTime);
 
     activeSleep.endTime = endTime;

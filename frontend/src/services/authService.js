@@ -68,11 +68,41 @@ const getProfile = async (token) => {
   return response.data;
 };
 
+// Update onboarding status
+const updateOnboarding = async (onboardingComplete) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user || !user.token) {
+    throw new Error("Not authenticated");
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${user.token}`,
+    },
+  };
+
+  const response = await axios.put(
+    `${API_URL}/api/auth/onboarding`,
+    { onboardingComplete },
+    config
+  );
+
+  // Update local storage with new onboarding status
+  if (response.data) {
+    const updatedUser = { ...user, onboardingComplete: response.data.onboardingComplete };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  }
+
+  return response.data;
+};
+
 const authService = {
   register,
   login,
   logout,
   getProfile,
+  updateOnboarding,
 };
 
 export default authService;
+

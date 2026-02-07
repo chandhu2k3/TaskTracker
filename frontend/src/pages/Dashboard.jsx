@@ -90,14 +90,22 @@ const Dashboard = () => {
   const [sleepDuration, setSleepDuration] = useState(0);
   const [todos, setTodos] = useState([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'light';
+  });
 
-  // Check if user needs onboarding (first time)
+  // Check if user needs onboarding (first time) - using database value
   useEffect(() => {
-    const onboardingComplete = localStorage.getItem('onboardingComplete');
+    const user = JSON.parse(localStorage.getItem('user'));
     const isNewUser = sessionStorage.getItem('isNewRegistration');
     
-    // Show onboarding for new registrations or if never completed
-    if (isNewUser === 'true' || !onboardingComplete) {
+    // Show onboarding for new registrations or if never completed (from database)
+    if (isNewUser === 'true' || (user && !user.onboardingComplete)) {
       setShowOnboarding(true);
       sessionStorage.removeItem('isNewRegistration');
     }
@@ -106,6 +114,35 @@ const Dashboard = () => {
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
   };
+
+  // Function to manually start the tour
+  const startTour = () => {
+    setShowOnboarding(true);
+  };
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
+  // Apply theme class to document
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuOpen && !event.target.closest('.profile-dropdown-container')) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [profileMenuOpen]);
 
   // Load todos from API
   const loadTodos = async () => {
@@ -795,12 +832,25 @@ const Dashboard = () => {
       
       <div className="dashboard-header">
         <div className="header-left">
-          <div className="logo-container">
+          {/* Hamburger menu - mobile only, on the left */}
+          <button
+            className="hamburger-menu"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
+          <div 
+            className="logo-container" 
+            onClick={() => setActiveTab("week")}
+            style={{ cursor: 'pointer' }}
+            title="Go to Home"
+          >
             <img src="\logo.svg" alt="Task Tracker Pro Logo" className="app-logo" />
             <h1>Task Tracker</h1>
           </div>
         </div>
-        {/* Mobile right side: Sleep + Hamburger */}
+        {/* Mobile right side: Sleep + Theme Toggle */}
         <div className="mobile-header-actions">
           <button
             className={`btn-sleep-mode ${sleepMode ? "active" : ""}`}
@@ -810,11 +860,11 @@ const Dashboard = () => {
             {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
           </button>
           <button
-            className="hamburger-menu"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
+            className="btn-theme-toggle"
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
-            {mobileMenuOpen ? "✕" : "☰"}
+            {theme === 'light' ? '🌙' : '☀️'}
           </button>
         </div>
         <div className="header-nav">
@@ -843,9 +893,75 @@ const Dashboard = () => {
             📈 Analytics
           </button>
         </div>
-        <button className="btn-logout desktop-only" onClick={handleLogout}>
-          Logout
-        </button>
+        <div className="desktop-header-actions desktop-only">
+          <button
+            className={`btn-sleep-mode ${sleepMode ? "active" : ""}`}
+            onClick={toggleSleepMode}
+            title={sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"}
+          >
+            {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
+          </button>
+          <button
+            className="btn-theme-toggle"
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+          <div className="profile-dropdown-container">
+            <button 
+              className={`btn-profile ${profileMenuOpen ? 'active' : ''}`}
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              title="Profile menu"
+            >
+              <span className="profile-avatar">
+                {user?.name?.charAt(0)?.toUpperCase() || '👤'}
+              </span>
+              <span className="profile-name">{user?.name?.split(' ')[0] || 'Profile'}</span>
+              <span className="dropdown-arrow">{profileMenuOpen ? '▲' : '▼'}</span>
+            </button>
+            {profileMenuOpen && (
+              <div className="profile-dropdown-menu">
+                <div className="profile-dropdown-header">
+                  <span className="profile-avatar-large">
+                    {user?.name?.charAt(0)?.toUpperCase() || '👤'}
+                  </span>
+                  <div className="profile-info">
+                    <span className="profile-name-full">{user?.name || 'User'}</span>
+                    <span className="profile-email">{user?.email || ''}</span>
+                  </div>
+                </div>
+                <div className="profile-dropdown-divider"></div>
+                <button 
+                  className="profile-dropdown-item theme-toggle"
+                  onClick={() => {
+                    toggleTheme();
+                  }}
+                >
+                  {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                </button>
+                <button 
+                  className="profile-dropdown-item"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    startTour();
+                  }}
+                >
+                  🎯 Tour Guide
+                </button>
+                <button 
+                  className="profile-dropdown-item logout"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  🚪 Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Mobile Dropdown Menu */}
@@ -894,6 +1010,15 @@ const Dashboard = () => {
             }}
           >
             📈 Analytics
+          </button>
+          <button
+            className="mobile-menu-item tour-item"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              startTour();
+            }}
+          >
+            🎯 Tour Guide
           </button>
           <button
             className="mobile-menu-item logout-item"
@@ -1056,8 +1181,11 @@ const Dashboard = () => {
                         onToggleTask={handleToggleTask}
                         onDeleteTask={handleDeleteTask}
                         onDeleteDayTasks={handleDeleteDayTasks}
-                        onToggleNotification={handleToggleNotification}
                         onReorderTasks={handleReorderTasks}
+                        onHeaderClick={() => {
+                          handleDateChange({ target: { value: day.date } });
+                          setViewMode("day");
+                        }}
                       />
                     ))}
                   </div>

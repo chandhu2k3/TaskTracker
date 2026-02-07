@@ -1,8 +1,9 @@
 import axios from "axios";
+import { getUserTimezone } from "../utils/timezone";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-// Get auth token
+// Get auth token and timezone header
 const getAuthConfig = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user || !user.token) {
@@ -11,6 +12,7 @@ const getAuthConfig = () => {
   return {
     headers: {
       Authorization: `Bearer ${user?.token}`,
+      "X-Timezone": getUserTimezone(),
     },
   };
 };

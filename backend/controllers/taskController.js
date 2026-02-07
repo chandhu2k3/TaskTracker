@@ -1,30 +1,7 @@
 const Task = require("../models/Task");
 const Category = require("../models/Category");
 const Sleep = require("../models/Sleep");
-
-// Helper function to get day name from date
-const getDayName = (date) => {
-  const days = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-  return days[new Date(date).getDay()];
-};
-
-// Helper function to get week start and end dates
-const getWeekDates = (year, month, weekNumber) => {
-  // Calendar-based weeks: Week 1 = days 1-7, Week 2 = 8-14, etc.
-  const startDay = 1 + (weekNumber - 1) * 7;
-  const startDate = new Date(year, month, startDay, 0, 0, 0, 0);
-  const endDate = new Date(year, month, startDay + 6, 23, 59, 59, 999);
-
-  return { startDate, endDate };
-};
+const tz = require("../utils/timezone");
 
 // @desc    Get tasks by date range
 // @route   GET /api/tasks/range?startDate=...&endDate=...&page=1&limit=50
@@ -84,10 +61,13 @@ const getTasksByDateRange = async (req, res) => {
 const getTasksByWeek = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
-    const { startDate, endDate } = getWeekDates(
+    const timezone = tz.getTimezoneFromRequest(req);
+    
+    const { startDate, endDate } = tz.getWeekDates(
       parseInt(year),
       parseInt(month),
-      parseInt(weekNumber)
+      parseInt(weekNumber),
+      timezone
     );
 
     const tasks = await Task.find({
@@ -99,17 +79,15 @@ const getTasksByWeek = async (req, res) => {
     }).sort({ date: 1, order: 1, createdAt: 1 }).lean();
 
     // Auto-complete automated tasks for today and past dates
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayStr = tz.getTodayString(timezone);
 
     for (const task of tasks) {
       if (task.isAutomated && !task.isActive && task.plannedTime > 0) {
-        const taskDate = new Date(task.date);
-        taskDate.setHours(0, 0, 0, 0);
+        const taskDateStr = tz.dateToString(task.date, timezone);
 
         // If task is for today or past, and hasn't been completed yet
         if (
-          taskDate <= today &&
+          taskDateStr <= todayStr &&
           task.totalTime === 0 &&
           task.sessions.length === 0
         ) {
@@ -122,14 +100,11 @@ const getTasksByWeek = async (req, res) => {
             const [startHour, startMin] = task.scheduledStartTime.split(':').map(Number);
             const [endHour, endMin] = task.scheduledEndTime.split(':').map(Number);
             
-            startTime = new Date(taskDate);
-            startTime.setHours(startHour, startMin, 0, 0);
-            
-            endTime = new Date(taskDate);
-            endTime.setHours(endHour, endMin, 0, 0);
+            startTime = tz.createDateTime(taskDateStr, startHour, startMin, timezone);
+            endTime = tz.createDateTime(taskDateStr, endHour, endMin, timezone);
           } else {
-            // No scheduled time - complete at start of day
-            startTime = new Date(taskDate.getTime() + 1 * 60 * 60 * 1000); // 1 AM
+            // No scheduled time - complete at 1 AM
+            startTime = tz.createDateTime(taskDateStr, 1, 0, timezone);
             endTime = new Date(startTime.getTime() + task.plannedTime);
           }
 
@@ -184,14 +159,16 @@ const createTask = async (req, res) => {
         .json({ message: "Please provide task name, category, and date" });
     }
 
+    const timezone = tz.getTimezoneFromRequest(req);
+
     // Fetch the category to get its name (category in req.body is the ID)
     const categoryDoc = await Category.findById(category);
     if (!categoryDoc) {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const taskDate = new Date(date);
-    const day = getDayName(taskDate);
+    const taskDate = tz.parseDate(date, timezone);
+    const day = tz.getDayName(taskDate, timezone);
 
     const task = await Task.create({
       user: req.user._id,
@@ -212,12 +189,10 @@ const createTask = async (req, res) => {
 
     // Auto-complete if automated task is for today or past
     if (task.isAutomated && task.plannedTime > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const checkDate = new Date(taskDate);
-      checkDate.setHours(0, 0, 0, 0);
+      const todayStr = tz.getTodayString(timezone);
+      const taskDateStr = tz.dateToString(taskDate, timezone);
 
-      if (checkDate <= today) {
+      if (taskDateStr <= todayStr) {
         // Use scheduled time or default to start of day
         let startTime;
         let endTime;
@@ -227,14 +202,11 @@ const createTask = async (req, res) => {
           const [startHour, startMin] = task.scheduledStartTime.split(':').map(Number);
           const [endHour, endMin] = task.scheduledEndTime.split(':').map(Number);
           
-          startTime = new Date(checkDate);
-          startTime.setHours(startHour, startMin, 0, 0);
-          
-          endTime = new Date(checkDate);
-          endTime.setHours(endHour, endMin, 0, 0);
+          startTime = tz.createDateTime(taskDateStr, startHour, startMin, timezone);
+          endTime = tz.createDateTime(taskDateStr, endHour, endMin, timezone);
         } else {
-          // No scheduled time - complete at start of day
-          startTime = new Date(checkDate.getTime() + 1 * 60 * 60 * 1000); // 1 AM
+          // No scheduled time - complete at 1 AM
+          startTime = tz.createDateTime(taskDateStr, 1, 0, timezone);
           endTime = new Date(startTime.getTime() + task.plannedTime);
         }
 
@@ -270,18 +242,15 @@ const updateTask = async (req, res) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
+    const timezone = tz.getTimezoneFromRequest(req);
+
     // Handle toggle with sessions
     if (req.body.hasOwnProperty("isActive")) {
       if (req.body.isActive) {
-        // Check if task date is today
-        const taskDate = new Date(task.date);
-        const today = new Date();
-        const isToday =
-          taskDate.getFullYear() === today.getFullYear() &&
-          taskDate.getMonth() === today.getMonth() &&
-          taskDate.getDate() === today.getDate();
+        // Check if task date is today (in user's timezone)
+        const isTodayTask = tz.isToday(task.date, timezone);
 
-        if (!isToday) {
+        if (!isTodayTask) {
           return res
             .status(400)
             .json({ message: "You can only start/stop today's tasks" });
@@ -289,11 +258,11 @@ const updateTask = async (req, res) => {
 
         // Starting a new session
         task.isActive = true;
-        task.startTime = new Date();
+        task.startTime = tz.getNow(timezone).toJSDate();
       } else {
         // Stopping current session
         if (task.startTime) {
-          const endTime = new Date();
+          const endTime = tz.getNow(timezone).toJSDate();
           const duration = endTime - new Date(task.startTime);
 
           // Add completed session
@@ -371,23 +340,25 @@ const deleteTasksByDay = async (req, res) => {
 const deleteTasksByWeek = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
-    const weekNum = parseInt(weekNumber);
-    const startDay = (weekNum - 1) * 7 + 1;
-    const endDay = weekNum * 7;
-
-    const startDate = new Date(parseInt(year), parseInt(month), startDay);
-    const endDate = new Date(parseInt(year), parseInt(month), endDay, 23, 59, 59);
+    const timezone = tz.getTimezoneFromRequest(req);
+    
+    const { startDate, endDate } = tz.getWeekDates(
+      parseInt(year),
+      parseInt(month),
+      parseInt(weekNumber),
+      timezone
+    );
 
     const result = await Task.deleteMany({
       user: req.user._id,
       date: {
-        $gte: startDate.toISOString().split('T')[0],
-        $lte: endDate.toISOString().split('T')[0],
+        $gte: startDate,
+        $lte: endDate,
       },
     });
 
     res.json({ 
-      message: `Deleted ${result.deletedCount} task(s) from week ${weekNum}`,
+      message: `Deleted ${result.deletedCount} task(s) from week ${weekNumber}`,
       deletedCount: result.deletedCount 
     });
   } catch (error) {
@@ -401,10 +372,13 @@ const deleteTasksByWeek = async (req, res) => {
 const getWeeklyAnalytics = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
-    const { startDate, endDate } = getWeekDates(
+    const timezone = tz.getTimezoneFromRequest(req);
+    
+    const { startDate, endDate } = tz.getWeekDates(
       parseInt(year),
       parseInt(month),
-      parseInt(weekNumber)
+      parseInt(weekNumber),
+      timezone
     );
 
     // Fetch tasks and sleep in parallel for speed

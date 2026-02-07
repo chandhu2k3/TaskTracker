@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Onboarding.css';
+import authService from '../services/authService';
 
 const Onboarding = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -75,8 +76,19 @@ const Onboarding = ({ onComplete }) => {
     }
   };
 
-  const handleComplete = () => {
-    localStorage.setItem('onboardingComplete', 'true');
+  const handleComplete = async () => {
+    try {
+      // Save onboarding completion to database
+      await authService.updateOnboarding(true);
+    } catch (error) {
+      console.error('Failed to save onboarding status:', error);
+      // Still complete even if API fails - fallback to localStorage
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        user.onboardingComplete = true;
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+    }
     onComplete();
   };
 

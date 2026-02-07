@@ -38,6 +38,7 @@ const register = async (req, res) => {
       name,
       email,
       password,
+      onboardingComplete: false,
     });
 
     if (user) {
@@ -45,6 +46,7 @@ const register = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        onboardingComplete: user.onboardingComplete,
         token: generateToken(user._id),
       });
     } else {
@@ -82,6 +84,7 @@ const login = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        onboardingComplete: user.onboardingComplete || false,
         token: generateToken(user._id),
       });
     } else {
@@ -105,7 +108,36 @@ const getProfile = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        onboardingComplete: user.onboardingComplete || false,
         createdAt: user.createdAt,
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update onboarding status
+// @route   PUT /api/auth/onboarding
+// @access  Private
+const updateOnboarding = async (req, res) => {
+  try {
+    const { onboardingComplete } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { onboardingComplete: onboardingComplete },
+      { new: true }
+    );
+
+    if (user) {
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        onboardingComplete: user.onboardingComplete,
       });
     } else {
       res.status(404).json({ message: "User not found" });
@@ -119,4 +151,6 @@ module.exports = {
   register,
   login,
   getProfile,
+  updateOnboarding,
 };
+
