@@ -635,6 +635,19 @@ Vercel auto-deploys on push to main branch.
 - `frontend/src/pages/Dashboard.jsx` - Added btn-theme-toggle in both header sections
 - `frontend/src/pages/Dashboard.css` - Minimal theme toggle button styling
 
+#### 7.5 Production Build Fixes (Feb 7, 2026)
+**Problem:** Production build failed on Vercel because `CI=true` treats ESLint warnings as errors.
+**Fixes:**
+- Removed unused `setUser` state setter in `Dashboard.jsx`.
+- Named the anonymous default export in `src/utils/timezone.js`.
+
+**Files Modified:**
+- `frontend/src/pages/Dashboard.jsx` - Removed unused variable
+- `frontend/src/utils/timezone.js` - Fixed anonymous default export
+
+**Result:**
+- Production build should now complete successfully on Vercel.
+
 **Result:**
 - Cohesive warm orange dark mode theme across entire application
 - Smooth drag-and-drop with clear visual feedback

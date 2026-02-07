@@ -91,7 +91,7 @@ const Dashboard = () => {
   const [todos, setTodos] = useState([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [user, setUser] = useState(() => {
+  const [user] = useState(() => {
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
