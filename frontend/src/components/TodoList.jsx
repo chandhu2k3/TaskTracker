@@ -1,14 +1,82 @@
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import "./TodoList.css";
+import calendarService from "../services/calendarService";
 
 const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
   const [newTodo, setNewTodo] = useState("");
+  const [calendarStatuses, setCalendarStatuses] = useState({});
+  const [showPickerForTodo, setShowPickerForTodo] = useState(null);
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
+  const pickerRef = React.useRef(null);
+  const calBtnRefs = React.useRef({});
+
+  // Close picker on outside click
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        pickerRef.current && !pickerRef.current.contains(e.target) &&
+        !Object.values(calBtnRefs.current).some(btn => btn && btn.contains(e.target))
+      ) {
+        setShowPickerForTodo(null);
+      }
+    };
+    if (showPickerForTodo) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPickerForTodo]);
+
+  const handleCalBtnClick = (todoId) => {
+    if (showPickerForTodo === todoId) {
+      setShowPickerForTodo(null);
+      return;
+    }
+    const btn = calBtnRefs.current[todoId];
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      setPickerPos({ top: rect.bottom + 4, left: rect.right - 170 });
+    }
+    setShowPickerForTodo(todoId);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (newTodo.trim()) {
       onAddTodo(newTodo.trim());
       setNewTodo("");
+    }
+  };
+
+  const handleAddToCalendar = async (todo, reminderMinutes) => {
+    setShowPickerForTodo(null);
+    setCalendarStatuses(prev => ({ ...prev, [todo._id]: 'adding' }));
+
+    try {
+      const result = await calendarService.smartAddToCalendar(
+        {
+          title: `✓ ${todo.text}`,
+          description: "Quick todo from Task Tracker Pro",
+          date: new Date(),
+          durationMinutes: 30,
+          reminderMinutes,
+        },
+        () => {
+          setCalendarStatuses(prev => ({ ...prev, [todo._id]: 'error' }));
+          alert('Please connect Google Calendar first from the profile menu.');
+        }
+      );
+
+      if (result.success) {
+        setCalendarStatuses(prev => ({ ...prev, [todo._id]: 'added' }));
+        setTimeout(() => setCalendarStatuses(prev => ({ ...prev, [todo._id]: null })), 2000);
+      } else {
+        setCalendarStatuses(prev => ({ ...prev, [todo._id]: null }));
+      }
+    } catch (err) {
+      console.error('Calendar error:', err);
+      setCalendarStatuses(prev => ({ ...prev, [todo._id]: 'error' }));
+      setTimeout(() => setCalendarStatuses(prev => ({ ...prev, [todo._id]: null })), 2000);
     }
   };
 
@@ -62,13 +130,42 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                 )}
                 {todo.text}
               </span>
-              <button
-                onClick={() => onDeleteTodo(todo._id)}
-                className="todo-delete-btn"
-                title="Delete todo"
-              >
-                ×
-              </button>
+              <div className="todo-actions">
+                <div className="calendar-btn-wrapper">
+                  <button
+                    ref={el => calBtnRefs.current[todo._id] = el}
+                    onClick={() => handleCalBtnClick(todo._id)}
+                    className={`todo-calendar-btn ${calendarStatuses[todo._id] === 'added' ? 'calendar-added' : ''}`}
+                    title={calendarStatuses[todo._id] === 'added' ? 'Added to Calendar!' : calendarStatuses[todo._id] === 'adding' ? 'Adding...' : 'Add to Google Calendar'}
+                    disabled={calendarStatuses[todo._id] === 'adding'}
+                  >
+                    {calendarStatuses[todo._id] === 'adding' ? '⏳' : calendarStatuses[todo._id] === 'added' ? '✅' : '📅'}
+                  </button>
+                  {showPickerForTodo === todo._id && ReactDOM.createPortal(
+                    <div
+                      ref={pickerRef}
+                      className="calendar-reminder-picker"
+                      style={{ top: pickerPos.top, left: pickerPos.left }}
+                    >
+                      <div className="calendar-picker-title">Set Reminder</div>
+                      <button onClick={() => handleAddToCalendar(todo, 0)}>No reminder</button>
+                      <button onClick={() => handleAddToCalendar(todo, 5)}>5 min before</button>
+                      <button onClick={() => handleAddToCalendar(todo, 10)}>10 min before</button>
+                      <button onClick={() => handleAddToCalendar(todo, 15)}>15 min before</button>
+                      <button onClick={() => handleAddToCalendar(todo, 30)}>30 min before</button>
+                      <button onClick={() => handleAddToCalendar(todo, 60)}>1 hour before</button>
+                    </div>,
+                    document.body
+                  )}
+                </div>
+                <button
+                  onClick={() => onDeleteTodo(todo._id)}
+                  className="todo-delete-btn"
+                  title="Delete todo"
+                >
+                  ×
+                </button>
+              </div>
             </div>
           ))
         )}

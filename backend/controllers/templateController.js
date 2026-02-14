@@ -1,5 +1,38 @@
 const TaskTemplate = require("../models/TaskTemplate");
 const Task = require("../models/Task");
+const { google } = require('googleapis');
+const User = require('../models/User');
+
+// Helper: get authenticated Google Calendar client
+const getCalendarClient = async (userId) => {
+  const user = await User.findById(userId).select('+googleCalendar.accessToken +googleCalendar.refreshToken +googleCalendar.tokenExpiry');
+  
+  if (!user.googleCalendar?.connected || !user.googleCalendar?.accessToken) {
+    return null; // Not connected — skip calendar silently
+  }
+
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI || `${process.env.FRONTEND_URL}/calendar/callback`
+  );
+  oauth2Client.setCredentials({
+    access_token: user.googleCalendar.accessToken,
+    refresh_token: user.googleCalendar.refreshToken,
+    expiry_date: user.googleCalendar.tokenExpiry?.getTime(),
+  });
+
+  oauth2Client.on('tokens', async (tokens) => {
+    if (tokens.access_token) {
+      await User.findByIdAndUpdate(userId, {
+        'googleCalendar.accessToken': tokens.access_token,
+        'googleCalendar.tokenExpiry': new Date(tokens.expiry_date),
+      });
+    }
+  });
+
+  return google.calendar({ version: 'v3', auth: oauth2Client });
+};
 
 // Helper function to get day name from date
 const getDayName = (date) => {
@@ -197,7 +230,15 @@ const applyTemplate = async (req, res) => {
       saturday: 6,
     };
 
+    // Get calendar client once if any task needs calendar
+    const hasCalendarTasks = template.tasks.some(t => t.addToCalendar);
+    let calendarClient = null;
+    if (hasCalendarTasks) {
+      calendarClient = await getCalendarClient(req.user._id);
+    }
+
     const createdTasks = [];
+    let calendarEventsCreated = 0;
 
     for (const templateTask of template.tasks) {
       console.log("Processing template task:", {
@@ -290,6 +331,38 @@ const applyTemplate = async (req, res) => {
         await existing.save();
         createdTasks.push(existing);
         console.log("Task updated from template");
+
+        // Auto-add to Google Calendar if enabled (skip if already has event)
+        if (templateTask.addToCalendar && calendarClient && existing.scheduledStartTime && !existing.calendarEventId) {
+          try {
+            const taskDateObj = new Date(dateStr);
+            const [sh, sm] = existing.scheduledStartTime.split(':').map(Number);
+            const startDt = new Date(taskDateObj); startDt.setHours(sh, sm, 0, 0);
+            let endDt;
+            if (existing.scheduledEndTime) {
+              const [eh, em] = existing.scheduledEndTime.split(':').map(Number);
+              endDt = new Date(taskDateObj); endDt.setHours(eh, em, 0, 0);
+            } else {
+              endDt = new Date(startDt.getTime() + (existing.plannedTime || 30 * 60000));
+            }
+            const reminderMins = templateTask.reminderMinutes || 0;
+            const calResponse = await calendarClient.events.insert({
+              calendarId: 'primary',
+              resource: {
+                summary: `📋 ${existing.name}`,
+                description: `Task from Task Tracker Pro template: ${template.name}`,
+                start: { dateTime: startDt.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+                end: { dateTime: endDt.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+                reminders: reminderMins > 0
+                  ? { useDefault: false, overrides: [{ method: 'popup', minutes: reminderMins }] }
+                  : { useDefault: true },
+              },
+            });
+            existing.calendarEventId = calResponse.data.id;
+            await existing.save();
+            calendarEventsCreated++;
+          } catch (calErr) { console.error('Calendar event create failed for updated task:', calErr.message); }
+        }
       } else {
         console.log("Creating task from template:", {
           name: templateTask.name,
@@ -360,12 +433,45 @@ const applyTemplate = async (req, res) => {
         }
 
         createdTasks.push(newTask);
+
+        // Auto-add to Google Calendar if enabled (skip if already has event)
+        if (templateTask.addToCalendar && calendarClient && newTask.scheduledStartTime && !newTask.calendarEventId) {
+          try {
+            const taskDateObj2 = new Date(dateStr);
+            const [sh2, sm2] = newTask.scheduledStartTime.split(':').map(Number);
+            const startDt2 = new Date(taskDateObj2); startDt2.setHours(sh2, sm2, 0, 0);
+            let endDt2;
+            if (newTask.scheduledEndTime) {
+              const [eh2, em2] = newTask.scheduledEndTime.split(':').map(Number);
+              endDt2 = new Date(taskDateObj2); endDt2.setHours(eh2, em2, 0, 0);
+            } else {
+              endDt2 = new Date(startDt2.getTime() + (newTask.plannedTime || 30 * 60000));
+            }
+            const reminderMins2 = templateTask.reminderMinutes || 0;
+            const calResponse2 = await calendarClient.events.insert({
+              calendarId: 'primary',
+              resource: {
+                summary: `📋 ${newTask.name}`,
+                description: `Task from Task Tracker Pro template: ${template.name}`,
+                start: { dateTime: startDt2.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+                end: { dateTime: endDt2.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+                reminders: reminderMins2 > 0
+                  ? { useDefault: false, overrides: [{ method: 'popup', minutes: reminderMins2 }] }
+                  : { useDefault: true },
+              },
+            });
+            newTask.calendarEventId = calResponse2.data.id;
+            await newTask.save();
+            calendarEventsCreated++;
+          } catch (calErr) { console.error('Calendar event create failed for new task:', calErr.message); }
+        }
       }
     }
 
     res.json({
-      message: `Applied template with ${createdTasks.length} tasks`,
+      message: `Applied template with ${createdTasks.length} tasks${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ''}`,
       tasks: createdTasks,
+      calendarEventsCreated,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -18,6 +18,7 @@ An advanced task tracking application with categories, templates, multiple daily
 - **Weekly Analytics**: View breakdown by day and category
 - **Monthly Analytics**: Compare different weeks in a month
 - **Category Analytics**: Track time spent on specific categories
+- **Quick Todos Stats**: Completed/total count, missed todos tracking
 - **Visual Charts**: Progress bars and stat cards for easy visualization
 
 ## Quick Start
@@ -100,26 +101,72 @@ Create a weekly template once, apply to any week:
 - **By Week**: Compare weeks in a month
 - Visual progress bars and percentage breakdowns
 
+### 📅 Google Calendar Integration
+
+- **One-Click Calendar Sync**: Click 📅 on any task or todo to instantly add it to Google Calendar — no redirects
+- **Template Calendar Sync**: Toggle "📅 Cal" on template tasks → events auto-created when template is applied
+- **Custom Reminders**: Set 5/10/15/30/60 min reminders per template task
+- **OAuth2 Connection**: Secure Google sign-in from profile dropdown
+- **Smart Fallback**: If API fails, falls back to Google Calendar URL method
+
+### 🔔 Notifications & Reminders
+
+- Per-task notification toggle with customizable timing (5/10/15/30/60 min)
+- Overtime detection: auto-stops tasks exceeding planned time + 1 hour
+- Audio notification via Web Audio API
+
 ## Tech Stack
 
 - **Backend**: Node.js, Express, MongoDB, JWT
 - **Frontend**: React 18, React Router, Axios
-- **Styling**: Custom CSS with responsive design
+- **Styling**: Custom CSS with responsive design, dark mode support
+- **Google Calendar**: googleapis (OAuth2, Calendar API v3)
+- **Deployment**: Vercel (frontend + backend)
 
 ## API Endpoints
 
+### Auth
 - `POST /api/auth/register` - Register user
 - `POST /api/auth/login` - Login user
+
+### Tasks
 - `GET /api/tasks/week/:year/:month/:week` - Get weekly tasks
 - `POST /api/tasks` - Create task
 - `PUT /api/tasks/:id` - Update task (toggle)
 - `GET /api/tasks/analytics/week/:year/:month/:week` - Weekly stats
 - `GET /api/tasks/analytics/month/:year/:month` - Monthly stats
+
+### Categories
 - `GET /api/categories` - Get categories
 - `POST /api/categories` - Create category
-- `GET /api/templates` - Get template
-- `POST /api/templates` - Save template
-- `POST /api/templates/apply/:year/:month/:week` - Apply template
+
+### Templates
+- `GET /api/templates` - Get templates
+- `POST /api/templates` - Create template
+- `PUT /api/templates/:id` - Update template
+- `DELETE /api/templates/:id` - Delete template
+- `POST /api/templates/:id/apply/:year/:month/:week` - Apply template (+ auto-create calendar events)
+
+### Google Calendar
+- `GET /api/calendar/auth-url` - Get Google OAuth URL
+- `POST /api/calendar/callback` - Handle OAuth callback
+- `GET /api/calendar/status` - Check connection status
+- `DELETE /api/calendar/disconnect` - Disconnect calendar
+- `POST /api/calendar/events` - Create calendar event
+- `DELETE /api/calendar/events/:eventId` - Delete calendar event
+
+## Environment Variables
+
+### Backend (.env)
+```
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/tasktracker
+JWT_SECRET=your_secret_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/calendar/callback
+FRONTEND_URL=http://localhost:3000
+```
 
 ## Troubleshooting
 

@@ -51,6 +51,8 @@ const TemplateSetup = ({
       ...task,
       isAutomated: task.isAutomated || false,
       completionCount: task.completionCount || 0,
+      addToCalendar: task.addToCalendar || false,
+      reminderMinutes: task.reminderMinutes || 0,
     }));
     setTemplateTasks(tasksWithDefaults);
     setShowModal(true);
@@ -71,6 +73,8 @@ const TemplateSetup = ({
         isAutomated: false,
         scheduledStartTime: null,
         scheduledEndTime: null,
+        addToCalendar: false,
+        reminderMinutes: 0,
       },
     ]);
   };
@@ -398,6 +402,33 @@ const TemplateSetup = ({
                           />
                           <span>🔄 Auto</span>
                         </label>
+                        <label className="automated-checkbox-template calendar-toggle">
+                          <input
+                            type="checkbox"
+                            checked={task.addToCalendar || false}
+                            onChange={(e) =>
+                              updateTask(index, "addToCalendar", e.target.checked)
+                            }
+                          />
+                          <span>📅 Cal</span>
+                        </label>
+                        {task.addToCalendar && (
+                          <select
+                            value={task.reminderMinutes || 0}
+                            onChange={(e) =>
+                              updateTask(index, "reminderMinutes", parseInt(e.target.value))
+                            }
+                            className="task-reminder-select"
+                            title="Reminder before task"
+                          >
+                            <option value={0}>No reminder</option>
+                            <option value={5}>5 min</option>
+                            <option value={10}>10 min</option>
+                            <option value={15}>15 min</option>
+                            <option value={30}>30 min</option>
+                            <option value={60}>1 hour</option>
+                          </select>
+                        )}
                         <input
                           type="time"
                           value={task.scheduledStartTime || ""}

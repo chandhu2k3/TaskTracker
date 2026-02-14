@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Google Calendar Integration
+  googleCalendar: {
+    connected: { type: Boolean, default: false },
+    accessToken: { type: String, select: false },
+    refreshToken: { type: String, select: false },
+    tokenExpiry: { type: Date },
+    calendarId: { type: String, default: 'primary' },
+  },
   createdAt: {
     type: Date,
     default: Date.now,

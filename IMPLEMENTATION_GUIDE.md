@@ -181,4 +181,123 @@ GET /api/tasks/week/2026/0/1
 
 The backend is 100% ready and working! All API endpoints are functional.
 
-Would you like me to create the complete frontend Dashboard with all these features integrated?
+---
+
+## ✅ Google Calendar Integration (Feb 2026)
+
+### Overview
+
+Full Google Calendar API integration via OAuth2. Tasks and todos can be automatically added to Google Calendar without leaving the app — no redirects, no manual copying.
+
+### Backend Changes
+
+1. **calendarController.js** — New controller with 6 endpoints:
+   - `GET /api/calendar/auth-url` — Generates Google OAuth consent URL
+   - `POST /api/calendar/callback` — Handles OAuth authorization code exchange
+   - `GET /api/calendar/status` — Check if user's calendar is connected
+   - `DELETE /api/calendar/disconnect` — Revoke calendar connection
+   - `POST /api/calendar/events` — Create event in Google Calendar (automatic, API-based)
+   - `DELETE /api/calendar/events/:eventId` — Delete a calendar event
+
+2. **calendar routes** (`routes/calendar.js`) — All endpoints protected with auth middleware
+
+3. **User.js** model — Added `googleCalendar` subdocument:
+   - `connected` (Boolean)
+   - `accessToken`, `refreshToken` (String)
+   - `tokenExpiry` (Date)
+   - `calendarId` (String)
+
+4. **TaskTemplate.js** model — Added per-task fields:
+   - `addToCalendar` (Boolean) — Flag to auto-create calendar event on template apply
+   - `reminderMinutes` (Number) — Reminder time before event (5/10/15/30/60 min)
+
+5. **templateController.js** — Updated `applyTemplate` to auto-create Google Calendar events for tasks with `addToCalendar: true` when user's calendar is connected
+
+6. **Dependencies**: `googleapis` npm package installed
+
+7. **Environment Variables** (`.env.development`):
+   ```
+   GOOGLE_CLIENT_ID=<your_client_id>
+   GOOGLE_CLIENT_SECRET=<your_client_secret>
+   GOOGLE_REDIRECT_URI=http://localhost:3000/calendar/callback
+   FRONTEND_URL=http://localhost:3000
+   ```
+
+### Frontend Changes
+
+1. **calendarService.js** — Full API integration service:
+   - `getStatus()` — Check connection
+   - `getAuthUrl()` — Get OAuth URL
+   - `handleCallback(code)` — Exchange auth code
+   - `disconnect()` — Disconnect calendar
+   - `createEvent(options)` — Create event via API (automatic)
+   - `deleteEvent(eventId)` — Delete event
+   - `smartAddToCalendar(options, onNeedsConnection)` — Tries API first, falls back to URL
+   - `generateGoogleCalendarUrl(options)` — URL fallback method
+   - `generateICSContent(options)` — ICS file generation
+   - `downloadICS(options)` — Download .ics file
+
+2. **CalendarCallback.jsx** — OAuth redirect callback page. Receives auth code and sends to parent via `postMessage`.
+
+3. **Dashboard.jsx** — Calendar connection management:
+   - `googleCalendarConnected` state
+   - Connect/Disconnect button in profile dropdown
+   - Auto-creates calendar events when adding tasks with scheduled time
+
+4. **TaskItem.jsx** — 📅 button updated:
+   - Uses `smartAddToCalendar()` API (no redirect!)
+   - Shows ⏳ while adding, ✅ on success
+   - Alerts user if calendar not connected
+
+5. **TodoList.jsx** — 📅 button updated:
+   - Same API-based approach with per-todo status tracking
+   - Visual feedback (⏳ → ✅)
+
+6. **TemplateSetup.jsx** — New fields per template task:
+   - **📅 Cal** toggle — auto-add to Google Calendar when template is applied
+   - **Reminder dropdown** — 5/10/15/30/60 min before (visible when Cal is on)
+
+7. **App.jsx** — Added `/calendar/callback` route
+
+### Google Cloud Setup Required
+
+1. Create project at https://console.cloud.google.com
+2. Enable Google Calendar API
+3. Configure OAuth consent screen (External, add test users)
+4. Create OAuth 2.0 credentials (Web application)
+5. Add authorized redirect URIs:
+   - `http://localhost:3000/calendar/callback`
+   - `https://your-domain.vercel.app/calendar/callback`
+
+### User Flow
+
+```
+1. User clicks "Connect Calendar" in profile dropdown
+2. OAuth popup opens → User signs in with Google
+3. Callback exchanges code for tokens → stored in DB
+4. Now:
+   - Click 📅 on any task → event created instantly via API
+   - Click 📅 on any todo → event created instantly
+   - Apply template with "Cal" toggled → all flagged tasks auto-added
+   - Adding task with scheduled time → auto-creates event
+```
+
+---
+
+## 🎨 UI/UX Updates (Feb 2026)
+
+### DayCard Styling
+- Today's card: slate gray header (`#64748b`), light background (`#f1f5f9`)
+- Went through iterations: blue → white → slate gray
+
+### Navigation Fixes
+- Day view shows "Next Day" / "Previous Day" (was "Next Week")
+- Date picker in day view shows selected date's tasks (was hardcoded to today)
+
+### Analytics Enhancements
+- Quick Todos tracking: completed/total count and missed todos stats
+- Added `todos` prop to Analytics component
+
+### Vercel Optimization
+- Cache headers configured in `vercel.json` for API responses
+- Addressed timeout issues with Vercel serverless functions

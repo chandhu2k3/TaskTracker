@@ -23,7 +23,7 @@
 
 .btn-add-category {
   padding: 10px 18px;
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  background: #F5E1C8;
   color: white;
   border: none;
   border-radius: 10px;
@@ -35,7 +35,7 @@
 
 .btn-add-category:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.4);
+  box-shadow: 0 6px 16px rgba(245, 225, 200, 0.3);
 }
 
 .categories-list {
@@ -146,7 +146,7 @@
 .category-modal-content h3 {
   margin: 0 0 25px 0;
   font-size: 1.4rem;
-  color: #78350f;
+  color: #1e293b;
   font-weight: 700;
 }
 
@@ -174,8 +174,8 @@
 
 .category-modal-content .form-group input[type="text"]:focus {
   outline: none;
-  border-color: #d97706;
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+  border-color: #F5E1C8;
+  box-shadow: 0 0 0 3px rgba(245, 225, 200, 0.1);
 }
 
 /* Icon Picker Grid */
@@ -208,13 +208,13 @@
 }
 
 .icon-option:hover {
-  border-color: #6366f1;
+  border-color: #F5E1C8;
   transform: scale(1.1);
 }
 
 .icon-option.selected {
-  border-color: #6366f1;
-  background: #eef2ff;
+  border-color: #F5E1C8;
+  background: rgba(245, 225, 200, 0.08);
 }
 
 .color-option {
@@ -262,7 +262,7 @@
 }
 
 .category-modal-content input[type="color"]:hover {
-  border-color: #d97706;
+  border-color: #F5E1C8;
   transform: scale(1.1);
 }
 
@@ -307,39 +307,39 @@
 }
 
 .btn-save {
-  background: #6366f1;
+  background: #F5E1C8;
   color: white;
 }
 
 .btn-save:hover {
-  background: #4f46e5;
+  background: #E8CDB0;
 }
 
 /* Dark Mode Styles */
 body[data-theme="dark"] .category-chip {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.2) 0%, rgba(184, 134, 11, 0.12) 100%);
-  border-color: rgba(205, 127, 50, 0.4);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.12) 0%, rgba(100, 116, 139, 0.08) 100%);
+  border-color: rgba(148, 163, 184, 0.2);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 body[data-theme="dark"] .category-chip:hover {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.3) 0%, rgba(184, 134, 11, 0.2) 100%);
-  border-color: rgba(205, 127, 50, 0.5);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(205, 127, 50, 0.1);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.18) 0%, rgba(100, 116, 139, 0.12) 100%);
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(148, 163, 184, 0.05);
 }
 
 body[data-theme="dark"] .category-name {
-  color: #e8c49a;
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .btn-edit,
 body[data-theme="dark"] .btn-delete-cat {
-  background: rgba(205, 127, 50, 0.15);
-  color: #e8c49a;
+  background: rgba(245, 158, 11, 0.1);
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .btn-edit:hover {
-  background: rgba(205, 127, 50, 0.25);
+  background: rgba(245, 158, 11, 0.15);
 }
 
 body[data-theme="dark"] .btn-delete-cat:hover {
@@ -353,49 +353,49 @@ body[data-theme="dark"] .category-modal-overlay {
 
 body[data-theme="dark"] .category-modal-content {
   background: #0a0a0c;
-  border: 1px solid rgba(205, 127, 50, 0.3);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(205, 127, 50, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(148, 163, 184, 0.05);
 }
 
 body[data-theme="dark"] .category-modal-content h3 {
-  color: #e8c49a;
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .category-modal-content .form-group label {
-  color: #d4a574;
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .category-modal-content .form-group input[type="text"] {
   background: rgba(0, 0, 0, 0.4);
-  border-color: rgba(205, 127, 50, 0.3);
-  color: #f5f5f5;
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .icon-picker {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(205, 127, 50, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 body[data-theme="dark"] .icon-option {
   background: rgba(0, 0, 0, 0.4);
-  border-color: rgba(205, 127, 50, 0.2);
+  border-color: rgba(148, 163, 184, 0.12);
 }
 
 body[data-theme="dark"] .icon-option:hover,
 body[data-theme="dark"] .icon-option.selected {
-  border-color: rgba(205, 127, 50, 0.5);
-  background: rgba(205, 127, 50, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.1);
 }
 
 body[data-theme="dark"] .custom-color-picker {
   background: rgba(0, 0, 0, 0.3);
-  border-color: rgba(205, 127, 50, 0.3);
+  border-color: rgba(148, 163, 184, 0.15);
 }
 
 body[data-theme="dark"] .picker-label {
-  color: #d4a574;
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .no-categories {
-  color: #d4a574;
+  color: #ffffff;
 }

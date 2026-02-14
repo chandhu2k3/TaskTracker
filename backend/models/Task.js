@@ -95,6 +95,10 @@ const taskSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  calendarEventId: {
+    type: String,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

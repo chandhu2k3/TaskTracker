@@ -45,6 +45,14 @@ const templateTaskSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  addToCalendar: {
+    type: Boolean,
+    default: false,
+  },
+  reminderMinutes: {
+    type: Number,
+    default: 0, // 0 means no reminder, otherwise minutes before
+  },
 });
 
 const taskTemplateSchema = new mongoose.Schema({

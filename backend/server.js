@@ -83,6 +83,7 @@ app.use("/api/categories", require("./routes/categories"));
 app.use("/api/templates", require("./routes/templates"));
 app.use("/api/sleep", require("./routes/sleepRoutes"));
 app.use("/api/todos", require("./routes/todos"));
+app.use("/api/calendar", require("./routes/calendar"));
 
 // Health check
 app.get("/", (req, res) => {

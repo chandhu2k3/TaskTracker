@@ -3,8 +3,8 @@
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border-radius: 16px;
-  box-shadow: 0 6px 24px rgba(139, 69, 19, 0.2);
-  border: 1px solid rgba(139, 69, 19, 0.3);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: all 0.3s ease;
   scroll-margin-top: 20px;
@@ -12,11 +12,11 @@
 
 /* Today's Card - Elegant & Cohesive */
 .day-card.today {
-  background: linear-gradient(145deg, #fffbf5 0%, #fef3e2 100%);
-  border: 2px solid rgba(180, 83, 9, 0.4);
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid rgba(30, 41, 59, 0.15);
   box-shadow: 
-    0 8px 32px rgba(180, 83, 9, 0.15),
-    0 0 0 4px rgba(217, 119, 6, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 4px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   position: relative;
 }
@@ -28,7 +28,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #d97706 0%, #b45309 50%, #d97706 100%);
+  background: linear-gradient(90deg, #F5E1C8 0%, #E8CDB0 50%, #F5E1C8 100%);
   background-size: 200% 100%;
   animation: shimmerTop 3s ease-in-out infinite;
 }
@@ -39,8 +39,8 @@
 }
 
 .day-card.today .day-header {
-  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
-  border-bottom: 1px solid rgba(139, 69, 19, 0.5);
+  background: linear-gradient(135deg, #E8CDB0 0%, #F5E1C8 100%);
+  border-bottom: 1px solid rgba(245, 225, 200, 0.2);
 }
 
 .day-card.today .day-header h3 {
@@ -54,29 +54,29 @@
 }
 
 .day-card.today .add-task-section {
-  background: rgba(217, 119, 6, 0.06);
-  border-bottom: 1px solid rgba(180, 83, 9, 0.15);
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .day-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 35px rgba(139, 69, 19, 0.3);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
 }
 
 .day-card.today:hover {
   transform: translateY(-4px);
   box-shadow: 
-    0 12px 40px rgba(180, 83, 9, 0.2),
-    0 0 0 4px rgba(217, 119, 6, 0.12);
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    0 0 0 4px rgba(0, 0, 0, 0.04);
 }
 
 .day-header {
-  background: linear-gradient(135deg, #8b4513 0%, #6b3410 100%);
+  background: linear-gradient(135deg, #F5E1C8 0%, #E8CDB0 100%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(139, 69, 19, 0.4);
-  box-shadow: 0 2px 8px rgba(139, 69, 19, 0.25);
+  border-bottom: 1px solid rgba(245, 225, 200, 0.2);
+  box-shadow: 0 2px 8px rgba(245, 225, 200, 0.15);
 }
 
 .day-header h3 {
@@ -93,7 +93,7 @@
 }
 
 .day-header.clickable:hover {
-  background: linear-gradient(135deg, #a05216 0%, #8b4513 100%);
+  background: linear-gradient(135deg, #E8CDB0 0%, #DBBA98 100%);
 }
 
 .day-stats {
@@ -142,8 +142,8 @@
   flex-direction: column;
   padding: 14px;
   gap: 10px;
-  border-bottom: 1px solid rgba(139, 69, 19, 0.3);
-  background: rgba(139, 69, 19, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.02);
   backdrop-filter: blur(8px);
   transition: all 0.3s ease;
   overflow: hidden;
@@ -152,7 +152,7 @@
 /* Collapsed State */
 .add-task-section.collapsed {
   padding: 10px 14px;
-  background: rgba(139, 69, 19, 0.05);
+  background: rgba(0, 0, 0, 0.01);
 }
 
 /* Expand Button - Shown when collapsed */
@@ -163,10 +163,10 @@
   gap: 10px;
   width: 100%;
   padding: 12px 20px;
-  background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(180, 83, 9, 0.15) 100%);
-  border: 2px dashed rgba(217, 119, 6, 0.4);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.05) 100%);
+  border: 2px dashed rgba(0, 0, 0, 0.15);
   border-radius: 12px;
-  color: #92400e;
+  color: #E8CDB0;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -174,10 +174,10 @@
 }
 
 .btn-expand-add-task:hover {
-  background: linear-gradient(135deg, rgba(217, 119, 6, 0.2) 0%, rgba(180, 83, 9, 0.25) 100%);
-  border-color: rgba(217, 119, 6, 0.6);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.08) 100%);
+  border-color: rgba(0, 0, 0, 0.25);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .btn-expand-icon {
@@ -186,7 +186,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  background: linear-gradient(135deg, #F5E1C8 0%, #E8CDB0 100%);
   color: white;
   border-radius: 50%;
   font-size: 1.1rem;
@@ -208,7 +208,7 @@
 
 .add-task-title {
   font-weight: 600;
-  color: #78350f;
+  color: #374151;
   font-size: 0.9rem;
 }
 
@@ -307,7 +307,7 @@
 
 .category-select {
   padding: 10px 14px;
-  border: 1px solid rgba(255, 200, 179, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   font-size: 0.85rem;
   background: rgba(255, 255, 255, 0.7);
@@ -321,8 +321,8 @@
 
 .category-select:focus {
   outline: none;
-  border-color: rgba(217, 119, 6, 0.5);
-  box-shadow: 0 0 0 4px rgba(255, 200, 179, 0.2);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
   background: rgba(255, 255, 255, 0.9);
 }
 
@@ -330,7 +330,7 @@
   flex: 1;
   min-width: 180px;
   padding: 10px 14px;
-  border: 1px solid rgba(255, 200, 179, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   font-size: 0.85rem;
   background: rgba(255, 255, 255, 0.7);
@@ -345,15 +345,15 @@
 
 .task-input:focus {
   outline: none;
-  border-color: rgba(217, 119, 6, 0.5);
-  box-shadow: 0 0 0 4px rgba(255, 200, 179, 0.2);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
   background: rgba(255, 255, 255, 0.9);
 }
 
 .time-input {
   width: 90px;
   padding: 10px 14px;
-  border: 1px solid rgba(255, 200, 179, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   font-size: 0.85rem;
   background: rgba(255, 255, 255, 0.7);
@@ -368,8 +368,8 @@
 
 .time-input:focus {
   outline: none;
-  border-color: rgba(217, 119, 6, 0.5);
-  box-shadow: 0 0 0 4px rgba(255, 200, 179, 0.2);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
   background: rgba(255, 255, 255, 0.9);
 }
 
@@ -379,7 +379,7 @@
   gap: 5px;
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 200, 179, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s;
@@ -389,7 +389,7 @@
 
 .automated-checkbox:hover {
   background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(217, 119, 6, 0.5);
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .automated-checkbox input[type="checkbox"] {
@@ -401,13 +401,13 @@
 .automated-checkbox span {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #92400e;
+  color: #E8CDB0;
 }
 
 .btn-add {
   width: 38px;
   height: 38px;
-  background: #92400e;
+  background: #F5E1C8;
   color: white;
   border: none;
   border-radius: 10px;
@@ -421,7 +421,7 @@
 
 .btn-add:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.4);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .tasks-list {
@@ -517,71 +517,94 @@
 
 /* Dark Mode Styles */
 body[data-theme="dark"] .day-card {
-  background: rgba(20, 20, 25, 0.6);
-  border-color: rgba(205, 127, 50, 0.25);
+  background: rgba(20, 27, 45, 0.6);
+  border-color: rgba(148, 163, 184, 0.15);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
 body[data-theme="dark"] .day-header {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.35) 0%, rgba(184, 134, 11, 0.25) 100%);
-  border-bottom-color: rgba(205, 127, 50, 0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.15) 100%);
+  border-bottom-color: rgba(245, 158, 11, 0.15);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 body[data-theme="dark"] .day-header h3 {
-  color: #f5f5f5;
+  color: #ffffff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 body[data-theme="dark"] .day-header.clickable:hover {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.45) 0%, rgba(184, 134, 11, 0.35) 100%);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.2) 100%);
 }
 
 body[data-theme="dark"] .day-stats {
-  background: rgba(205, 127, 50, 0.2);
-  color: #e8c49a;
-  border-color: rgba(205, 127, 50, 0.3);
+  background: rgba(245, 158, 11, 0.12);
+  color: #ffffff;
+  border-color: rgba(245, 158, 11, 0.15);
 }
 
 body[data-theme="dark"] .day-card.today {
-  background: rgba(25, 22, 18, 0.7);
-  border-color: rgba(205, 127, 50, 0.4);
+  background: rgba(24, 30, 50, 0.7);
+  border-color: rgba(245, 158, 11, 0.25);
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 0 4px rgba(205, 127, 50, 0.1);
+    0 0 0 4px rgba(245, 158, 11, 0.08);
 }
 
 body[data-theme="dark"] .day-card.today .day-header {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.5) 0%, rgba(184, 134, 11, 0.4) 100%);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.2) 100%);
 }
 
 body[data-theme="dark"] .day-card.today .day-stats {
-  background: rgba(205, 127, 50, 0.25);
-  color: #f5f5f5;
+  background: rgba(245, 158, 11, 0.15);
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .add-task-section {
   background: rgba(0, 0, 0, 0.2);
-  border-bottom-color: rgba(205, 127, 50, 0.15);
+  border-bottom-color: rgba(148, 163, 184, 0.1);
 }
 
 body[data-theme="dark"] .task-input {
   background: rgba(0, 0, 0, 0.3);
-  border-color: rgba(205, 127, 50, 0.25);
-  color: #f5f5f5;
+  border-color: rgba(148, 163, 184, 0.15);
+  color: #ffffff;
 }
 
 body[data-theme="dark"] .task-input::placeholder {
-  color: #8b7355;
+  color: #6b7280;
 }
 
 body[data-theme="dark"] .task-input:focus {
-  border-color: rgba(205, 127, 50, 0.5);
-  box-shadow: 0 0 0 3px rgba(205, 127, 50, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.08);
 }
 
-body[data-theme="dark"] .empty-state {
-  color: #d4a574;
+body[data-theme="dark"] .empty-state,
+body[data-theme="dark"] .day-count,
+body[data-theme="dark"] .day-time {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .btn-expand-add-task {
+  color: #ffffff;
+  opacity: 0.9;
+}
+
+body[data-theme="dark"] .add-task-title {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .task-input::placeholder,
+body[data-theme="dark"] .time-slot-input::placeholder,
+body[data-theme="dark"] .time-input::placeholder {
+  color: #ffffff;
+  opacity: 0.5;
+}
+
+body[data-theme="dark"] .time-slot-input,
+body[data-theme="dark"] .time-input {
+  color-scheme: dark;
 }
 
 body[data-theme="dark"] .tasks-list {

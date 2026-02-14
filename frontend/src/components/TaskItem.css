@@ -16,7 +16,7 @@
 
 .task-item.dragging {
   background: rgba(0, 0, 0, 0.1) !important;
-  border: 2px dashed rgba(205, 127, 50, 0.5) !important;
+  border: 2px dashed rgba(148, 163, 184, 0.5) !important;
   box-shadow: none !important;
   opacity: 1;
   transform: scale(0.99);
@@ -53,7 +53,7 @@
 
 .drag-handle {
   cursor: grab;
-  color: #92400e;
+  color: #F5E1C8;
   font-size: 1.2rem;
   opacity: 0.4;
   transition: opacity 0.3s;
@@ -72,13 +72,13 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(217, 119, 6, 0.15);
+  background: rgba(245, 225, 200, 0.1);
   padding: 3px 10px;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #92400e;
-  border: 1px solid rgba(217, 119, 6, 0.3);
+  color: #E8CDB0;
+  border: 1px solid rgba(245, 225, 200, 0.2);
 }
 
 .automated-badge {
@@ -98,13 +98,13 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(245, 225, 200, 0.1);
   padding: 3px 10px;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #d97706;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #E8CDB0;
+  border: 1px solid rgba(245, 225, 200, 0.2);
   margin-left: 6px;
 }
 
@@ -167,6 +167,111 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.btn-calendar {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-calendar:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: scale(1.05);
+}
+
+.btn-calendar.calendar-added {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.btn-calendar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.calendar-btn-wrapper {
+  position: relative;
+}
+
+.calendar-reminder-picker {
+  position: fixed;
+  margin-top: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  min-width: 170px;
+  padding: 6px;
+  animation: pickerFadeIn 0.15s ease-out;
+}
+
+@keyframes pickerFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.calendar-picker-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 4px;
+}
+
+.calendar-reminder-picker button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.calendar-reminder-picker button:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+body[data-theme="dark"] .calendar-reminder-picker {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body[data-theme="dark"] .calendar-picker-title {
+  color: #fbbf24;
+  border-bottom-color: rgba(245, 158, 11, 0.15);
+}
+
+body[data-theme="dark"] .calendar-reminder-picker button {
+  color: #e2e8f0;
+}
+
+body[data-theme="dark"] .calendar-reminder-picker button:hover {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
 }
 
 .btn-notification {
@@ -271,10 +376,10 @@
 .progress-bar-wrapper {
   flex: 1;
   height: 20px;
-  background: rgba(217, 119, 6, 0.08);
+  background: rgba(0, 0, 0, 0.04);
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(217, 119, 6, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   position: relative;
 }
 
@@ -282,8 +387,8 @@
   height: 100%;
   background: linear-gradient(
     90deg,
-    rgba(217, 119, 6, 0.55) 0%,
-    rgba(180, 83, 9, 0.55) 100%
+    rgba(245, 225, 200, 0.5) 0%,
+    rgba(232, 205, 176, 0.5) 100%
   );
   border-radius: 10px;
   transition: width 0.5s ease;
@@ -304,7 +409,7 @@
 
 .planned-time-label {
   font-weight: 600;
-  color: #92400e;
+  color: #E8CDB0;
   white-space: nowrap;
   font-size: 0.75rem;
 }
@@ -323,8 +428,8 @@
 }
 
 .task-sessions {
-  background: #e0e7ff;
-  color: #4f46e5;
+  background: rgba(245, 225, 200, 0.12);
+  color: #E8CDB0;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.75rem;

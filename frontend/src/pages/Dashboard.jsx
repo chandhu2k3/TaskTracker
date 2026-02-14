@@ -13,6 +13,7 @@ import templateService from "../services/templateService";
 import sleepService from "../services/sleepService";
 import todoService from "../services/todoService";
 import notificationService from "../services/notificationService";
+import calendarService from "../services/calendarService";
 import Onboarding from "../components/Onboarding";
 import "./Dashboard.css";
 
@@ -90,6 +91,7 @@ const Dashboard = () => {
   const [sleepDuration, setSleepDuration] = useState(0);
   const [todos, setTodos] = useState([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [user] = useState(() => {
     const storedUser = localStorage.getItem('user');
@@ -154,11 +156,73 @@ const Dashboard = () => {
     }
   };
 
+  // Check Google Calendar connection status
+  const checkCalendarConnection = async () => {
+    try {
+      const status = await calendarService.getStatus();
+      setGoogleCalendarConnected(status.connected);
+    } catch (error) {
+      console.log("Failed to check calendar status:", error.message);
+    }
+  };
+
+  // Connect Google Calendar
+  const handleConnectCalendar = async () => {
+    try {
+      const { authUrl } = await calendarService.getAuthUrl();
+      // Open OAuth popup
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const popup = window.open(
+        authUrl,
+        'Google Calendar Authorization',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+
+      // Listen for OAuth callback
+      const handleMessage = async (event) => {
+        if (event.data?.type === 'GOOGLE_CALENDAR_CALLBACK') {
+          window.removeEventListener('message', handleMessage);
+          popup?.close();
+          
+          if (event.data.code) {
+            try {
+              await calendarService.handleCallback(event.data.code);
+              setGoogleCalendarConnected(true);
+              toast.success('📅 Google Calendar connected!');
+            } catch (error) {
+              toast.error('Failed to connect Google Calendar');
+            }
+          }
+        }
+      };
+      window.addEventListener('message', handleMessage);
+    } catch (error) {
+      toast.error('Failed to connect Google Calendar');
+      console.error('Calendar connect error:', error);
+    }
+  };
+
+  // Disconnect Google Calendar
+  const handleDisconnectCalendar = async () => {
+    try {
+      await calendarService.disconnect();
+      setGoogleCalendarConnected(false);
+      toast.success('Google Calendar disconnected');
+    } catch (error) {
+      toast.error('Failed to disconnect calendar');
+    }
+  };
+
   useEffect(() => {
     loadCategories();
     loadTemplates();
     checkActiveSleep();
     loadTodos();
+    checkCalendarConnection();
 
     // Request notification permission on mount
     notificationService.requestPermission();
@@ -363,6 +427,7 @@ const Dashboard = () => {
         scheduledEndTime,
       });
       toast.success("Task added successfully");
+
       // Reload tasks only if we have a complete selectedDate
       if (
         selectedDate?.year &&
@@ -948,6 +1013,18 @@ const Dashboard = () => {
                   }}
                 >
                   🎯 Tour Guide
+                </button>
+                <button 
+                  className={`profile-dropdown-item ${googleCalendarConnected ? 'connected' : ''}`}
+                  onClick={() => {
+                    if (googleCalendarConnected) {
+                      handleDisconnectCalendar();
+                    } else {
+                      handleConnectCalendar();
+                    }
+                  }}
+                >
+                  {googleCalendarConnected ? '📅 Disconnect Calendar' : '📅 Connect Google Calendar'}
                 </button>
                 <button 
                   className="profile-dropdown-item logout"

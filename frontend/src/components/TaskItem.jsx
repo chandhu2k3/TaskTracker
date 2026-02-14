@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import "./TaskItem.css";
+import calendarService from "../services/calendarService";
 
 const TaskItem = ({
   task,
@@ -163,12 +165,82 @@ const TaskItem = ({
     }
   };
 
+  const [calendarStatus, setCalendarStatus] = React.useState(null); // 'adding' | 'added' | 'error' | null
+  const [showCalendarPicker, setShowCalendarPicker] = React.useState(false);
+  const [pickerPos, setPickerPos] = React.useState({ top: 0, left: 0 });
+  const calendarBtnRef = React.useRef(null);
+  const calendarPickerRef = React.useRef(null);
+
+  // Close picker when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        calendarPickerRef.current && !calendarPickerRef.current.contains(e.target) &&
+        calendarBtnRef.current && !calendarBtnRef.current.contains(e.target)
+      ) {
+        setShowCalendarPicker(false);
+      }
+    };
+    if (showCalendarPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showCalendarPicker]);
+
+  // Toggle reminder picker on calendar button click
+  const handleCalendarClick = (e) => {
+    e.stopPropagation();
+    if (task.calendarEventId) return;
+    if (!showCalendarPicker && calendarBtnRef.current) {
+      const rect = calendarBtnRef.current.getBoundingClientRect();
+      setPickerPos({ top: rect.bottom + 4, left: rect.right - 170 });
+    }
+    setShowCalendarPicker(!showCalendarPicker);
+  };
+
+  // Add task to Google Calendar via API with chosen reminder
+  const handleAddToCalendar = async (reminderMinutes) => {
+    setShowCalendarPicker(false);
+    setCalendarStatus('adding');
+
+    const plannedMinutes = Math.round((task.plannedTime || 1800000) / 60000);
+
+    try {
+      const result = await calendarService.smartAddToCalendar(
+        {
+          title: `📋 ${task.name}`,
+          description: `Task from Task Tracker Pro\n\nPlanned time: ${formatTime(task.plannedTime || 0)}`,
+          date: task.date,
+          startTime: task.scheduledStartTime || null,
+          endTime: task.scheduledEndTime || null,
+          durationMinutes: plannedMinutes,
+          reminderMinutes,
+          taskId: task._id,
+        },
+        () => {
+          setCalendarStatus('error');
+          alert('Please connect Google Calendar first from the profile menu.');
+        }
+      );
+
+      if (result.success) {
+        setCalendarStatus('added');
+        setTimeout(() => setCalendarStatus(null), 2000);
+      } else {
+        setCalendarStatus(null);
+      }
+    } catch (err) {
+      console.error('Calendar error:', err);
+      setCalendarStatus('error');
+      setTimeout(() => setCalendarStatus(null), 2000);
+    }
+  };
+
   return (
     <div
       className={`task-item ${task.isActive ? "active" : ""} ${
         isDragging ? "dragging" : ""
       }`}
-      style={{ borderLeft: `4px solid ${categoryColor || "#6366f1"}` }}
       draggable="true"
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -209,6 +281,34 @@ const TaskItem = ({
           )}
         </div>
         <div className="task-controls" draggable="false">
+          <div className="calendar-btn-wrapper">
+            <button
+              ref={calendarBtnRef}
+              className={`btn-calendar ${calendarStatus === 'added' || task.calendarEventId ? 'calendar-added' : ''}`}
+              onClick={handleCalendarClick}
+              title={task.calendarEventId ? 'Already in Google Calendar' : calendarStatus === 'added' ? 'Added to Calendar!' : calendarStatus === 'adding' ? 'Adding...' : 'Add to Google Calendar'}
+              draggable="false"
+              disabled={calendarStatus === 'adding'}
+            >
+              {calendarStatus === 'adding' ? '⏳' : (calendarStatus === 'added' || task.calendarEventId) ? '✅' : '📅'}
+            </button>
+            {showCalendarPicker && ReactDOM.createPortal(
+              <div
+                ref={calendarPickerRef}
+                className="calendar-reminder-picker"
+                style={{ top: pickerPos.top, left: pickerPos.left }}
+              >
+                <div className="calendar-picker-title">Set Reminder</div>
+                <button onClick={() => handleAddToCalendar(0)}>No reminder</button>
+                <button onClick={() => handleAddToCalendar(5)}>5 min before</button>
+                <button onClick={() => handleAddToCalendar(10)}>10 min before</button>
+                <button onClick={() => handleAddToCalendar(15)}>15 min before</button>
+                <button onClick={() => handleAddToCalendar(30)}>30 min before</button>
+                <button onClick={() => handleAddToCalendar(60)}>1 hour before</button>
+              </div>,
+              document.body
+            )}
+          </div>
           {task.scheduledStartTime && (
             <div className="notification-controls">
               <button
