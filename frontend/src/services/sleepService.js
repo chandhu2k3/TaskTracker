@@ -1,27 +1,16 @@
-import axios from "axios";
+import api from "./api";
 import { getUserTimezone } from "../utils/timezone";
 
-const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-const API_URL = `${BASE_URL}/api/sleep`;
-
-const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !user.token) {
-    console.error("No auth token found for sleep service");
-    throw new Error("Authentication required");
-  }
-  return {
-    headers: {
-      Authorization: `Bearer ${user.token}`,
-      "X-Timezone": getUserTimezone(),
-    },
-  };
-};
+const getConfig = () => ({
+  headers: {
+    "X-Timezone": getUserTimezone(),
+  },
+});
 
 const startSleep = async () => {
   try {
     console.log("Starting sleep session...");
-    const response = await axios.post(`${API_URL}/start`, {}, getAuthHeader());
+    const response = await api.post(`/api/sleep/start`, {}, getConfig());
     console.log("Sleep session started:", response.data);
     return response.data;
   } catch (error) {
@@ -34,7 +23,7 @@ const startSleep = async () => {
 
 const stopSleep = async () => {
   try {
-    const response = await axios.put(`${API_URL}/stop`, {}, getAuthHeader());
+    const response = await api.put(`/api/sleep/stop`, {}, getConfig());
     return response.data;
   } catch (error) {
     throw new Error(
@@ -45,7 +34,7 @@ const stopSleep = async () => {
 
 const getActiveSleep = async () => {
   try {
-    const response = await axios.get(`${API_URL}/active`, getAuthHeader());
+    const response = await api.get(`/api/sleep/active`, getConfig());
     return response.data;
   } catch (error) {
     // Return null if no active session or API is unavailable
@@ -54,17 +43,17 @@ const getActiveSleep = async () => {
 };
 
 const getSleepHistory = async (startDate, endDate) => {
-  const response = await axios.get(`${API_URL}/history`, {
+  const response = await api.get(`/api/sleep/history`, {
     params: { startDate, endDate },
-    ...getAuthHeader(),
+    ...getConfig(),
   });
   return response.data;
 };
 
 const getSleepAnalytics = async (startDate, endDate) => {
-  const response = await axios.get(`${API_URL}/analytics`, {
+  const response = await api.get(`/api/sleep/analytics`, {
     params: { startDate, endDate },
-    ...getAuthHeader(),
+    ...getConfig(),
   });
   return response.data;
 };

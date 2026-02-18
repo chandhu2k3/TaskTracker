@@ -74,7 +74,8 @@ const getDayBounds = (dateString, timezone = DEFAULT_TIMEZONE) => {
 
 /**
  * Get week dates for a given year, month, and week number
- * Week 1 = days 1-7, Week 2 = days 8-14, etc.
+ * Week 1 = days 1-7, Week 2 = days 8-14, Week 3 = days 15-21, Week 4 = days 22-end
+ * Always 4 weeks per month
  * @param {number} year 
  * @param {number} month - 0-indexed (0 = January)
  * @param {number} weekNumber 
@@ -90,9 +91,19 @@ const getWeekDates = (year, month, weekNumber, timezone = DEFAULT_TIMEZONE) => {
     { zone: timezone }
   ).startOf("day");
   
-  // Create end date at end of day (6 days later)
+  // For week 4, end at the last day of the month
+  let endDay;
+  if (weekNumber === 4) {
+    // Get last day of month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    endDay = daysInMonth;
+  } else {
+    endDay = startDay + 6;
+  }
+  
+  // Create end date at end of day
   const endDt = DateTime.fromObject(
-    { year, month: month + 1, day: startDay + 6 },
+    { year, month: month + 1, day: endDay },
     { zone: timezone }
   ).endOf("day");
   

@@ -35,8 +35,9 @@ const Dashboard = () => {
     const month = now.getMonth();
     const day = now.getDate();
 
-    // Calculate week number based on calendar (Week 1 = days 1-7, Week 2 = 8-14, etc.)
-    const week = Math.ceil(day / 7);
+    // Calculate week number (Week 1: 1-7, Week 2: 8-14, Week 3: 15-21, Week 4: 22-end)
+    // Always limit to 4 weeks per month
+    const week = Math.min(Math.ceil(day / 7), 4);
 
     return { year, month, week };
   };
@@ -52,7 +53,8 @@ const Dashboard = () => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const day = date.getDate();
-    const week = Math.ceil(day / 7);
+    // Always limit to 4 weeks per month
+    const week = Math.min(Math.ceil(day / 7), 4);
 
     return { year, month, week };
   };
@@ -83,6 +85,9 @@ const Dashboard = () => {
   const [analyticsType, setAnalyticsType] = useState("week"); // week, month, category
   const [selectedAnalyticsCategory, setSelectedAnalyticsCategory] =
     useState("");
+  const [selectedAnalyticsYear, setSelectedAnalyticsYear] = useState(new Date().getFullYear());
+  const [selectedAnalyticsMonth, setSelectedAnalyticsMonth] = useState(new Date().getMonth());
+  const [selectedAnalyticsWeek, setSelectedAnalyticsWeek] = useState(Math.ceil(new Date().getDate() / 7));
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplateForApply, setSelectedTemplateForApply] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -353,14 +358,38 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, analyticsType, selectedAnalyticsCategory, selectedDate]);
 
+  // Helper function to get max weeks in a month
+  const getMaxWeeksInMonth = (year, month) => {
+    // Always return 4 weeks per month (Week 4 covers days 22 to end of month)
+    return 4;
+  };
+
+  // Handle analytics period changes
+  const handleAnalyticsYearChange = (year) => {
+    setSelectedAnalyticsYear(year);
+    setSelectedDate({ year, month: selectedAnalyticsMonth, week: selectedAnalyticsWeek });
+  };
+
+  const handleAnalyticsMonthChange = (month) => {
+    setSelectedAnalyticsMonth(month);
+    const maxWeeks = getMaxWeeksInMonth(selectedAnalyticsYear, month);
+    const safeWeek = Math.min(selectedAnalyticsWeek, maxWeeks);
+    setSelectedAnalyticsWeek(safeWeek);
+    setSelectedDate({ year: selectedAnalyticsYear, month, week: safeWeek });
+  };
+
+  const handleAnalyticsWeekChange = (week) => {
+    setSelectedAnalyticsWeek(week);
+    setSelectedDate({ year: selectedAnalyticsYear, month: selectedAnalyticsMonth, week });
+  };
+
   const navigateWeek = (direction) => {
     if (!selectedDate || selectedDate.month === null || !selectedDate.week) {
       return;
     }
 
     const { year, month, week } = selectedDate;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const maxWeeks = Math.ceil(daysInMonth / 7);
+    const maxWeeks = 4; // Always 4 weeks per month
 
     let newWeek = week + direction;
     let newMonth = month;
@@ -382,8 +411,7 @@ const Dashboard = () => {
         newMonth = 11;
         newYear--;
       }
-      const prevMonthDays = new Date(newYear, newMonth + 1, 0).getDate();
-      newWeek = Math.ceil(prevMonthDays / 7);
+      newWeek = 4; // Always 4 weeks per month
     }
 
     setSelectedDate({ year: newYear, month: newMonth, week: newWeek });
@@ -1098,6 +1126,19 @@ const Dashboard = () => {
             🎯 Tour Guide
           </button>
           <button
+            className={`mobile-menu-item ${googleCalendarConnected ? 'connected' : ''}`}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              if (googleCalendarConnected) {
+                handleDisconnectCalendar();
+              } else {
+                handleConnectCalendar();
+              }
+            }}
+          >
+            {googleCalendarConnected ? '📅 Disconnect Calendar' : '📅 Connect Google Calendar'}
+          </button>
+          <button
             className="mobile-menu-item logout-item"
             onClick={() => {
               setMobileMenuOpen(false);
@@ -1326,6 +1367,86 @@ const Dashboard = () => {
                   Category View
                 </button>
               </div>
+              
+              {/* Week View Selectors */}
+              {analyticsType === "week" && (
+                <div className="analytics-date-selectors">
+                  <select
+                    className="analytics-selector"
+                    value={selectedAnalyticsYear}
+                    onChange={(e) => handleAnalyticsYearChange(Number(e.target.value))}
+                  >
+                    {[...Array(5)].map((_, i) => {
+                      const year = new Date().getFullYear() - 2 + i;
+                      return (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="analytics-selector"
+                    value={selectedAnalyticsMonth}
+                    onChange={(e) => handleAnalyticsMonthChange(Number(e.target.value))}
+                  >
+                    {[
+                      "January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"
+                    ].map((month, index) => (
+                      <option key={index} value={index}>
+                        {month}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="analytics-selector"
+                    value={selectedAnalyticsWeek}
+                    onChange={(e) => handleAnalyticsWeekChange(Number(e.target.value))}
+                  >
+                    {[...Array(getMaxWeeksInMonth(selectedAnalyticsYear, selectedAnalyticsMonth))].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        Week {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {/* Month View Selectors */}
+              {analyticsType === "month" && (
+                <div className="analytics-date-selectors">
+                  <select
+                    className="analytics-selector"
+                    value={selectedAnalyticsYear}
+                    onChange={(e) => handleAnalyticsYearChange(Number(e.target.value))}
+                  >
+                    {[...Array(5)].map((_, i) => {
+                      const year = new Date().getFullYear() - 2 + i;
+                      return (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <select
+                    className="analytics-selector"
+                    value={selectedAnalyticsMonth}
+                    onChange={(e) => handleAnalyticsMonthChange(Number(e.target.value))}
+                  >
+                    {[
+                      "January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"
+                    ].map((month, index) => (
+                      <option key={index} value={index}>
+                        {month}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               {analyticsType === "category" && (
                 <select
                   className="category-filter"

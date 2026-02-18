@@ -1,122 +1,112 @@
-import axios from "axios";
+import api from "./api";
 import { getUserTimezone } from "../utils/timezone";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-// Get auth token and timezone header
-const getAuthConfig = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !user.token) {
-    console.error("No user token found in localStorage");
-  }
-  return {
-    headers: {
-      Authorization: `Bearer ${user?.token}`,
-      "X-Timezone": getUserTimezone(),
-    },
-  };
-};
+// Get timezone header (auth is handled by api interceptor)
+const getConfig = () => ({
+  headers: {
+    "X-Timezone": getUserTimezone(),
+  },
+});
 
 // Get tasks by date range
 const getTasksByDateRange = async (startDate, endDate) => {
-  const response = await axios.get(
-    `${API_URL}/api/tasks/range?startDate=${startDate}&endDate=${endDate}`,
-    getAuthConfig()
+  const response = await api.get(
+    `/api/tasks/range?startDate=${startDate}&endDate=${endDate}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Get tasks for specific week
 const getTasksByWeek = async (year, month, weekNumber) => {
-  const response = await axios.get(
-    `${API_URL}/api/tasks/week/${year}/${month}/${weekNumber}`,
-    getAuthConfig()
+  const response = await api.get(
+    `/api/tasks/week/${year}/${month}/${weekNumber}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Create task
 const createTask = async (taskData) => {
-  const response = await axios.post(
-    `${API_URL}/api/tasks`,
+  const response = await api.post(
+    `/api/tasks`,
     taskData,
-    getAuthConfig()
+    getConfig()
   );
   return response.data;
 };
 
 // Update task (toggle, edit)
 const updateTask = async (id, taskData) => {
-  const response = await axios.put(
-    `${API_URL}/api/tasks/${id}`,
+  const response = await api.put(
+    `/api/tasks/${id}`,
     taskData,
-    getAuthConfig()
+    getConfig()
   );
   return response.data;
 };
 
 // Delete task
 const deleteTask = async (id) => {
-  const response = await axios.delete(
-    `${API_URL}/api/tasks/${id}`,
-    getAuthConfig()
+  const response = await api.delete(
+    `/api/tasks/${id}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Delete all tasks for a specific day
 const deleteTasksByDay = async (date) => {
-  const response = await axios.delete(
-    `${API_URL}/api/tasks/day/${date}`,
-    getAuthConfig()
+  const response = await api.delete(
+    `/api/tasks/day/${date}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Delete all tasks for a specific week
 const deleteTasksByWeek = async (year, month, weekNumber) => {
-  const response = await axios.delete(
-    `${API_URL}/api/tasks/week/${year}/${month}/${weekNumber}`,
-    getAuthConfig()
+  const response = await api.delete(
+    `/api/tasks/week/${year}/${month}/${weekNumber}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Get weekly analytics
 const getWeeklyAnalytics = async (year, month, weekNumber) => {
-  const response = await axios.get(
-    `${API_URL}/api/tasks/analytics/week/${year}/${month}/${weekNumber}`,
-    getAuthConfig()
+  const response = await api.get(
+    `/api/tasks/analytics/week/${year}/${month}/${weekNumber}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Get monthly analytics
 const getMonthlyAnalytics = async (year, month) => {
-  const response = await axios.get(
-    `${API_URL}/api/tasks/analytics/month/${year}/${month}`,
-    getAuthConfig()
+  const response = await api.get(
+    `/api/tasks/analytics/month/${year}/${month}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Get category analytics
 const getCategoryAnalytics = async (category, startDate, endDate) => {
-  let url = `${API_URL}/api/tasks/analytics/category/${category}`;
+  let url = `/api/tasks/analytics/category/${category}`;
   if (startDate && endDate) {
     url += `?startDate=${startDate}&endDate=${endDate}`;
   }
-  const response = await axios.get(url, getAuthConfig());
+  const response = await api.get(url, getConfig());
   return response.data;
 };
 
 // Stop/pause a task
 const stopTask = async (id) => {
-  // To stop a task, we update it with isActive: false and calculate end time
-  const response = await axios.put(
-    `${API_URL}/api/tasks/${id}`,
+  const response = await api.put(
+    `/api/tasks/${id}`,
     { isActive: false },
-    getAuthConfig()
+    getConfig()
   );
   return response.data;
 };

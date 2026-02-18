@@ -1,59 +1,52 @@
-import axios from "axios";
+import api from "./api";
 import { getUserTimezone } from "../utils/timezone";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-// Get auth token and timezone header
-const getAuthConfig = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  return {
-    headers: {
-      Authorization: `Bearer ${user?.token}`,
-      "X-Timezone": getUserTimezone(),
-    },
-  };
-};
+const getConfig = () => ({
+  headers: {
+    "X-Timezone": getUserTimezone(),
+  },
+});
 
 // Get todos for today (includes overdue carryover)
 const getTodos = async () => {
-  const response = await axios.get(`${API_URL}/api/todos`, getAuthConfig());
+  const response = await api.get(`/api/todos`, getConfig());
   return response.data;
 };
 
 // Create new todo
 const createTodo = async (text) => {
-  const response = await axios.post(
-    `${API_URL}/api/todos`,
+  const response = await api.post(
+    `/api/todos`,
     { text },
-    getAuthConfig()
+    getConfig()
   );
   return response.data;
 };
 
 // Toggle todo completion
 const toggleTodo = async (id, completed) => {
-  const response = await axios.put(
-    `${API_URL}/api/todos/${id}`,
+  const response = await api.put(
+    `/api/todos/${id}`,
     { completed },
-    getAuthConfig()
+    getConfig()
   );
   return response.data;
 };
 
 // Delete todo
 const deleteTodo = async (id) => {
-  const response = await axios.delete(
-    `${API_URL}/api/todos/${id}`,
-    getAuthConfig()
+  const response = await api.delete(
+    `/api/todos/${id}`,
+    getConfig()
   );
   return response.data;
 };
 
 // Clear all completed todos
 const clearCompleted = async () => {
-  const response = await axios.delete(
-    `${API_URL}/api/todos/clear-completed`,
-    getAuthConfig()
+  const response = await api.delete(
+    `/api/todos/clear-completed`,
+    getConfig()
   );
   return response.data;
 };

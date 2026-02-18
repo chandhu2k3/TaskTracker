@@ -1,19 +1,7 @@
 // Calendar Integration Service
 // Integrates with Google Calendar API for automatic event creation
 
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-// Get auth token header
-const getAuthConfig = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  return {
-    headers: {
-      Authorization: `Bearer ${user?.token}`,
-    },
-  };
-};
+import api from './api';
 
 const calendarService = {
   /**
@@ -22,7 +10,7 @@ const calendarService = {
    */
   getStatus: async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/calendar/status`, getAuthConfig());
+      const response = await api.get(`/api/calendar/status`);
       return response.data;
     } catch (error) {
       console.error('Error checking calendar status:', error);
@@ -35,7 +23,7 @@ const calendarService = {
    * @returns {Promise<{authUrl: string}>}
    */
   getAuthUrl: async () => {
-    const response = await axios.get(`${API_URL}/api/calendar/auth-url`, getAuthConfig());
+    const response = await api.get(`/api/calendar/auth-url`);
     return response.data;
   },
 
@@ -45,7 +33,7 @@ const calendarService = {
    * @returns {Promise<{success: boolean, message: string}>}
    */
   handleCallback: async (code) => {
-    const response = await axios.post(`${API_URL}/api/calendar/callback`, { code }, getAuthConfig());
+    const response = await api.post(`/api/calendar/callback`, { code });
     return response.data;
   },
 
@@ -54,7 +42,7 @@ const calendarService = {
    * @returns {Promise<{success: boolean}>}
    */
   disconnect: async () => {
-    const response = await axios.delete(`${API_URL}/api/calendar/disconnect`, getAuthConfig());
+    const response = await api.delete(`/api/calendar/disconnect`);
     return response.data;
   },
 
@@ -65,7 +53,7 @@ const calendarService = {
    */
   createEvent: async (options) => {
     try {
-      const response = await axios.post(`${API_URL}/api/calendar/events`, options, getAuthConfig());
+      const response = await api.post(`/api/calendar/events`, options);
       return response.data;
     } catch (error) {
       // If not connected, return special flag
@@ -86,7 +74,7 @@ const calendarService = {
    * @returns {Promise<{success: boolean}>}
    */
   deleteEvent: async (eventId) => {
-    const response = await axios.delete(`${API_URL}/api/calendar/events/${eventId}`, getAuthConfig());
+    const response = await api.delete(`/api/calendar/events/${eventId}`);
     return response.data;
   },
 

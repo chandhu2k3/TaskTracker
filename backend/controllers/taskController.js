@@ -2,6 +2,7 @@ const Task = require("../models/Task");
 const Category = require("../models/Category");
 const Sleep = require("../models/Sleep");
 const tz = require("../utils/timezone");
+const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
 
 // @desc    Get tasks by date range
 // @route   GET /api/tasks/range?startDate=...&endDate=...&page=1&limit=50
@@ -173,7 +174,7 @@ const createTask = async (req, res) => {
     const task = await Task.create({
       user: req.user._id,
       name,
-      category: categoryDoc.name, // Store category name, not ID
+      category: categoryDoc.name,
       date: taskDate,
       day,
       isActive: false,
@@ -193,19 +194,16 @@ const createTask = async (req, res) => {
       const taskDateStr = tz.dateToString(taskDate, timezone);
 
       if (taskDateStr <= todayStr) {
-        // Use scheduled time or default to start of day
         let startTime;
         let endTime;
         
         if (task.scheduledStartTime && task.scheduledEndTime) {
-          // Parse scheduled time (format: "HH:MM")
           const [startHour, startMin] = task.scheduledStartTime.split(':').map(Number);
           const [endHour, endMin] = task.scheduledEndTime.split(':').map(Number);
           
           startTime = tz.createDateTime(taskDateStr, startHour, startMin, timezone);
           endTime = tz.createDateTime(taskDateStr, endHour, endMin, timezone);
         } else {
-          // No scheduled time - complete at 1 AM
           startTime = tz.createDateTime(taskDateStr, 1, 0, timezone);
           endTime = new Date(startTime.getTime() + task.plannedTime);
         }
@@ -220,6 +218,10 @@ const createTask = async (req, res) => {
         await task.save();
       }
     }
+
+    // Invalidate tasks and analytics cache for this user
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
 
     res.status(201).json(task);
   } catch (error) {
@@ -285,6 +287,9 @@ const updateTask = async (req, res) => {
     if (req.body.category) task.category = req.body.category;
 
     await task.save();
+    // Invalidate caches on task update
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
     res.json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -307,6 +312,8 @@ const deleteTask = async (req, res) => {
     }
 
     await task.deleteOne();
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
     res.json({ message: "Task removed" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -324,6 +331,9 @@ const deleteTasksByDay = async (req, res) => {
       user: req.user._id,
       date: date,
     });
+
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
 
     res.json({ 
       message: `Deleted ${result.deletedCount} task(s)`,
@@ -357,6 +367,8 @@ const deleteTasksByWeek = async (req, res) => {
       },
     });
 
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
     res.json({ 
       message: `Deleted ${result.deletedCount} task(s) from week ${weekNumber}`,
       deletedCount: result.deletedCount 
@@ -373,6 +385,13 @@ const getWeeklyAnalytics = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
     const timezone = tz.getTimezoneFromRequest(req);
+
+    // Check cache first
+    const key = cacheKey(req.user._id, "analytics", "week", year, month, weekNumber);
+    const cached = await getCache(key);
+    if (cached) {
+      return res.json(typeof cached === "string" ? JSON.parse(cached) : cached);
+    }
     
     const { startDate, endDate } = tz.getWeekDates(
       parseInt(year),
@@ -484,6 +503,7 @@ const getWeeklyAnalytics = async (req, res) => {
 
     analytics.averagePerDay = analytics.totalTime / 7;
 
+    await setCache(key, analytics, TTL.ANALYTICS);
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -496,6 +516,14 @@ const getWeeklyAnalytics = async (req, res) => {
 const getMonthlyAnalytics = async (req, res) => {
   try {
     const { year, month } = req.params;
+
+    // Check cache first
+    const key = cacheKey(req.user._id, "analytics", "month", year, month);
+    const cached = await getCache(key);
+    if (cached) {
+      return res.json(typeof cached === "string" ? JSON.parse(cached) : cached);
+    }
+
     const startDate = new Date(year, month, 1);
     const endDate = new Date(year, parseInt(month) + 1, 0, 23, 59, 59, 999);
 
@@ -539,8 +567,8 @@ const getMonthlyAnalytics = async (req, res) => {
       analytics.byCategory[categoryName].taskCount++;
       analytics.byCategory[categoryName].totalTime += taskTime;
 
-      // By week
-      const weekNum = Math.ceil(task.date.getDate() / 7);
+      // By week (limit to 4 weeks per month: Week 1: 1-7, Week 2: 8-14, Week 3: 15-21, Week 4: 22-end)
+      const weekNum = Math.min(Math.ceil(task.date.getDate() / 7), 4);
       if (!analytics.byWeek[`week${weekNum}`]) {
         analytics.byWeek[`week${weekNum}`] = { taskCount: 0, totalTime: 0 };
       }
@@ -562,6 +590,7 @@ const getMonthlyAnalytics = async (req, res) => {
       analytics.sessionCount += sleepSessions.length;
     }
 
+    await setCache(key, analytics, TTL.ANALYTICS);
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -575,6 +604,13 @@ const getCategoryAnalytics = async (req, res) => {
   try {
     const { category } = req.params;
     const { startDate, endDate } = req.query;
+
+    // Check cache first
+    const key = cacheKey(req.user._id, "analytics", "cat", category, startDate || "all", endDate || "all");
+    const cached = await getCache(key);
+    if (cached) {
+      return res.json(typeof cached === "string" ? JSON.parse(cached) : cached);
+    }
 
     const query = {
       user: req.user._id,
@@ -622,6 +658,7 @@ const getCategoryAnalytics = async (req, res) => {
       analytics.byDate[dateKey].sessions += task.sessions.length;
     });
 
+    await setCache(key, analytics, TTL.ANALYTICS);
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,13 +1,22 @@
 const Category = require("../models/Category");
+const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
 
 // @desc    Get all categories for user
 // @route   GET /api/categories
 // @access  Private
 const getCategories = async (req, res) => {
   try {
+    const key = cacheKey(req.user._id, "categories");
+    const cached = await getCache(key);
+    if (cached) {
+      return res.json(typeof cached === "string" ? JSON.parse(cached) : cached);
+    }
+
     const categories = await Category.find({ user: req.user._id }).sort({
       createdAt: 1,
     }).lean();
+
+    await setCache(key, categories, TTL.CATEGORIES);
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -32,6 +41,7 @@ const createCategory = async (req, res) => {
       icon: icon || "📋",
     });
 
+    await invalidateCache(`user:${req.user._id}:categories*`);
     res.status(201).json(category);
   } catch (error) {
     if (error.code === 11000) {
@@ -61,6 +71,7 @@ const updateCategory = async (req, res) => {
     if (req.body.icon) category.icon = req.body.icon;
 
     await category.save();
+    await invalidateCache(`user:${req.user._id}:categories*`);
     res.json(category);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -83,6 +94,7 @@ const deleteCategory = async (req, res) => {
     }
 
     await category.deleteOne();
+    await invalidateCache(`user:${req.user._id}:categories*`);
     res.json({ message: "Category removed" });
   } catch (error) {
     res.status(500).json({ message: error.message });

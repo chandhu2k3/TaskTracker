@@ -1,35 +1,8 @@
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-// Configure axios defaults for better timeout handling
-axios.defaults.timeout = 15000; // 15 second timeout
-
-// Retry helper for handling cold starts
-const retryRequest = async (requestFn, retries = 2) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await requestFn();
-    } catch (error) {
-      const isLastRetry = i === retries - 1;
-      const isTimeout = error.code === 'ECONNABORTED' || error.message.includes('timeout');
-      
-      // Only retry on timeout or network errors
-      if (isLastRetry || (!isTimeout && error.response)) {
-        throw error;
-      }
-      
-      // Wait before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-    }
-  }
-};
+import api from "./api";
 
 // Register user
 const register = async (userData) => {
-  const response = await retryRequest(() => 
-    axios.post(`${API_URL}/api/auth/register`, userData)
-  );
+  const response = await api.post(`/api/auth/register`, userData);
 
   if (response.data) {
     localStorage.setItem("user", JSON.stringify(response.data));
@@ -40,9 +13,7 @@ const register = async (userData) => {
 
 // Login user
 const login = async (userData) => {
-  const response = await retryRequest(() =>
-    axios.post(`${API_URL}/api/auth/login`, userData)
-  );
+  const response = await api.post(`/api/auth/login`, userData);
 
   if (response.data) {
     localStorage.setItem("user", JSON.stringify(response.data));
@@ -58,13 +29,11 @@ const logout = () => {
 
 // Get user profile
 const getProfile = async (token) => {
-  const config = {
+  const response = await api.get(`/api/auth/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  };
-
-  const response = await axios.get(`${API_URL}/api/auth/profile`, config);
+  });
   return response.data;
 };
 
@@ -75,16 +44,9 @@ const updateOnboarding = async (onboardingComplete) => {
     throw new Error("Not authenticated");
   }
 
-  const config = {
-    headers: {
-      Authorization: `Bearer ${user.token}`,
-    },
-  };
-
-  const response = await axios.put(
-    `${API_URL}/api/auth/onboarding`,
-    { onboardingComplete },
-    config
+  const response = await api.put(
+    `/api/auth/onboarding`,
+    { onboardingComplete }
   );
 
   // Update local storage with new onboarding status

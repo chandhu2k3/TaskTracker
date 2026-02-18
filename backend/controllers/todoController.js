@@ -1,5 +1,6 @@
 const Todo = require("../models/Todo");
 const tz = require("../utils/timezone");
+const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
 
 // @desc    Get todos for today (with overdue carryover)
 // @route   GET /api/todos
@@ -63,6 +64,7 @@ const createTodo = async (req, res) => {
       isOverdue: false,
     });
 
+    await invalidateCache(`user:${req.user._id}:todos*`);
     res.status(201).json(todo);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -93,6 +95,7 @@ const updateTodo = async (req, res) => {
     }
 
     await todo.save();
+    await invalidateCache(`user:${req.user._id}:todos*`);
     res.json(todo);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -115,6 +118,7 @@ const deleteTodo = async (req, res) => {
     }
 
     await todo.deleteOne();
+    await invalidateCache(`user:${req.user._id}:todos*`);
     res.json({ message: "Todo removed" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -131,6 +135,7 @@ const clearCompleted = async (req, res) => {
       completed: true,
     });
 
+    await invalidateCache(`user:${req.user._id}:todos*`);
     res.json({
       message: `Cleared ${result.deletedCount} completed todo(s)`,
       deletedCount: result.deletedCount,

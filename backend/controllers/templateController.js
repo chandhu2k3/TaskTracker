@@ -2,6 +2,7 @@ const TaskTemplate = require("../models/TaskTemplate");
 const Task = require("../models/Task");
 const { google } = require('googleapis');
 const User = require('../models/User');
+const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
 
 // Helper: get authenticated Google Calendar client
 const getCalendarClient = async (userId) => {
@@ -53,9 +54,14 @@ const getDayName = (date) => {
 // @access  Private
 const getTemplates = async (req, res) => {
   try {
+    const key = cacheKey(req.user._id, "templates");
+    const cached = await getCache(key);
+    if (cached) return res.json(cached);
+
     const templates = await TaskTemplate.find({ user: req.user._id }).sort({
       createdAt: -1,
     }).lean();
+    await setCache(key, templates, TTL.TEMPLATES);
     res.json(templates);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -67,6 +73,10 @@ const getTemplates = async (req, res) => {
 // @access  Private
 const getTemplate = async (req, res) => {
   try {
+    const key = cacheKey(req.user._id, "templates", req.params.id);
+    const cached = await getCache(key);
+    if (cached) return res.json(cached);
+
     const template = await TaskTemplate.findOne({
       _id: req.params.id,
       user: req.user._id,
@@ -76,6 +86,7 @@ const getTemplate = async (req, res) => {
       return res.status(404).json({ message: "Template not found" });
     }
 
+    await setCache(key, template, TTL.TEMPLATES);
     res.json(template);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -126,6 +137,7 @@ const createTemplate = async (req, res) => {
       tasks,
     });
 
+    await invalidateCache(`user:${req.user._id}:templates*`);
     res.status(201).json(template);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -166,6 +178,7 @@ const updateTemplate = async (req, res) => {
       JSON.stringify(savedTemplate.tasks, null, 2)
     );
 
+    await invalidateCache(`user:${req.user._id}:templates*`);
     res.json(savedTemplate);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -187,6 +200,7 @@ const deleteTemplate = async (req, res) => {
     }
 
     await template.deleteOne();
+    await invalidateCache(`user:${req.user._id}:templates*`);
     res.json({ message: "Template deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -212,7 +226,8 @@ const applyTemplate = async (req, res) => {
         .json({ message: "Template not found or has no tasks" });
     }
 
-    // Calculate week dates using calendar-based system (Week 1 = days 1-7)
+    // Calculate week dates (Week 1: 1-7, Week 2: 8-14, Week 3: 15-21, Week 4: 22-end)
+    // Always 4 weeks per month
     const startDay = 1 + (parseInt(weekNumber) - 1) * 7;
 
     // Get the actual day of week for the start date (0 = Sunday, 1 = Monday, etc.)
@@ -467,6 +482,9 @@ const applyTemplate = async (req, res) => {
         }
       }
     }
+
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
 
     res.json({
       message: `Applied template with ${createdTasks.length} tasks${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ''}`,
