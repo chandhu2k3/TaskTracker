@@ -1,5 +1,6 @@
 const Sleep = require("../models/Sleep");
 const tz = require("../utils/timezone");
+const { cacheKey, getCache, setCache, invalidateCache } = require("../config/redis");
 
 // @desc    Start sleep session
 // @route   POST /api/sleep/start
@@ -29,6 +30,7 @@ const startSleep = async (req, res) => {
       isActive: true,
     });
 
+    await invalidateCache(`user:${req.user._id}:sleep*`);
     res.status(201).json(sleep);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -60,6 +62,7 @@ const stopSleep = async (req, res) => {
 
     await activeSleep.save();
 
+    await invalidateCache(`user:${req.user._id}:sleep*`);
     res.json(activeSleep);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -71,11 +74,16 @@ const stopSleep = async (req, res) => {
 // @access  Private
 const getActiveSleep = async (req, res) => {
   try {
+    const key = cacheKey(req.user._id, "sleep:active");
+    const cached = await getCache(key);
+    if (cached !== null) return res.json(cached);
+
     const activeSleep = await Sleep.findOne({
       user: req.user._id,
       isActive: true,
     });
 
+    await setCache(key, activeSleep, 30); // 30 seconds TTL
     res.json(activeSleep);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -96,7 +96,24 @@ app.get("/", (req, res) => {
 
 // Quick health check for warming up
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  try {
+    const { getRedis } = require('./config/redis');
+    const redisClient = getRedis();
+    
+    res.status(200).json({ 
+      status: "ok",
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      redis: redisClient ? 'connected' : 'disabled',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(200).json({ 
+      status: "ok",
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      redis: 'error',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Error handler

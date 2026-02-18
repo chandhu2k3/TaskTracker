@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const User = require('../models/User');
 const Task = require('../models/Task');
+const { cacheKey, getCache, setCache, invalidateCache } = require('../config/redis');
 
 // Google OAuth2 Client
 const getOAuth2Client = () => {
@@ -57,6 +58,7 @@ exports.handleCallback = async (req, res) => {
       'googleCalendar.tokenExpiry': new Date(tokens.expiry_date),
     });
 
+    await invalidateCache(`user:${req.user._id}:calendar*`);
     res.json({ 
       success: true, 
       message: 'Google Calendar connected successfully!' 
@@ -72,12 +74,19 @@ exports.handleCallback = async (req, res) => {
 // @access  Private
 exports.getStatus = async (req, res) => {
   try {
+    const key = cacheKey(req.user._id, "calendar:status");
+    const cached = await getCache(key);
+    if (cached) return res.json(cached);
+
     const user = await User.findById(req.user._id).select('+googleCalendar.connected +googleCalendar.tokenExpiry');
     
-    res.json({
+    const status = {
       connected: user.googleCalendar?.connected || false,
       tokenExpiry: user.googleCalendar?.tokenExpiry,
-    });
+    };
+
+    await setCache(key, status, 60); // 60 seconds TTL
+    res.json(status);
   } catch (error) {
     console.error('Error getting status:', error);
     res.status(500).json({ message: 'Failed to get calendar status' });
