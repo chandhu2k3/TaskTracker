@@ -105,21 +105,45 @@ app.get("/api/ping", (req, res) => {
 });
 
 // Quick health check for warming up
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
   try {
     const { getRedis } = require('./config/redis');
     const redisClient = getRedis();
     
+    // Try to reconnect if disconnected
+    if (mongoose.connection.readyState !== 1) {
+      console.log('❌ MongoDB disconnected, attempting reconnect...');
+      try {
+        await connectDB();
+      } catch (err) {
+        console.error('Reconnect failed:', err.message);
+      }
+    }
+    
+    // Get connection state details
+    const stateMap = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    };
+    
+    const mongoState = mongoose.connection.readyState;
+    
     res.status(200).json({ 
       status: "ok",
-      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      mongodb: stateMap[mongoState] || 'unknown',
+      mongodbState: mongoState,
+      mongodbHost: mongoose.connection.host || 'none',
+      mongodbError: mongoose.connection.error?.message || null,
       redis: redisClient ? 'connected' : 'disabled',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(200).json({ 
       status: "ok",
-      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      mongodb: 'error',
+      error: error.message,
       redis: 'error',
       timestamp: new Date().toISOString()
     });
