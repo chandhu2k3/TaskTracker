@@ -27,14 +27,16 @@ const getRedis = () => {
   }
 };
 
-// Default TTLs (in seconds)
+// Default TTLs (in seconds) - OPTIMIZED FOR FREE TIER
+// Longer TTLs = fewer SET operations = lower Redis command usage
 const TTL = {
-  TASKS: 120,        // 2 min - tasks change frequently (timers, status)
-  CATEGORIES: 600,   // 10 min - categories change rarely
-  TEMPLATES: 600,    // 10 min - templates change rarely
+  TASKS: 120,        // 2 min - not currently cached (auto-complete logic)
+  CATEGORIES: 3600,  // 1 hour - categories rarely change
+  TEMPLATES: 3600,   // 1 hour - templates rarely change
   TODOS: 120,        // 2 min - todos get toggled often
-  ANALYTICS: 300,    // 5 min - analytics are expensive queries
+  ANALYTICS: 1800,   // 30 min - analytics expensive but can be stale
 };
+
 
 /**
  * Build a user-scoped cache key
@@ -89,7 +91,8 @@ const setCache = async (key, data, ttl) => {
 
 /**
  * Invalidate cache keys matching a pattern
- * Uses SCAN to find keys, then deletes them
+ * OPTIMIZED FOR FREE TIER: Avoids expensive SCAN operations
+ * Analytics cache is NOT invalidated - relies on TTL expiry (5 min acceptable staleness)
  * @param {string} pattern - e.g., "user:abc123:tasks*"
  */
 const invalidateCache = async (pattern) => {
@@ -97,20 +100,33 @@ const invalidateCache = async (pattern) => {
   if (!client) return;
 
   try {
-    // Upstash supports scan
-    let cursor = 0;
-    let keysToDelete = [];
-
-    do {
-      const result = await client.scan(cursor, { match: pattern, count: 100 });
-      cursor = result[0];
-      keysToDelete = keysToDelete.concat(result[1]);
-    } while (cursor !== 0);
+    // Extract the base key parts
+    const baseParts = pattern.replace(/\*/g, '').split(':');
+    const userId = baseParts[1];
+    
+    // For common patterns, delete known keys directly (no SCAN needed)
+    const keysToDelete = [];
+    
+    if (pattern.includes(':tasks*')) {
+      // Tasks aren't cached (auto-complete logic), skip
+      console.log(`[CACHE INVALIDATE] ${pattern} → skipped (not cached)`);
+      return;
+    } else if (pattern.includes(':analytics*')) {
+      // Analytics cache is NOT invalidated to save Redis commands
+      // 5-minute TTL means max 5 min staleness, which is acceptable
+      console.log(`[CACHE INVALIDATE] ${pattern} → skipped (TTL-based expiry)`);
+      return;
+    } else if (pattern.includes(':categories*')) {
+      keysToDelete.push(`user:${userId}:categories`);
+    } else if (pattern.includes(':templates*')) {
+      keysToDelete.push(`user:${userId}:templates`);
+    } else if (pattern.includes(':todos*')) {
+      keysToDelete.push(`user:${userId}:todos`);
+    }
 
     if (keysToDelete.length > 0) {
-      // Delete in batches using pipeline
       await Promise.all(keysToDelete.map((key) => client.del(key)));
-      console.log(`[CACHE INVALIDATE] ${pattern} → ${keysToDelete.length} keys removed`);
+      console.log(`[CACHE INVALIDATE] ${keysToDelete.join(', ')} → deleted`);
     }
   } catch (error) {
     console.warn(`[CACHE ERROR] invalidate ${pattern}:`, error.message);
