@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 
 // Load environment config
