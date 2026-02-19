@@ -94,6 +94,15 @@ app.get("/", (req, res) => {
   });
 });
 
+// Super lightweight ping - no DB required
+app.get("/api/ping", (req, res) => {
+  res.status(200).json({ 
+    status: "ok",
+    timestamp: Date.now(),
+    message: "pong"
+  });
+});
+
 // Quick health check for warming up
 app.get("/api/health", (req, res) => {
   try {
