@@ -43,9 +43,24 @@ api.interceptors.request.use(
 
 // Response interceptor - automatic retry with exponential backoff
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[API Success] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config;
+
+    // Log detailed error info
+    console.error(`[API Error] ${config?.method?.toUpperCase()} ${config?.url}`, {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      code: error.code,
+    });
 
     // Initialize retry count
     if (!config.__retryCount) {
