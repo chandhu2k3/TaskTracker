@@ -155,9 +155,10 @@ const Dashboard = () => {
   const loadTodos = async () => {
     try {
       const data = await todoService.getTodos();
-      setTodos(data);
+      setTodos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.log("Failed to load todos:", error.message);
+      setTodos([]);
     }
   };
 
@@ -258,9 +259,10 @@ const Dashboard = () => {
   const loadCategories = async () => {
     try {
       const data = await categoryService.getCategories();
-      setCategories(data);
+      setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error("Failed to load categories");
+      setCategories([]);
       if (error.response?.status === 401) {
         navigate("/login");
       }
@@ -270,9 +272,10 @@ const Dashboard = () => {
   const loadTemplates = async () => {
     try {
       const data = await templateService.getTemplates();
-      setTemplates(data);
+      setTemplates(Array.isArray(data) ? data : []);
     } catch (error) {
       console.log("Failed to load templates:", error);
+      setTemplates([]);
     }
   };
 
@@ -291,10 +294,11 @@ const Dashboard = () => {
         selectedDate.week,
       );
       console.log("Tasks loaded:", data);
-      setTasks(data);
+      setTasks(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Load tasks error:", error.response || error);
       toast.error(error.response?.data?.message || "Failed to load tasks");
+      setTasks([]); // Set empty array on error to prevent undefined errors
       if (error.response?.status === 401) {
         navigate("/login");
       }
@@ -341,9 +345,10 @@ const Dashboard = () => {
         );
       }
       console.log("Analytics data loaded:", data);
-      setAnalyticsData(data);
+      setAnalyticsData(data || null);
     } catch (error) {
       console.error("Analytics error:", error);
+      setAnalyticsData(null);
       toast.error(
         "Failed to load analytics: " +
           (error.response?.data?.message || error.message),
