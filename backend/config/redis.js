@@ -31,8 +31,8 @@ const getRedis = () => {
 // Longer TTLs = fewer SET operations = lower Redis command usage
 const TTL = {
   TASKS: 120,        // 2 min - not currently cached (auto-complete logic)
-  CATEGORIES: 3600,  // 1 hour - categories rarely change
-  TEMPLATES: 3600,   // 1 hour - templates rarely change
+  CATEGORIES: 86400, // 1 day - categories rarely change (manual update only)
+  TEMPLATES: 604800, // 1 week - templates rarely change (manual update only)
   TODOS: 120,        // 2 min - todos get toggled often
   ANALYTICS: 1800,   // 30 min - analytics expensive but can be stale
 };
