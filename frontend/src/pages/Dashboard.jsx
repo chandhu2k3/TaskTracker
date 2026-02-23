@@ -93,7 +93,6 @@ const Dashboard = () => {
   const [addingTodo, setAddingTodo] = useState(false);
   const [togglingTodo, setTogglingTodo] = useState({});
   const [deletingTodo, setDeletingTodo] = useState({});
-  const [clearingCompletedTodos, setClearingCompletedTodos] = useState(false);
   
   const [activeTab, setActiveTab] = useState("week"); // week, categories, template, analytics
   const [viewMode, setViewMode] = useState("day"); // day or week
