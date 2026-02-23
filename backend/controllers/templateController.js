@@ -386,21 +386,40 @@ const applyTemplate = async (req, res) => {
           date: dateStr,
         });
 
-        const newTask = await Task.create({
-          user: req.user._id,
-          name: templateTask.name,
-          category: templateTask.category,
-          date: dateStr,
-          day: templateTask.day,
-          isActive: false,
-          sessions: [],
-          totalTime: 0,
-          plannedTime: templateTask.plannedTime || 0,
-          isAutomated: templateTask.isAutomated || false,
-          completionCount: 0,
-          scheduledStartTime: templateTask.scheduledStartTime || null,
-          scheduledEndTime: templateTask.scheduledEndTime || null,
-        });
+        let newTask;
+        try {
+          newTask = await Task.create({
+            user: req.user._id,
+            name: templateTask.name,
+            category: templateTask.category,
+            date: dateStr,
+            day: templateTask.day,
+            isActive: false,
+            sessions: [],
+            totalTime: 0,
+            plannedTime: templateTask.plannedTime || 0,
+            isAutomated: templateTask.isAutomated || false,
+            completionCount: 0,
+            scheduledStartTime: templateTask.scheduledStartTime || null,
+            scheduledEndTime: templateTask.scheduledEndTime || null,
+          });
+        } catch (err) {
+          // If duplicate key error (code 11000), task was created by concurrent request
+          if (err.code === 11000) {
+            console.log("Task already exists (concurrent request), fetching existing...");
+            newTask = await Task.findOne({
+              user: req.user._id,
+              name: templateTask.name,
+              category: templateTask.category,
+              date: dateStr,
+            });
+            if (newTask) {
+              createdTasks.push(newTask);
+              continue; // Skip to next template task
+            }
+          }
+          throw err; // Re-throw if not duplicate error
+        }
 
         console.log("Task created:", {
           _id: newTask._id,

@@ -14,10 +14,10 @@ const getTodos = async () => {
 };
 
 // Create new todo
-const createTodo = async (text) => {
+const createTodo = async (text, deadline = null) => {
   const response = await api.post(
     `/api/todos`,
-    { text },
+    { text, deadline },
     getConfig()
   );
   return response.data;

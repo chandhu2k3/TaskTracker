@@ -9,6 +9,10 @@ const TemplateSetup = ({
   onUpdateTemplate,
   onDeleteTemplate,
   onApplyTemplate,
+  isApplyingTemplate = false,
+  isCreatingTemplate = false,
+  updatingTemplate = {},
+  deletingTemplate = {},
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -228,14 +232,16 @@ const TemplateSetup = ({
                     onClick={() => handleDelete(selectedTemplate._id)}
                     className="btn-delete-small"
                     title="Delete template"
+                    disabled={deletingTemplate[selectedTemplate._id]}
                   >
-                    🗑️
+                    {deletingTemplate[selectedTemplate._id] ? "..." : "🗑️"}
                   </button>
                   <button
                     onClick={() => onApplyTemplate(selectedTemplate._id)}
                     className="btn-apply-template"
+                    disabled={isApplyingTemplate}
                   >
-                    🔄 Apply to Week
+                    {isApplyingTemplate ? "Applying..." : "🔄 Apply to Week"}
                   </button>
                 </div>
               )}
@@ -468,8 +474,8 @@ const TemplateSetup = ({
                 >
                   Cancel
                 </button>
-                <button onClick={handleSave} className="btn-save">
-                  {editingTemplate ? "Update Template" : "Create Template"}
+                <button onClick={handleSave} className="btn-save" disabled={isCreatingTemplate || (editingTemplate && updatingTemplate[editingTemplate._id])}>
+                  {editingTemplate ? (updatingTemplate[editingTemplate._id] ? "Updating..." : "Update Template") : (isCreatingTemplate ? "Creating..." : "Create Template")}
                 </button>
               </div>
             </div>

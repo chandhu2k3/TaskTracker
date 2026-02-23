@@ -16,6 +16,8 @@ const DayCard = forwardRef(
       onToggleNotification,
       onReorderTasks,
       onHeaderClick,
+      isAddingTask = false,
+      deletingTask = {},
     },
     ref
   ) => {
@@ -235,9 +237,9 @@ const DayCard = forwardRef(
                 <button
                   className="btn-add"
                   onClick={handleAddTask}
-                  disabled={!taskInput.trim() || !selectedCategory}
+                  disabled={!taskInput.trim() || !selectedCategory || isAddingTask}
                 >
-                  +
+                  {isAddingTask ? "..." : "+"}
                 </button>
               </div>
               <div className="time-slot-row">
@@ -291,6 +293,7 @@ const DayCard = forwardRef(
                   onDrop={handleDrop}
                   draggedTask={draggedTask}
                   isDragging={draggedTask?._id === task._id}
+                  isDeleting={deletingTask[task._id]}
                 />
               );
             })

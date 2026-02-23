@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import "./CategoryManager.css";
 
-const CategoryManager = ({ categories, onAdd, onUpdate, onDelete }) => {
+const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = false, updatingCategory = {}, deletingCategory = {} }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({
@@ -158,8 +158,8 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete }) => {
             >
               Cancel
             </button>
-            <button type="submit" className="btn-save">
-              {editingCategory ? "Update" : "Create"}
+            <button type="submit" className="btn-save" disabled={isAdding || (editingCategory && updatingCategory[editingCategory._id])}>
+              {editingCategory ? (updatingCategory[editingCategory._id] ? "Updating..." : "Update") : (isAdding ? "Creating..." : "Create")}
             </button>
           </div>
         </form>
@@ -209,8 +209,9 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete }) => {
                     }
                   }}
                   className="btn-delete-cat"
+                  disabled={deletingCategory[category._id]}
                 >
-                  ×
+                  {deletingCategory[category._id] ? "..." : "×"}
                 </button>
               </div>
             </div>

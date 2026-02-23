@@ -47,7 +47,7 @@ const getTodos = async (req, res) => {
 // @access  Private
 const createTodo = async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, deadline } = req.body;
 
     if (!text || text.trim() === "") {
       return res.status(400).json({ message: "Please provide todo text" });
@@ -62,6 +62,7 @@ const createTodo = async (req, res) => {
       completed: false,
       date: today,
       isOverdue: false,
+      deadline: deadline || null,
     });
 
     await invalidateCache(`user:${req.user._id}:todos*`);

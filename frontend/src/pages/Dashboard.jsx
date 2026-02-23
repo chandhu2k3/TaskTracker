@@ -79,6 +79,22 @@ const Dashboard = () => {
   const [categories, setCategories] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Specific loading states for button disabling
+  const [addingTask, setAddingTask] = useState(false);
+  const [deletingTask, setDeletingTask] = useState({});
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [updatingCategory, setUpdatingCategory] = useState({});
+  const [deletingCategory, setDeletingCategory] = useState({});
+  const [creatingTemplate, setCreatingTemplate] = useState(false);
+  const [updatingTemplate, setUpdatingTemplate] = useState({});
+  const [deletingTemplate, setDeletingTemplate] = useState({});
+  const [resettingWeek, setResettingWeek] = useState(false);
+  const [addingTodo, setAddingTodo] = useState(false);
+  const [togglingTodo, setTogglingTodo] = useState({});
+  const [deletingTodo, setDeletingTodo] = useState({});
+  const [clearingCompletedTodos, setClearingCompletedTodos] = useState(false);
+  
   const [activeTab, setActiveTab] = useState("week"); // week, categories, template, analytics
   const [viewMode, setViewMode] = useState("day"); // day or week
   const [analyticsData, setAnalyticsData] = useState(null);
@@ -449,6 +465,8 @@ const Dashboard = () => {
     scheduledStartTime = null,
     scheduledEndTime = null,
   ) => {
+    if (addingTask) return;
+    setAddingTask(true);
     try {
       await taskService.createTask({
         name,
@@ -472,6 +490,8 @@ const Dashboard = () => {
     } catch (error) {
       toast.error("Failed to add task");
       console.error("Add task error:", error);
+    } finally {
+      setAddingTask(false);
     }
   };
 
@@ -522,12 +542,20 @@ const Dashboard = () => {
   };
 
   const handleDeleteTask = async (taskId) => {
+    if (deletingTask[taskId]) return;
+    setDeletingTask(prev => ({ ...prev, [taskId]: true }));
     try {
       await taskService.deleteTask(taskId);
       setTasks(tasks.filter((task) => task._id !== taskId));
       toast.success("Task deleted successfully");
     } catch (error) {
       toast.error("Failed to delete task");
+    } finally {
+      setDeletingTask(prev => {
+        const newState = { ...prev };
+        delete newState[taskId];
+        return newState;
+      });
     }
   };
 
@@ -550,12 +578,14 @@ const Dashboard = () => {
   };
 
   const handleResetWeek = async () => {
+    if (resettingWeek) return;
     if (
       !window.confirm("Delete all tasks for this week? This cannot be undone!")
     ) {
       return;
     }
 
+    setResettingWeek(true);
     try {
       const { year, month, week } = selectedDate;
       await taskService.deleteTasksByWeek(year, month, week);
@@ -563,6 +593,8 @@ const Dashboard = () => {
       toast.success("Week reset successfully");
     } catch (error) {
       toast.error("Failed to reset week");
+    } finally {
+      setResettingWeek(false);
     }
   };
 
@@ -660,6 +692,13 @@ const Dashboard = () => {
       return;
     }
 
+    // Prevent multiple simultaneous applications
+    if (loading) {
+      toast.info("Template is already being applied...");
+      return;
+    }
+
+    setLoading(true);
     try {
       await templateService.applyTemplate(
         selectedTemplateForApply,
@@ -673,66 +712,108 @@ const Dashboard = () => {
       await loadTasks();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to apply template");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateTemplate = async (templateData) => {
+    if (creatingTemplate) return;
+    setCreatingTemplate(true);
     try {
       await templateService.createTemplate(templateData);
       toast.success("Template created successfully");
       loadTemplates();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create template");
+    } finally {
+      setCreatingTemplate(false);
     }
   };
 
   const handleUpdateTemplate = async (templateId, templateData) => {
+    if (updatingTemplate[templateId]) return;
+    setUpdatingTemplate(prev => ({ ...prev, [templateId]: true }));
     try {
       await templateService.updateTemplate(templateId, templateData);
       toast.success("Template updated successfully");
       await loadTemplates(); // Wait for templates to reload
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update template");
+    } finally {
+      setUpdatingTemplate(prev => {
+        const newState = { ...prev };
+        delete newState[templateId];
+        return newState;
+      });
     }
   };
 
   const handleDeleteTemplate = async (templateId) => {
+    if (deletingTemplate[templateId]) return;
+    setDeletingTemplate(prev => ({ ...prev, [templateId]: true }));
     try {
       await templateService.deleteTemplate(templateId);
       toast.success("Template deleted successfully");
       loadTemplates();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete template");
+    } finally {
+      setDeletingTemplate(prev => {
+        const newState = { ...prev };
+        delete newState[templateId];
+        return newState;
+      });
     }
   };
 
   const handleAddCategory = async (categoryData) => {
+    if (addingCategory) return;
+    setAddingCategory(true);
     try {
       await categoryService.createCategory(categoryData);
       toast.success("Category created successfully");
       loadCategories();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create category");
+    } finally {
+      setAddingCategory(false);
     }
   };
 
   const handleUpdateCategory = async (categoryId, categoryData) => {
+    if (updatingCategory[categoryId]) return;
+    setUpdatingCategory(prev => ({ ...prev, [categoryId]: true }));
     try {
       await categoryService.updateCategory(categoryId, categoryData);
       toast.success("Category updated successfully");
       loadCategories();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update category");
+    } finally {
+      setUpdatingCategory(prev => {
+        const newState = { ...prev };
+        delete newState[categoryId];
+        return newState;
+      });
     }
   };
 
   const handleDeleteCategory = async (categoryId) => {
+    if (deletingCategory[categoryId]) return;
+    setDeletingCategory(prev => ({ ...prev, [categoryId]: true }));
     try {
       await categoryService.deleteCategory(categoryId);
       toast.success("Category deleted successfully");
       loadCategories();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete category");
+    } finally {
+      setDeletingCategory(prev => {
+        const newState = { ...prev };
+        delete newState[categoryId];
+        return newState;
+      });
     }
   };
 
@@ -880,16 +961,22 @@ const Dashboard = () => {
   
 
   // Todo handlers - API-based
-  const handleAddTodo = async (text) => {
+  const handleAddTodo = async (text, deadline = null) => {
+    if (addingTodo) return;
+    setAddingTodo(true);
     try {
-      const newTodo = await todoService.createTodo(text);
+      const newTodo = await todoService.createTodo(text, deadline);
       setTodos([...todos, newTodo]);
     } catch (error) {
       toast.error("Failed to add todo");
+    } finally {
+      setAddingTodo(false);
     }
   };
 
   const handleToggleTodo = async (id) => {
+    if (togglingTodo[id]) return;
+    setTogglingTodo(prev => ({ ...prev, [id]: true }));
     try {
       const todo = todos.find((t) => t._id === id);
       if (todo) {
@@ -898,15 +985,29 @@ const Dashboard = () => {
       }
     } catch (error) {
       toast.error("Failed to update todo");
+    } finally {
+      setTogglingTodo(prev => {
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      });
     }
   };
 
   const handleDeleteTodo = async (id) => {
+    if (deletingTodo[id]) return;
+    setDeletingTodo(prev => ({ ...prev, [id]: true }));
     try {
       await todoService.deleteTodo(id);
       setTodos(todos.filter((todo) => todo._id !== id));
     } catch (error) {
       toast.error("Failed to delete todo");
+    } finally {
+      setDeletingTodo(prev => {
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      });
     }
   };
 
@@ -1239,15 +1340,17 @@ const Dashboard = () => {
                     <button
                       className="btn-apply-template"
                       onClick={handleApplyTemplate}
+                      disabled={loading}
                     >
-                      ✨ Apply Template to This Week
+                      {loading ? "Applying..." : "✨ Apply Template to This Week"}
                     </button>
                     <button
                       className="btn-reset-week"
                       onClick={handleResetWeek}
                       title="Delete all tasks for this week"
+                      disabled={resettingWeek}
                     >
-                      🗑️ Reset Week
+                      {resettingWeek ? "Resetting..." : "🗑️ Reset Week"}
                     </button>
                   </div>
                 </div>
@@ -1287,6 +1390,9 @@ const Dashboard = () => {
                         onAddTodo={handleAddTodo}
                         onToggleTodo={handleToggleTodo}
                         onDeleteTodo={handleDeleteTodo}
+                        isAddingTodo={addingTodo}
+                        togglingTodo={togglingTodo}
+                        deletingTodo={deletingTodo}
                       />
                     </div>
                   </div>
@@ -1305,6 +1411,8 @@ const Dashboard = () => {
                         onDeleteTask={handleDeleteTask}
                         onDeleteDayTasks={handleDeleteDayTasks}
                         onReorderTasks={handleReorderTasks}
+                        isAddingTask={addingTask}
+                        deletingTask={deletingTask}
                         onHeaderClick={() => {
                           handleDateChange({ target: { value: day.date } });
                           setViewMode("day");
@@ -1326,6 +1434,9 @@ const Dashboard = () => {
               onAdd={handleAddCategory}
               onUpdate={handleUpdateCategory}
               onDelete={handleDeleteCategory}
+              isAdding={addingCategory}
+              updatingCategory={updatingCategory}
+              deletingCategory={deletingCategory}
             />
           </div>
         )}
@@ -1339,6 +1450,10 @@ const Dashboard = () => {
               onUpdateTemplate={handleUpdateTemplate}
               onDeleteTemplate={handleDeleteTemplate}
               onApplyTemplate={handleApplyTemplate}
+              isApplyingTemplate={loading}
+              isCreatingTemplate={creatingTemplate}
+              updatingTemplate={updatingTemplate}
+              deletingTemplate={deletingTemplate}
             />
           </div>
         )}
@@ -1524,9 +1639,9 @@ const Dashboard = () => {
               <button
                 onClick={handleApplyTemplate}
                 className="btn-save"
-                disabled={!selectedTemplateForApply}
+                disabled={!selectedTemplateForApply || loading}
               >
-                Apply Template
+                {loading ? "Applying..." : "Apply Template"}
               </button>
             </div>
           </div>

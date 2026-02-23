@@ -3,8 +3,9 @@ import ReactDOM from "react-dom";
 import "./TodoList.css";
 import calendarService from "../services/calendarService";
 
-const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
+const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo = false, togglingTodo = {}, deletingTodo = {} }) => {
   const [newTodo, setNewTodo] = useState("");
+  const [deadline, setDeadline] = useState("");
   const [calendarStatuses, setCalendarStatuses] = useState({});
   const [showPickerForTodo, setShowPickerForTodo] = useState(null);
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
@@ -43,8 +44,9 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (newTodo.trim()) {
-      onAddTodo(newTodo.trim());
+      onAddTodo(newTodo.trim(), deadline || null);
       setNewTodo("");
+      setDeadline("");
     }
   };
 
@@ -88,15 +90,24 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="todo-input-form">
-        <input
-          type="text"
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          placeholder="Add a quick todo..."
-          className="todo-input"
-        />
-        <button type="submit" className="todo-add-btn">
-          + Add
+        <div className="todo-input-group">
+          <input
+            type="text"
+            value={newTodo}
+            onChange={(e) => setNewTodo(e.target.value)}
+            placeholder="Add a quick todo..."
+            className="todo-input"
+          />
+          <input
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="todo-deadline-input"
+            title="Optional deadline"
+          />
+        </div>
+        <button type="submit" className="todo-add-btn" disabled={isAddingTodo}>
+          {isAddingTodo ? "Adding..." : "+ Add"}
         </button>
       </form>
 
@@ -123,12 +134,18 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                 checked={todo.completed}
                 onChange={() => onToggleTodo(todo._id)}
                 className="todo-checkbox"
+                disabled={togglingTodo[todo._id]}
               />
               <span className="todo-text">
                 {todo.isOverdue && !todo.completed && (
                   <span className="overdue-tag">OVERDUE</span>
                 )}
                 {todo.text}
+                {todo.deadline && (
+                  <span className="todo-deadline-badge" title="Deadline">
+                    📅 {new Date(todo.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                )}
               </span>
               <div className="todo-actions">
                 <div className="calendar-btn-wrapper">
@@ -162,8 +179,9 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                   onClick={() => onDeleteTodo(todo._id)}
                   className="todo-delete-btn"
                   title="Delete todo"
+                  disabled={deletingTodo[todo._id]}
                 >
-                  ×
+                  {deletingTodo[todo._id] ? "..." : "×"}
                 </button>
               </div>
             </div>

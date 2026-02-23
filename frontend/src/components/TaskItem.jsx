@@ -17,6 +17,7 @@ const TaskItem = ({
   onDrop,
   draggedTask,
   isDragging,
+  isDeleting = false,
 }) => {
   const overtimeCheckRef = useRef(null);
 
@@ -491,9 +492,10 @@ const TaskItem = ({
                 onDelete(task._id);
               }
             }}
+            disabled={isDeleting}
             draggable="false"
           >
-            ×
+            {isDeleting ? "..." : "×"}
           </button>
         </div>
       </div>

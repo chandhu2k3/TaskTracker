@@ -561,3 +561,106 @@ body[data-theme="dark"] .todo-stats {
   border-top-color: rgba(148, 163, 184, 0.12);
   color: #ffffff;
 }
+
+/* Deadline Styles */
+.todo-input-group {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+}
+
+.todo-deadline-input {
+  padding: 14px 18px;
+  border: 2px solid #e7e5e4;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: white;
+  color: #44403c;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.todo-deadline-input:focus {
+  outline: none;
+  border-color: #F5E1C8;
+  box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.1);
+}
+
+.todo-deadline-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: opacity(0.6);
+}
+
+.todo-deadline-input:hover::-webkit-calendar-picker-indicator {
+  filter: opacity(1);
+}
+
+.todo-deadline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-left: 8px;
+  border: 1px solid rgba(146, 64, 14, 0.1);
+}
+
+.todo-item.completed .todo-deadline-badge {
+  background: linear-gradient(135deg, #f5f5f4 0%, #e7e5e4 100%);
+  color: #78716c;
+  opacity: 0.7;
+}
+
+/* Dark Theme Deadline Styles */
+body[data-theme="dark"] .todo-deadline-input {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .todo-deadline-input:focus {
+  border-color: rgba(245, 225, 200, 0.4);
+  box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.08);
+}
+
+body[data-theme="dark"] .todo-deadline-input::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.6);
+}
+
+body[data-theme="dark"] .todo-deadline-input:hover::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(1);
+}
+
+body[data-theme="dark"] .todo-deadline-badge {
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.15) 0%, rgba(253, 230, 138, 0.12) 100%);
+  color: #fde68a;
+  border-color: rgba(253, 230, 138, 0.2);
+}
+
+body[data-theme="dark"] .todo-item.completed .todo-deadline-badge {
+  background: rgba(148, 163, 184, 0.1);
+  color: rgba(148, 163, 184, 0.6);
+  opacity: 0.6;
+}
+
+/* Mobile Responsiveness for Deadline */
+@media (max-width: 768px) {
+  .todo-input-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .todo-deadline-input {
+    min-width: 100%;
+  }
+
+  .todo-deadline-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+  }
+}

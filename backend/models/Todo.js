@@ -19,6 +19,11 @@ const todoSchema = new mongoose.Schema({
     type: String, // Format: YYYY-MM-DD
     required: true,
   },
+  deadline: {
+    type: String, // Optional deadline date: YYYY-MM-DD
+    required: false,
+    default: null,
+  },
   isOverdue: {
     type: Boolean,
     default: false,
