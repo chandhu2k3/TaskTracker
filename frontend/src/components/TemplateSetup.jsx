@@ -21,6 +21,7 @@ const TemplateSetup = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [draggedTaskIndex, setDraggedTaskIndex] = useState(null);
   const [selectedEditDay, setSelectedEditDay] = useState("monday"); // Track which day is being edited
+  const [importTemplateId, setImportTemplateId] = useState(""); // Track which template to import from
 
   const days = [
     "monday",
@@ -44,7 +45,28 @@ const TemplateSetup = ({
     setEditingTemplate(null);
     setTemplateName("");
     setTemplateTasks([]);
+    setImportTemplateId("");
     setShowModal(true);
+  };
+
+  const handleImportTasks = () => {
+    if (!importTemplateId) return;
+    
+    const templateToImport = templates.find(t => t._id === importTemplateId);
+    if (!templateToImport) return;
+
+    // Import all tasks from the selected template with defaults
+    const importedTasks = templateToImport.tasks.map(task => ({
+      ...task,
+      isAutomated: task.isAutomated || false,
+      completionCount: task.completionCount || 0,
+      addToCalendar: task.addToCalendar || false,
+      reminderMinutes: task.reminderMinutes || 0,
+    }));
+
+    // Add imported tasks to existing tasks
+    setTemplateTasks([...templateTasks, ...importedTasks]);
+    setImportTemplateId(""); // Reset selection
   };
 
   const openEditTemplate = (template) => {
@@ -309,6 +331,36 @@ const TemplateSetup = ({
                     placeholder="e.g., Work Week, Study Schedule, Gym Routine"
                   />
                 </div>
+
+                {/* Import from existing template - only show when creating new */}
+                {!editingTemplate && templates.length > 0 && (
+                  <div className="form-group import-section">
+                    <label>📋 Import Tasks from Existing Template (Optional)</label>
+                    <div className="import-row">
+                      <select
+                        value={importTemplateId}
+                        onChange={(e) => setImportTemplateId(e.target.value)}
+                        className="import-template-select"
+                      >
+                        <option value="">-- Select a template to import --</option>
+                        {templates.map((template) => (
+                          <option key={template._id} value={template._id}>
+                            {template.name} ({template.tasks.length} tasks)
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleImportTasks}
+                        disabled={!importTemplateId}
+                        className="btn-import-tasks"
+                        type="button"
+                      >
+                        Import Tasks
+                      </button>
+                    </div>
+                    <p className="import-hint">💡 Import tasks from another template to reuse common tasks</p>
+                  </div>
+                )}
               </div>
 
               <div className="modal-body">

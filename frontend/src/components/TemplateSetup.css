@@ -707,3 +707,96 @@ body[data-theme="dark"] .no-tasks {
 body[data-theme="dark"] .template-tasks-list {
   background: transparent;
 }
+
+/* Import Template Section */
+.import-section {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 12px;
+  border: 1px dashed rgba(99, 102, 241, 0.2);
+}
+
+.import-section label {
+  color: #4f46e5;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.import-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.import-template-select {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.import-template-select:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+}
+
+.btn-import-tasks {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.btn-import-tasks:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+}
+
+.btn-import-tasks:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.import-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6366f1;
+  font-style: italic;
+}
+
+/* Dark Theme - Import Section */
+body[data-theme="dark"] .import-section {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+body[data-theme="dark"] .import-section label {
+  color: #818cf8;
+}
+
+body[data-theme="dark"] .import-template-select {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .import-template-select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+body[data-theme="dark"] .import-hint {
+  color: #a5b4fc;
+}
