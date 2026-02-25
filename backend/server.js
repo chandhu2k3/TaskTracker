@@ -25,8 +25,11 @@ if (fs.existsSync(devEnvPath)) {
 console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 console.log(`🗄️ Database: ${process.env.MONGODB_URI?.includes('localhost') ? 'Local MongoDB' : 'MongoDB Atlas'}`);
 
-// Connect to database
-connectDB();
+// Connect to database asynchronously (don't block server startup)
+connectDB().catch(err => {
+  console.error('❌ Initial DB connection failed:', err.message);
+  console.log('⚠️ Server will start anyway, DB reconnection will be attempted on requests');
+});
 
 const app = express();
 

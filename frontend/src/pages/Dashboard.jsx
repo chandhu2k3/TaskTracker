@@ -166,6 +166,24 @@ const Dashboard = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [profileMenuOpen]);
 
+  // Keep serverless function warm - ping every 2 minutes to prevent cold starts
+  useEffect(() => {
+    const keepAlive = async () => {
+      try {
+        await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/ping`);
+      } catch (err) {
+        // Silently fail - just for keeping function warm
+      }
+    };
+
+    // Initial ping
+    keepAlive();
+
+    // Ping every 2 minutes
+    const interval = setInterval(keepAlive, 120000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Load todos from API
   const loadTodos = async () => {
     try {

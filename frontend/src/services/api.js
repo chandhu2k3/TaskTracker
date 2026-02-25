@@ -5,12 +5,12 @@ const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 // Create a centralized axios instance with robust network handling
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000, // 30 seconds - generous for slow WiFi + cold starts
+  timeout: 45000, // 45 seconds - very generous for college WiFi + serverless cold starts
 });
 
 // Retry configuration
-const MAX_RETRIES = 3;
-const RETRY_DELAY_BASE = 1500; // 1.5 seconds base delay
+const MAX_RETRIES = 5; // More retries for unreliable networks
+const RETRY_DELAY_BASE = 2000; // 2 seconds base delay
 
 // Check if an error is retryable
 const isRetryable = (error) => {
