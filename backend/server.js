@@ -98,12 +98,24 @@ app.get("/", (req, res) => {
   });
 });
 
-// Super lightweight ping - no DB required
+// Super lightweight ping - no DB required, optimized for keep-alive
 app.get("/api/ping", (req, res) => {
+  // Skip logging for keep-alive requests to reduce noise
+  if (!req.headers['x-keep-alive']) {
+    console.log('📡 Ping request');
+  }
+  
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+    'Connection': 'keep-alive',
+    'Keep-Alive': 'timeout=60'
+  });
+  
   res.status(200).json({ 
     status: "ok",
     timestamp: Date.now(),
-    message: "pong"
+    message: "pong",
+    cold: false // Always warm now!
   });
 });
 
