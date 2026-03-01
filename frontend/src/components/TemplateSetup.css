@@ -34,7 +34,7 @@
 
 .btn-new-template {
   padding: 10px 20px;
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   border: none;
   border-radius: 10px;
@@ -56,7 +56,7 @@
     rgba(0, 0, 0, 0.06) 100%
   );
   backdrop-filter: blur(10px);
-  color: #E8CDB0;
+  color: #F59E0B;
   border: 1px solid rgba(245, 225, 200, 0.2);
   padding: 8px 16px;
   border-radius: 10px;
@@ -186,7 +186,7 @@
 }
 
 .day-tab.active {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
@@ -233,7 +233,7 @@
 }
 
 .day-tab.active {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
@@ -247,7 +247,7 @@
 
 .btn-add-task {
   padding: 8px 14px;
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   border: none;
   border-radius: 8px;
@@ -306,7 +306,7 @@
 
 .drag-handle-template {
   cursor: grab;
-  color: #F5E1C8;
+  color: #FBBF24;
   font-size: 1.2rem;
   opacity: 0.4;
   transition: opacity 0.3s;
@@ -519,7 +519,7 @@
     rgba(0, 0, 0, 0.04) 0%,
     rgba(0, 0, 0, 0.06) 100%
   );
-  color: #E8CDB0;
+  color: #F59E0B;
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 

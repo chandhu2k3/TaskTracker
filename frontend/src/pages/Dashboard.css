@@ -12,8 +12,8 @@
   --text-muted: #666;
   --text-light: #888;
   
-  --accent-primary: #F5E1C8;
-  --accent-secondary: #E8CDB0;
+  --accent-primary: #FBBF24;
+  --accent-secondary: #F59E0B;
   --accent-dark: #DBBA98;
   --accent-light: rgba(245, 225, 200, 0.1);
   
@@ -247,7 +247,7 @@ body[data-theme="dark"] {
 }
 
 .btn-profile.active {
-  background: linear-gradient(135deg, #F5E1C8 0%, #E8CDB0 100%);
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
   color: white;
 }
 
@@ -264,7 +264,7 @@ body[data-theme="dark"] {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #F5E1C8 0%, #FAF0E4 100%);
+  background: linear-gradient(135deg, #FBBF24 0%, #FAF0E4 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -327,7 +327,7 @@ body[data-theme="dark"] {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #F5E1C8 0%, #FAF0E4 100%);
+  background: linear-gradient(135deg, #FBBF24 0%, #FAF0E4 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -526,7 +526,7 @@ body[data-theme="dark"] .profile-dropdown-item {
 }
 
 .nav-btn.active {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: #fff;
   box-shadow: 0 2px 8px rgba(245, 225, 200, 0.25);
 }
@@ -777,7 +777,7 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .nav-btn.active {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(245, 225, 200, 0.25);
 }
@@ -877,7 +877,7 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .view-mode-btn.active {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   box-shadow: 0 2px 8px rgba(245, 225, 200, 0.2);
 }
@@ -1099,7 +1099,7 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .type-btn.active {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   box-shadow: 0 4px 12px rgba(245, 225, 200, 0.25);
 }
@@ -1125,13 +1125,13 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .analytics-selector:hover {
-  border-color: #F5E1C8;
+  border-color: #FBBF24;
   background: rgba(255, 255, 255, 0.95);
 }
 
 .analytics-selector:focus {
   outline: none;
-  border-color: #E8CDB0;
+  border-color: #F59E0B;
   box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.15);
 }
 
@@ -1401,7 +1401,7 @@ body[data-theme="dark"] .nav-btn.active {
 .template-apply-modal .btn-save {
   flex: 1;
   padding: 14px 24px;
-  background: #F5E1C8;
+  background: #FBBF24;
   border: none;
   border-radius: 12px;
   font-weight: 600;

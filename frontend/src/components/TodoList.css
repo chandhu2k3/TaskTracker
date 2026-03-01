@@ -37,7 +37,7 @@
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #E8CDB0 0%, #F5E1C8 100%);
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -78,7 +78,7 @@
 
 .todo-input:focus {
   outline: none;
-  border-color: #F5E1C8;
+  border-color: #FBBF24;
   box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.1);
   background: white;
 }
@@ -88,7 +88,7 @@
 }
 
 .todo-add-btn {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   border: none;
   padding: 14px 24px;
@@ -583,7 +583,7 @@ body[data-theme="dark"] .todo-stats {
 
 .todo-deadline-input:focus {
   outline: none;
-  border-color: #F5E1C8;
+  border-color: #FBBF24;
   box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.1);
 }
 

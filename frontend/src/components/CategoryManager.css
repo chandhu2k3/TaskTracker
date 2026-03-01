@@ -23,7 +23,7 @@
 
 .btn-add-category {
   padding: 10px 18px;
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
   border: none;
   border-radius: 10px;
@@ -174,7 +174,7 @@
 
 .category-modal-content .form-group input[type="text"]:focus {
   outline: none;
-  border-color: #F5E1C8;
+  border-color: #FBBF24;
   box-shadow: 0 0 0 3px rgba(245, 225, 200, 0.1);
 }
 
@@ -208,12 +208,12 @@
 }
 
 .icon-option:hover {
-  border-color: #F5E1C8;
+  border-color: #FBBF24;
   transform: scale(1.1);
 }
 
 .icon-option.selected {
-  border-color: #F5E1C8;
+  border-color: #FBBF24;
   background: rgba(245, 225, 200, 0.08);
 }
 
@@ -262,7 +262,7 @@
 }
 
 .category-modal-content input[type="color"]:hover {
-  border-color: #F5E1C8;
+  border-color: #FBBF24;
   transform: scale(1.1);
 }
 
@@ -307,12 +307,12 @@
 }
 
 .btn-save {
-  background: #F5E1C8;
+  background: #FBBF24;
   color: white;
 }
 
 .btn-save:hover {
-  background: #E8CDB0;
+  background: #F59E0B;
 }
 
 /* Dark Mode Styles */
