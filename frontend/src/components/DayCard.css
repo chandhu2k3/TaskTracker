@@ -407,7 +407,7 @@
 .btn-add {
   width: 38px;
   height: 38px;
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   border: none;
   border-radius: 10px;

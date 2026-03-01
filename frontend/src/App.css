@@ -159,7 +159,7 @@ body {
 }
 
 .btn-save {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
 }
 

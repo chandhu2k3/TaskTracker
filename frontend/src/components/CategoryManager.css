@@ -23,7 +23,7 @@
 
 .btn-add-category {
   padding: 10px 18px;
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   border: none;
   border-radius: 10px;
@@ -307,12 +307,12 @@
 }
 
 .btn-save {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
 }
 
 .btn-save:hover {
-  background: #F59E0B;
+  background: linear-gradient(135deg, #D97706, #F59E0B);
 }
 
 /* Dark Mode Styles */

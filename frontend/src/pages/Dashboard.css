@@ -526,7 +526,7 @@ body[data-theme="dark"] .profile-dropdown-item {
 }
 
 .nav-btn.active {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: #fff;
   box-shadow: 0 2px 8px rgba(245, 225, 200, 0.25);
 }
@@ -542,7 +542,7 @@ body[data-theme="dark"] .nav-btn:hover {
 }
 
 body[data-theme="dark"] .nav-btn.active {
-  background: #f59e0b;
+  background: linear-gradient(135deg, #D97706, #F59E0B);
   color: #ffffff;
 }
 
@@ -777,7 +777,7 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .nav-btn.active {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(245, 225, 200, 0.25);
 }
@@ -877,7 +877,7 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .view-mode-btn.active {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   box-shadow: 0 2px 8px rgba(245, 225, 200, 0.2);
 }
@@ -1099,7 +1099,7 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .type-btn.active {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   box-shadow: 0 4px 12px rgba(245, 225, 200, 0.25);
 }
@@ -1401,7 +1401,7 @@ body[data-theme="dark"] .nav-btn.active {
 .template-apply-modal .btn-save {
   flex: 1;
   padding: 14px 24px;
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   border: none;
   border-radius: 12px;
   font-weight: 600;
@@ -2250,7 +2250,7 @@ body[data-theme="dark"] .view-mode-btn {
 }
 
 body[data-theme="dark"] .view-mode-btn.active {
-  background: #f59e0b !important;
+  background: linear-gradient(135deg, #D97706, #F59E0B) !important;
   color: #ffffff !important;
 }
 

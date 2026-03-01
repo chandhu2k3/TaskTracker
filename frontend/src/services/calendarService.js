@@ -123,7 +123,7 @@ const calendarService = {
       
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     } else {
-      // Default to current time or 9 AM
+      // Default to current time or 2 PM (afternoon)
       startDateTime = new Date(eventDate);
       const now = new Date();
       if (eventDate.toDateString() === now.toDateString()) {
@@ -131,8 +131,8 @@ const calendarService = {
         const minutes = Math.ceil(now.getMinutes() / 15) * 15;
         startDateTime.setHours(now.getHours(), minutes, 0, 0);
       } else {
-        // Future date - default to 9 AM
-        startDateTime.setHours(9, 0, 0, 0);
+        // Future date - default to 2 PM (afternoon)
+        startDateTime.setHours(14, 0, 0, 0);
       }
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     }
@@ -149,6 +149,11 @@ const calendarService = {
       details: description,
     });
     
+    // Add popup reminder (minutes before)
+    if (durationMinutes) {
+      params.append("rem", String(durationMinutes < 60 ? 15 : 30));
+    }
+    
     return `${baseUrl}?${params.toString()}`;
   },
 
@@ -162,7 +167,32 @@ const calendarService = {
   },
 
   /**
-   * Smart add - tries API first, falls back to URL method
+   * Detect if the user is on a mobile device
+   */
+  isMobile: () => {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  },
+
+  /**
+   * Open ICS as a blob URL so mobile calendar apps handle it natively
+   */
+  openICS: (options) => {
+    const content = calendarService.generateICSContent(options);
+    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    // On mobile: triggers native "Add to Calendar" dialog
+    // On desktop: downloads the .ics file to open in calendar app
+    link.download = `${(options.title || 'reminder').replace(/[^a-z0-9]/gi, '_')}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+
+  /**
+   * Smart add - tries API first, falls back to ICS (mobile) or URL (desktop)
    * @param {Object} options - Event options
    * @param {Function} onNeedsConnection - Callback when calendar needs connection
    * @returns {Promise<{success: boolean, method: string}>}
@@ -173,12 +203,15 @@ const calendarService = {
       const result = await calendarService.createEvent(options);
       
       if (result.needsConnection) {
-        // Calendar not connected - call callback or fallback
-        if (onNeedsConnection) {
+        // Calendar not connected - use best fallback for platform
+        if (calendarService.isMobile()) {
+          // Mobile: ICS triggers native calendar app with reminder pre-set
+          calendarService.openICS(options);
+          return { success: true, method: 'ics' };
+        } else if (onNeedsConnection) {
           onNeedsConnection();
           return { success: false, method: 'needs_connection' };
         } else {
-          // Fallback to URL method
           calendarService.addToGoogleCalendar(options);
           return { success: true, method: 'url' };
         }
@@ -186,8 +219,12 @@ const calendarService = {
       
       return { success: true, method: 'api', ...result };
     } catch (error) {
-      // API failed, fallback to URL method
-      console.warn('Calendar API failed, using URL fallback:', error);
+      // API failed - use best fallback for platform
+      console.warn('Calendar API failed, using fallback:', error);
+      if (calendarService.isMobile()) {
+        calendarService.openICS(options);
+        return { success: true, method: 'ics' };
+      }
       calendarService.addToGoogleCalendar(options);
       return { success: true, method: 'url' };
     }
@@ -205,6 +242,7 @@ const calendarService = {
     startTime,
     endTime,
     durationMinutes = 30,
+    reminderMinutes = 15,
   }) => {
     const eventDate = new Date(date);
     let startDateTime, endDateTime;
@@ -227,7 +265,14 @@ const calendarService = {
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     } else {
       startDateTime = new Date(eventDate);
-      startDateTime.setHours(9, 0, 0, 0);
+      // Default to 2 PM (afternoon) for future dates
+      const now = new Date();
+      if (eventDate.toDateString() === now.toDateString()) {
+        const minutes = Math.ceil(now.getMinutes() / 15) * 15;
+        startDateTime.setHours(now.getHours(), minutes, 0, 0);
+      } else {
+        startDateTime.setHours(14, 0, 0, 0);
+      }
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     }
     
@@ -248,9 +293,9 @@ DTEND:${formatICSDate(endDateTime)}
 SUMMARY:${title}
 DESCRIPTION:${description.replace(/\n/g, "\\n")}
 BEGIN:VALARM
-TRIGGER:-PT10M
+TRIGGER:-PT${reminderMinutes}M
 ACTION:DISPLAY
-DESCRIPTION:Reminder
+DESCRIPTION:Reminder: ${title}
 END:VALARM
 END:VEVENT
 END:VCALENDAR`;

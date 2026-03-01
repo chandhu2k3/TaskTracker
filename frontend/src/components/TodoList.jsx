@@ -65,7 +65,7 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
 
     try {
       // Use deadline date if available, otherwise today
-      const eventDate = todo.deadline ? new Date(todo.deadline + 'T09:00:00') : new Date();
+      const eventDate = todo.deadline ? new Date(todo.deadline + 'T14:00:00') : new Date();
 
       const result = await calendarService.smartAddToCalendar(
         {

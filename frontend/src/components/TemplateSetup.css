@@ -34,7 +34,7 @@
 
 .btn-new-template {
   padding: 10px 20px;
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   border: none;
   border-radius: 10px;
@@ -186,7 +186,7 @@
 }
 
 .day-tab.active {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
@@ -233,7 +233,7 @@
 }
 
 .day-tab.active {
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
@@ -247,7 +247,7 @@
 
 .btn-add-task {
   padding: 8px 14px;
-  background: #FBBF24;
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
   color: white;
   border: none;
   border-radius: 8px;
