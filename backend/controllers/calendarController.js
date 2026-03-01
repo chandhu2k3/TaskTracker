@@ -203,9 +203,9 @@ exports.createEvent = async (req, res) => {
       
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     } else {
-      // Default to 9 AM if no time specified
+      // Default to 2 PM if no time specified
       startDateTime = new Date(eventDate);
-      startDateTime.setHours(9, 0, 0, 0);
+      startDateTime.setHours(14, 0, 0, 0);
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     }
 

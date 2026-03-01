@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
+import { toast } from "react-toastify";
 import "./TodoList.css";
 import calendarService from "../services/calendarService";
 
-const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo = false, togglingTodo = {}, deletingTodo = {} }) => {
+const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo = false, togglingTodo = {}, deletingTodo = {}, onConnectCalendar }) => {
   const [newTodo, setNewTodo] = useState("");
   const [deadline, setDeadline] = useState("");
   const [calendarStatuses, setCalendarStatuses] = useState({});
@@ -78,8 +79,25 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
           reminderMinutes,
         },
         () => {
+          // Not connected — show in-app toast with Connect button, no redirect
           setCalendarStatuses(prev => ({ ...prev, [todo._id]: 'error' }));
-          alert('Please connect Google Calendar first from the profile menu.');
+          setTimeout(() => setCalendarStatuses(prev => ({ ...prev, [todo._id]: null })), 3000);
+          if (onConnectCalendar) {
+            toast.info(
+              ({ closeToast }) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span>Connect Google Calendar to enable background reminders</span>
+                  <button
+                    onClick={() => { closeToast(); onConnectCalendar(); }}
+                    style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: '#1a1a2e', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
+                  >Connect</button>
+                </div>
+              ),
+              { autoClose: 8000 }
+            );
+          } else {
+            toast.warn('Connect Google Calendar from the Profile menu to enable background reminders.');
+          }
         }
       );
 

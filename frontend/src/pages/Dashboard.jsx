@@ -1465,6 +1465,7 @@ const Dashboard = () => {
                         isAddingTodo={addingTodo}
                         togglingTodo={togglingTodo}
                         deletingTodo={deletingTodo}
+                        onConnectCalendar={handleConnectCalendar}
                       />
                     </div>
                   </div>

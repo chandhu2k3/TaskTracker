@@ -167,66 +167,26 @@ const calendarService = {
   },
 
   /**
-   * Detect if the user is on a mobile device
-   */
-  isMobile: () => {
-    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  },
-
-  /**
-   * Open ICS as a blob URL so mobile calendar apps handle it natively
-   */
-  openICS: (options) => {
-    const content = calendarService.generateICSContent(options);
-    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    // On mobile: triggers native "Add to Calendar" dialog
-    // On desktop: downloads the .ics file to open in calendar app
-    link.download = `${(options.title || 'reminder').replace(/[^a-z0-9]/gi, '_')}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  },
-
-  /**
-   * Smart add - tries API first, falls back to ICS (mobile) or URL (desktop)
+   * Smart add - uses API to create event silently in the background.
+   * Never redirects. If not connected, calls onNeedsConnection.
    * @param {Object} options - Event options
    * @param {Function} onNeedsConnection - Callback when calendar needs connection
    * @returns {Promise<{success: boolean, method: string}>}
    */
   smartAddToCalendar: async (options, onNeedsConnection) => {
     try {
-      // Try API method first
       const result = await calendarService.createEvent(options);
-      
+
       if (result.needsConnection) {
-        // Calendar not connected - use best fallback for platform
-        if (calendarService.isMobile()) {
-          // Mobile: ICS triggers native calendar app with reminder pre-set
-          calendarService.openICS(options);
-          return { success: true, method: 'ics' };
-        } else if (onNeedsConnection) {
-          onNeedsConnection();
-          return { success: false, method: 'needs_connection' };
-        } else {
-          calendarService.addToGoogleCalendar(options);
-          return { success: true, method: 'url' };
-        }
+        if (onNeedsConnection) onNeedsConnection();
+        return { success: false, method: 'needs_connection' };
       }
-      
+
       return { success: true, method: 'api', ...result };
     } catch (error) {
-      // API failed - use best fallback for platform
-      console.warn('Calendar API failed, using fallback:', error);
-      if (calendarService.isMobile()) {
-        calendarService.openICS(options);
-        return { success: true, method: 'ics' };
-      }
-      calendarService.addToGoogleCalendar(options);
-      return { success: true, method: 'url' };
+      console.error('Calendar API error:', error);
+      if (onNeedsConnection) onNeedsConnection();
+      return { success: false, method: 'error' };
     }
   },
 
