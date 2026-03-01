@@ -146,6 +146,8 @@ const getCalendarClient = async (userId) => {
 exports.createEvent = async (req, res) => {
   try {
     const { title, description, date, startTime, endTime, durationMinutes = 30, reminderMinutes, taskId } = req.body;
+    // Use user's timezone from header, fallback to UTC
+    const userTimeZone = req.headers['x-timezone'] || 'UTC';
 
     if (!title || !date) {
       return res.status(400).json({ message: 'Title and date are required' });
@@ -214,11 +216,11 @@ exports.createEvent = async (req, res) => {
       description: description || 'Task from Task Tracker Pro',
       start: {
         dateTime: startDateTime.toISOString(),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZone: userTimeZone,
       },
       end: {
         dateTime: endDateTime.toISOString(),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZone: userTimeZone,
       },
       reminders: reminderMinutes && reminderMinutes > 0
         ? {
@@ -249,10 +251,35 @@ exports.createEvent = async (req, res) => {
   } catch (error) {
     console.error('Error creating event:', error);
     
+    // Google Calendar not connected locally
     if (error.message === 'Google Calendar not connected') {
       return res.status(401).json({ 
         message: 'Google Calendar not connected. Please connect your calendar first.',
         needsConnection: true 
+      });
+    }
+
+    // Expired / revoked Google tokens
+    const errMsg = error.message || '';
+    const errCode = error.code || error.status || (error.response && error.response.status);
+    if (
+      errCode === 401 ||
+      errMsg.includes('invalid_grant') ||
+      errMsg.includes('Invalid Credentials') ||
+      errMsg.includes('Token has been expired') ||
+      errMsg.includes('revoked')
+    ) {
+      // Clear stored tokens so user is prompted to reconnect
+      try {
+        await User.findByIdAndUpdate(req.user._id, {
+          'googleCalendar.connected': false,
+          'googleCalendar.accessToken': null,
+          'googleCalendar.refreshToken': null,
+        });
+      } catch (_) {}
+      return res.status(401).json({
+        message: 'Google Calendar session expired. Please reconnect.',
+        needsConnection: true,
       });
     }
     

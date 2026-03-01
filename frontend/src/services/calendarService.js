@@ -178,6 +178,7 @@ const calendarService = {
       const result = await calendarService.createEvent(options);
 
       if (result.needsConnection) {
+        // Explicitly not connected — prompt to connect
         if (onNeedsConnection) onNeedsConnection();
         return { success: false, method: 'needs_connection' };
       }
@@ -185,8 +186,14 @@ const calendarService = {
       return { success: true, method: 'api', ...result };
     } catch (error) {
       console.error('Calendar API error:', error);
-      if (onNeedsConnection) onNeedsConnection();
-      return { success: false, method: 'error' };
+      // Only show connect prompt when the API says needsConnection (401)
+      // A 500 is a server error, not a connection issue
+      if (error.response?.data?.needsConnection) {
+        if (onNeedsConnection) onNeedsConnection();
+        return { success: false, method: 'needs_connection' };
+      }
+      // For all other errors, propagate so caller can show a generic error
+      throw error;
     }
   },
 
