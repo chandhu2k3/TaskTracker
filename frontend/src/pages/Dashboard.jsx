@@ -561,14 +561,12 @@ const Dashboard = () => {
       await taskService.deleteTask(taskId);
       setTasks(tasks.filter((task) => task._id !== taskId));
       // Show undo toast
-      let undone = false;
       toast.info(
         ({ closeToast }) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span>Task deleted</span>
             <button
               onClick={async () => {
-                undone = true;
                 closeToast();
                 try {
                   await taskService.restoreTask(taskId);
