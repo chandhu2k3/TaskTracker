@@ -94,6 +94,7 @@ const Dashboard = () => {
   const [addingTodo, setAddingTodo] = useState(false);
   const [togglingTodo, setTogglingTodo] = useState({});
   const [deletingTodo, setDeletingTodo] = useState({});
+  const [expandedPanel, setExpandedPanel] = useState(null); // null | 'tasks' | 'todos'
   
   const [activeTab, setActiveTab] = useState("week"); // week, categories, template, analytics
   const [viewMode, setViewMode] = useState("day"); // day or week
@@ -1410,8 +1411,17 @@ const Dashboard = () => {
                 {loading ? (
                   <div className="loading">Loading tasks...</div>
                 ) : viewMode === "day" ? (
-                  <div className="day-with-todos">
-                    <div className="day-section">
+                  <div className={`day-with-todos${expandedPanel ? ' has-expanded' : ''}`}>
+                    <div className={`day-section${expandedPanel === 'tasks' ? ' panel-expanded' : expandedPanel === 'todos' ? ' panel-hidden' : ''}`}>
+                      <div className="panel-toggle-bar">
+                        <button
+                          className="panel-toggle-btn"
+                          title={expandedPanel === 'tasks' ? 'Restore split view' : 'Expand tasks to full screen'}
+                          onClick={() => setExpandedPanel(expandedPanel === 'tasks' ? null : 'tasks')}
+                        >
+                          {expandedPanel === 'tasks' ? '⊠' : '⤢'}
+                        </button>
+                      </div>
                       {(() => {
                         const today = new Date();
                         const todayStr = getLocalDateString(today);
@@ -1437,7 +1447,16 @@ const Dashboard = () => {
                         );
                       })()}
                     </div>
-                    <div className="todos-section">
+                    <div className={`todos-section${expandedPanel === 'todos' ? ' panel-expanded' : expandedPanel === 'tasks' ? ' panel-hidden' : ''}`}>
+                      <div className="panel-toggle-bar">
+                        <button
+                          className="panel-toggle-btn"
+                          title={expandedPanel === 'todos' ? 'Restore split view' : 'Expand todos to full screen'}
+                          onClick={() => setExpandedPanel(expandedPanel === 'todos' ? null : 'todos')}
+                        >
+                          {expandedPanel === 'todos' ? '⊠' : '⤢'}
+                        </button>
+                      </div>
                       <TodoList
                         todos={todos}
                         onAddTodo={handleAddTodo}
