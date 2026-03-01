@@ -123,6 +123,14 @@ const taskService = {
   getWeeklyAnalytics,
   getMonthlyAnalytics,
   getCategoryAnalytics,
+  getDeletedTasks: async () => {
+    const response = await api.get(`/api/tasks/deleted`, getConfig());
+    return response.data;
+  },
+  restoreTask: async (id) => {
+    const response = await api.put(`/api/tasks/${id}/restore`, {}, getConfig());
+    return response.data;
+  },
 };
 
 export default taskService;

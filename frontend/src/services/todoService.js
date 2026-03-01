@@ -57,6 +57,14 @@ const todoService = {
   toggleTodo,
   deleteTodo,
   clearCompleted,
+  getDeletedTodos: async () => {
+    const response = await api.get(`/api/todos/deleted`, getConfig());
+    return response.data;
+  },
+  restoreTodo: async (id) => {
+    const response = await api.put(`/api/todos/${id}/restore`, {}, getConfig());
+    return response.data;
+  },
 };
 
 export default todoService;

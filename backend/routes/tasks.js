@@ -8,6 +8,8 @@ const {
   deleteTask,
   deleteTasksByDay,
   deleteTasksByWeek,
+  getDeletedTasks,
+  restoreTask,
   getWeeklyAnalytics,
   getMonthlyAnalytics,
   getCategoryAnalytics,
@@ -26,6 +28,10 @@ router.get("/week/:year/:month/:weekNumber", getTasksByWeek);
 // Bulk delete routes
 router.delete("/day/:date", deleteTasksByDay);
 router.delete("/week/:year/:month/:weekNumber", deleteTasksByWeek);
+
+// Restore / deleted routes
+router.get("/deleted", getDeletedTasks);
+router.put("/:id/restore", restoreTask);
 
 // Analytics routes
 router.get("/analytics/week/:year/:month/:weekNumber", getWeeklyAnalytics);

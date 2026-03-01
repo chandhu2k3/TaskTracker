@@ -12,6 +12,9 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
   const pickerRef = React.useRef(null);
   const calBtnRefs = React.useRef({});
 
+  // Compute today string for overdue comparison (YYYY-MM-DD)
+  const todayStr = new Date().toISOString().split("T")[0];
+
   // Close picker on outside click
   React.useEffect(() => {
     const handleClickOutside = (e) => {
@@ -28,9 +31,15 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showPickerForTodo]);
 
-  const handleCalBtnClick = (todoId) => {
+  const handleCalBtnClick = (todo) => {
+    const todoId = todo._id;
     if (showPickerForTodo === todoId) {
       setShowPickerForTodo(null);
+      return;
+    }
+    // If todo has a deadline, auto-trigger the reminder directly (no picker)
+    if (todo.deadline && !todo.completed) {
+      handleAddToCalendar(todo, 15); // Auto-remind 15 min before deadline
       return;
     }
     const btn = calBtnRefs.current[todoId];
@@ -55,11 +64,16 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
     setCalendarStatuses(prev => ({ ...prev, [todo._id]: 'adding' }));
 
     try {
+      // Use deadline date if available, otherwise today
+      const eventDate = todo.deadline ? new Date(todo.deadline + 'T09:00:00') : new Date();
+
       const result = await calendarService.smartAddToCalendar(
         {
           title: `✓ ${todo.text}`,
-          description: "Quick todo from Task Tracker Pro",
-          date: new Date(),
+          description: todo.deadline
+            ? `Deadline: ${new Date(todo.deadline).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
+            : "Quick todo from Task Tracker Pro",
+          date: eventDate,
           durationMinutes: 30,
           reminderMinutes,
         },
@@ -124,10 +138,17 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
               if (a.completed === b.completed) return 0;
               return a.completed ? 1 : -1;
             })
-            .map((todo) => (
+            .map((todo) => {
+              // Compute overdue locally: use deadline if available, else isOverdue from server
+              const isOverdue = !todo.completed && (
+                todo.deadline
+                  ? todo.deadline < todayStr           // Overdue = deadline date passed
+                  : todo.isOverdue                     // Fallback: server-set overdue
+              );
+              return (
             <div
               key={todo._id}
-              className={`todo-item ${todo.completed ? "completed" : ""}`}
+              className={`todo-item ${todo.completed ? "completed" : ""} ${isOverdue ? "overdue-item" : ""}`}
             >
               <input
                 type="checkbox"
@@ -137,13 +158,13 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
                 disabled={togglingTodo[todo._id]}
               />
               <span className="todo-text">
-                {todo.isOverdue && !todo.completed && (
+                {isOverdue && (
                   <span className="overdue-tag">OVERDUE</span>
                 )}
                 {todo.text}
                 {todo.deadline && (
-                  <span className="todo-deadline-badge" title="Deadline">
-                    📅 {new Date(todo.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  <span className={`todo-deadline-badge ${isOverdue ? 'deadline-overdue' : ''}`} title="Deadline">
+                    📅 {new Date(todo.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 )}
               </span>
@@ -151,9 +172,11 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
                 <div className="calendar-btn-wrapper">
                   <button
                     ref={el => calBtnRefs.current[todo._id] = el}
-                    onClick={() => handleCalBtnClick(todo._id)}
+                    onClick={() => handleCalBtnClick(todo)}
                     className={`todo-calendar-btn ${calendarStatuses[todo._id] === 'added' ? 'calendar-added' : ''}`}
-                    title={calendarStatuses[todo._id] === 'added' ? 'Added to Calendar!' : calendarStatuses[todo._id] === 'adding' ? 'Adding...' : 'Add to Google Calendar'}
+                    title={todo.deadline
+                      ? `Auto-add to calendar on ${new Date(todo.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                      : calendarStatuses[todo._id] === 'added' ? 'Added to Calendar!' : 'Add to Google Calendar'}
                     disabled={calendarStatuses[todo._id] === 'adding'}
                   >
                     {calendarStatuses[todo._id] === 'adding' ? '⏳' : calendarStatuses[todo._id] === 'added' ? '✅' : '📅'}
@@ -185,7 +208,8 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
                 </button>
               </div>
             </div>
-          ))
+              );
+            })
         )}
       </div>
 

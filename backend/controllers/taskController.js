@@ -73,10 +73,8 @@ const getTasksByWeek = async (req, res) => {
 
     const tasks = await Task.find({
       user: req.user._id,
-      date: {
-        $gte: startDate,
-        $lte: endDate,
-      },
+      date: { $gte: startDate, $lte: endDate },
+      deleted: { $ne: true },
     }).sort({ date: 1, order: 1, createdAt: 1 }).lean();
 
     // Auto-complete automated tasks for today and past dates
@@ -661,6 +659,41 @@ const getCategoryAnalytics = async (req, res) => {
   }
 };
 
+// @desc    Get recently deleted tasks (last 7 days)
+// @route   GET /api/tasks/deleted
+// @access  Private
+const getDeletedTasks = async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const tasks = await Task.find({
+      user: req.user._id,
+      deleted: true,
+      deletedAt: { $gte: since },
+    }).sort({ deletedAt: -1 }).lean();
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Restore a soft-deleted task
+// @route   PUT /api/tasks/:id/restore
+// @access  Private
+const restoreTask = async (req, res) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    task.deleted = false;
+    task.deletedAt = null;
+    await task.save();
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
+    res.json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTasksByDateRange,
   getTasksByWeek,
@@ -669,6 +702,8 @@ module.exports = {
   deleteTask,
   deleteTasksByDay,
   deleteTasksByWeek,
+  getDeletedTasks,
+  restoreTask,
   getWeeklyAnalytics,
   getMonthlyAnalytics,
   getCategoryAnalytics,

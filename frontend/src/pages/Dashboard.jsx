@@ -555,10 +555,33 @@ const Dashboard = () => {
   const handleDeleteTask = async (taskId) => {
     if (deletingTask[taskId]) return;
     setDeletingTask(prev => ({ ...prev, [taskId]: true }));
+    // Save the task for undo
+    const deletedTask = tasks.find(t => t._id === taskId);
     try {
       await taskService.deleteTask(taskId);
       setTasks(tasks.filter((task) => task._id !== taskId));
-      toast.success("Task deleted successfully");
+      // Show undo toast
+      let undone = false;
+      toast.info(
+        ({ closeToast }) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span>Task deleted</span>
+            <button
+              onClick={async () => {
+                undone = true;
+                closeToast();
+                try {
+                  await taskService.restoreTask(taskId);
+                  setTasks(prev => [...prev, deletedTask]);
+                  toast.success('Task restored!');
+                } catch { toast.error('Failed to restore task'); }
+              }}
+              style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}
+            >Undo</button>
+          </div>
+        ),
+        { autoClose: 5000 }
+      );
     } catch (error) {
       toast.error("Failed to delete task");
     } finally {
@@ -1008,9 +1031,30 @@ const Dashboard = () => {
   const handleDeleteTodo = async (id) => {
     if (deletingTodo[id]) return;
     setDeletingTodo(prev => ({ ...prev, [id]: true }));
+    const deletedTodo = todos.find(t => t._id === id);
     try {
       await todoService.deleteTodo(id);
       setTodos(todos.filter((todo) => todo._id !== id));
+      // Show undo toast
+      toast.info(
+        ({ closeToast }) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span>Todo deleted</span>
+            <button
+              onClick={async () => {
+                closeToast();
+                try {
+                  await todoService.restoreTodo(id);
+                  setTodos(prev => [...prev, deletedTodo]);
+                  toast.success('Todo restored!');
+                } catch { toast.error('Failed to restore todo'); }
+              }}
+              style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}
+            >Undo</button>
+          </div>
+        ),
+        { autoClose: 5000 }
+      );
     } catch (error) {
       toast.error("Failed to delete todo");
     } finally {

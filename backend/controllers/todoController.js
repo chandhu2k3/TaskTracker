@@ -10,9 +10,10 @@ const getTodos = async (req, res) => {
     const timezone = tz.getTimezoneFromRequest(req);
     const today = tz.getTodayString(timezone);
 
-    // Get all incomplete todos from past dates (overdue) and today's todos
+    // Get all incomplete todos from past dates (overdue) and today's todos — exclude soft-deleted
     const todos = await Todo.find({
       user: req.user._id,
+      deleted: { $ne: true },
       $or: [
         { date: today },
         { date: { $lt: today }, completed: false }, // Overdue incomplete todos
@@ -21,18 +22,25 @@ const getTodos = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // Mark overdue todos and update their dates to today
+    // Mark overdue: use deadline if set, otherwise use the todo date
     const updatedTodos = await Promise.all(
       todos.map(async (todo) => {
+        const isOverdueNow = todo.deadline
+          ? todo.deadline < today && !todo.completed   // Overdue = deadline passed
+          : todo.date < today && !todo.completed;      // Legacy: date-based overdue
+
         if (todo.date < today && !todo.completed) {
-          // Update the todo in the database
+          // Carry forward to today
           await Todo.findByIdAndUpdate(todo._id, {
             date: today,
-            isOverdue: true,
+            isOverdue: isOverdueNow,
           });
-          return { ...todo, date: today, isOverdue: true };
+          return { ...todo, date: today, isOverdue: isOverdueNow };
         }
-        return todo;
+        if (todo.isOverdue !== isOverdueNow) {
+          await Todo.findByIdAndUpdate(todo._id, { isOverdue: isOverdueNow });
+        }
+        return { ...todo, isOverdue: isOverdueNow };
       })
     );
 
@@ -147,10 +155,46 @@ const clearCompleted = async (req, res) => {
   }
 };
 
+// @desc    Get recently deleted todos (last 7 days)
+// @route   GET /api/todos/deleted
+// @access  Private
+const getDeletedTodos = async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const todos = await Todo.find({
+      user: req.user._id,
+      deleted: true,
+      deletedAt: { $gte: since },
+    }).sort({ deletedAt: -1 }).lean();
+    res.json(todos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Restore a soft-deleted todo
+// @route   PUT /api/todos/:id/restore
+// @access  Private
+const restoreTodo = async (req, res) => {
+  try {
+    const todo = await Todo.findOne({ _id: req.params.id, user: req.user._id });
+    if (!todo) return res.status(404).json({ message: "Todo not found" });
+    todo.deleted = false;
+    todo.deletedAt = null;
+    await todo.save();
+    await invalidateCache(`user:${req.user._id}:todos*`);
+    res.json(todo);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTodos,
   createTodo,
   updateTodo,
   deleteTodo,
   clearCompleted,
+  getDeletedTodos,
+  restoreTodo,
 };
