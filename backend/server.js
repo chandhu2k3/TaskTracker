@@ -70,7 +70,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Timezone", "x-keep-alive"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Timezone", "x-keep-alive", "Cache-Control"],
   optionsSuccessStatus: 200,
 };
 

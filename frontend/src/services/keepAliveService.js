@@ -105,10 +105,8 @@ class KeepAliveService {
         signal: controller.signal,
         method: 'GET',
         headers: { 
-          'X-Keep-Alive': 'true',
-          'Cache-Control': 'no-cache'
+          'X-Keep-Alive': 'true'
         },
-        // Bypass cache
         cache: 'no-store'
       });
       
