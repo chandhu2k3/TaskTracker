@@ -311,10 +311,12 @@ const deleteTask = async (req, res) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    await task.deleteOne();
+    task.deleted = true;
+    task.deletedAt = new Date();
+    await task.save();
     await invalidateCache(`user:${req.user._id}:tasks*`);
     await invalidateCache(`user:${req.user._id}:analytics*`);
-    res.json({ message: "Task removed" });
+    res.json({ message: "Task soft deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -327,17 +329,15 @@ const deleteTasksByDay = async (req, res) => {
   try {
     const { date } = req.params;
     
-    const result = await Task.deleteMany({
-      user: req.user._id,
-      date: date,
-    });
-
+    const result = await Task.updateMany(
+      { user: req.user._id, date: date, deleted: { $ne: true } },
+      { $set: { deleted: true, deletedAt: new Date() } }
+    );
     await invalidateCache(`user:${req.user._id}:tasks*`);
     await invalidateCache(`user:${req.user._id}:analytics*`);
-
     res.json({ 
-      message: `Deleted ${result.deletedCount} task(s)`,
-      deletedCount: result.deletedCount 
+      message: `Soft deleted ${result.modifiedCount} task(s)` ,
+      deletedCount: result.modifiedCount 
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -359,19 +359,15 @@ const deleteTasksByWeek = async (req, res) => {
       timezone
     );
 
-    const result = await Task.deleteMany({
-      user: req.user._id,
-      date: {
-        $gte: startDate,
-        $lte: endDate,
-      },
-    });
-
+    const result = await Task.updateMany(
+      { user: req.user._id, date: { $gte: startDate, $lte: endDate }, deleted: { $ne: true } },
+      { $set: { deleted: true, deletedAt: new Date() } }
+    );
     await invalidateCache(`user:${req.user._id}:tasks*`);
     await invalidateCache(`user:${req.user._id}:analytics*`);
     res.json({ 
-      message: `Deleted ${result.deletedCount} task(s) from week ${weekNumber}`,
-      deletedCount: result.deletedCount 
+      message: `Soft deleted ${result.modifiedCount} task(s) from week ${weekNumber}`,
+      deletedCount: result.modifiedCount 
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

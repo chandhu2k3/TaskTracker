@@ -118,9 +118,11 @@ const deleteTodo = async (req, res) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    await todo.deleteOne();
+    todo.deleted = true;
+    todo.deletedAt = new Date();
+    await todo.save();
     await invalidateCache(`user:${req.user._id}:todos*`);
-    res.json({ message: "Todo removed" });
+    res.json({ message: "Todo soft deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -131,15 +133,14 @@ const deleteTodo = async (req, res) => {
 // @access  Private
 const clearCompleted = async (req, res) => {
   try {
-    const result = await Todo.deleteMany({
-      user: req.user._id,
-      completed: true,
-    });
-
+    const result = await Todo.updateMany(
+      { user: req.user._id, completed: true, deleted: { $ne: true } },
+      { $set: { deleted: true, deletedAt: new Date() } }
+    );
     await invalidateCache(`user:${req.user._id}:todos*`);
     res.json({
-      message: `Cleared ${result.deletedCount} completed todo(s)`,
-      deletedCount: result.deletedCount,
+      message: `Soft deleted ${result.modifiedCount} completed todo(s)` ,
+      deletedCount: result.modifiedCount,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

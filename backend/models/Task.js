@@ -54,6 +54,14 @@ const taskSchema = new mongoose.Schema({
     default: false,
   },
   sessions: [sessionSchema],
+  deleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: {
+    type: Date,
+    default: null,
+  },
   totalTime: {
     type: Number,
     default: 0,

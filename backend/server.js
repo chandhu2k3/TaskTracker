@@ -80,6 +80,22 @@ app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// 🔌 Ensure DB is connected before every API request (fixes cold-start buffering timeout)
+app.use("/api", async (req, res, next) => {
+  // Skip DB check for ping (no DB needed)
+  if (req.path === "/ping") return next();
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("❌ DB connection failed for request:", req.path);
+    res.status(503).json({
+      message: "Database unavailable. Please try again in a few seconds.",
+      retry: true,
+    });
+  }
+});
+
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/tasks", require("./routes/tasks"));
