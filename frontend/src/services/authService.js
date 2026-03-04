@@ -1,24 +1,32 @@
 import api from "./api";
 
-// Register user
+// Register user — returns { email, requiresVerification } (does NOT log in)
 const register = async (userData) => {
   const response = await api.post(`/api/auth/register`, userData);
-
-  if (response.data) {
-    localStorage.setItem("user", JSON.stringify(response.data));
-  }
-
   return response.data;
 };
 
 // Login user
 const login = async (userData) => {
   const response = await api.post(`/api/auth/login`, userData);
-
-  if (response.data) {
+  if (response.data?.token) {
     localStorage.setItem("user", JSON.stringify(response.data));
   }
+  return response.data;
+};
 
+// Google OAuth Sign-In / Sign-Up
+const googleLogin = async (credential) => {
+  const response = await api.post(`/api/auth/google`, { credential });
+  if (response.data?.token) {
+    localStorage.setItem("user", JSON.stringify(response.data));
+  }
+  return response.data;
+};
+
+// Resend verification email
+const resendVerification = async (email) => {
+  const response = await api.post(`/api/auth/resend-verification`, { email });
   return response.data;
 };
 
@@ -28,43 +36,21 @@ const logout = () => {
 };
 
 // Get user profile
-const getProfile = async (token) => {
-  const response = await api.get(`/api/auth/profile`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const getProfile = async () => {
+  const response = await api.get(`/api/auth/profile`);
   return response.data;
 };
 
 // Update onboarding status
 const updateOnboarding = async (onboardingComplete) => {
+  const response = await api.put(`/api/auth/onboarding`, { onboardingComplete });
   const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !user.token) {
-    throw new Error("Not authenticated");
+  if (user && response.data) {
+    localStorage.setItem("user", JSON.stringify({ ...user, onboardingComplete: response.data.onboardingComplete }));
   }
-
-  const response = await api.put(
-    `/api/auth/onboarding`,
-    { onboardingComplete }
-  );
-
-  // Update local storage with new onboarding status
-  if (response.data) {
-    const updatedUser = { ...user, onboardingComplete: response.data.onboardingComplete };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-  }
-
   return response.data;
 };
 
-const authService = {
-  register,
-  login,
-  logout,
-  getProfile,
-  updateOnboarding,
-};
-
+const authService = { register, login, googleLogin, resendVerification, logout, getProfile, updateOnboarding };
 export default authService;
 

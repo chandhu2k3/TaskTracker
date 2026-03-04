@@ -9,30 +9,26 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
     setLoading(false);
   }, []);
 
+  // Returns { requiresVerification, email } — does NOT set user
   const register = async (userData) => {
-    try {
-      const data = await authService.register(userData);
-      setUser(data);
-      return data;
-    } catch (error) {
-      throw error;
-    }
+    const data = await authService.register(userData);
+    return data;
   };
 
   const login = async (userData) => {
-    try {
-      const data = await authService.login(userData);
-      setUser(data);
-      return data;
-    } catch (error) {
-      throw error;
-    }
+    const data = await authService.login(userData);
+    setUser(data);
+    return data;
+  };
+
+  const googleLogin = async (credential) => {
+    const data = await authService.googleLogin(credential);
+    setUser(data);
+    return data;
   };
 
   const logout = () => {
@@ -41,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );

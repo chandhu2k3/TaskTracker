@@ -20,8 +20,30 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, "Please add a password"],
     minlength: 6,
+    select: false,
+    // Not required for Google OAuth users
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local',
+  },
+  googleId: {
+    type: String,
+    sparse: true,
+    select: false,
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationToken: {
+    type: String,
+    select: false,
+  },
+  verificationTokenExpiry: {
+    type: Date,
     select: false,
   },
   onboardingComplete: {
@@ -45,10 +67,10 @@ const userSchema = new mongoose.Schema({
 // Note: email index is automatically created by unique: true in schema
 // No need for explicit index({ email: 1 }) to avoid duplicate index warning
 
-// Hash password before saving
+// Hash password before saving (skip for Google OAuth users)
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    next();
+  if (!this.isModified("password") || !this.password) {
+    return next();
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

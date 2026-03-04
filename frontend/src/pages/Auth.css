@@ -269,3 +269,95 @@
     padding: 14px;
   }
 }
+
+/* ── Google Sign-In button ── */
+.google-btn-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 4px;
+}
+
+/* ── Divider between Google and email form ── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+/* ── Password show/hide wrapper ── */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.password-wrapper input {
+  flex: 1;
+  padding-right: 42px !important;
+}
+.toggle-pw {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.toggle-pw:hover { opacity: 1; }
+
+/* ── Verify Pending page ── */
+.verify-card {
+  text-align: center;
+}
+.verify-icon {
+  font-size: 56px;
+  margin-bottom: 4px;
+  animation: logoFloat 3s ease-in-out infinite;
+}
+.verify-msg {
+  color: #334155;
+  font-size: 15px;
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+.verify-email {
+  color: #F59E0B;
+  font-size: 15px;
+}
+.verify-sub {
+  color: #64748b;
+  font-size: 13px;
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+.verify-steps {
+  margin: 16px 0 4px;
+}
+.verify-hint {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 0;
+}
+.link-btn {
+  color: #F59E0B;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.link-btn:hover { color: #D97706; }
