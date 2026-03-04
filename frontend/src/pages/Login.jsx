@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import authService from "../services/authService";
 import "./Auth.css";
 
 const Login = () => {
