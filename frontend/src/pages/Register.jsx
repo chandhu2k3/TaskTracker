@@ -98,6 +98,11 @@ const Register = () => {
           <button type="submit" className="btn-submit" disabled={isLoading}>
             {isLoading ? "Creating Account..." : "Create Account"}
           </button>
+          <p className="auth-legal auth-legal-form">
+            By creating an account, you agree to our{" "}
+            <a href="/terms-of-service">Terms of Service</a> and{" "}
+            <a href="/privacy-policy">Privacy Policy</a>.
+          </p>
         </form>
 
         <p className="auth-switch">

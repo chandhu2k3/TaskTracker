@@ -14,6 +14,9 @@ import Register from "./pages/Register";
 import VerifyPending from "./pages/VerifyPending";
 import Dashboard from "./pages/Dashboard";
 import CalendarCallback from "./pages/CalendarCallback";
+import Home from "./pages/Home";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
 
@@ -21,6 +24,12 @@ const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
   if (loading) return <div>Loading...</div>;
   return user ? children : <Navigate to="/login" />;
+};
+
+const HomeRoute = () => {
+  const { user, loading } = useContext(AuthContext);
+  if (loading) return <div>Loading...</div>;
+  return user ? <Navigate to="/dashboard" /> : <Home />;
 };
 
 function App() {
@@ -34,6 +43,8 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/verify-pending" element={<VerifyPending />} />
               <Route path="/calendar/callback" element={<CalendarCallback />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route
                 path="/dashboard"
                 element={
@@ -42,7 +53,7 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route path="/" element={<HomeRoute />} />
             </Routes>
             <ToastContainer
               position="top-right"

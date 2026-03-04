@@ -1,0 +1,185 @@
+/* Legal.css — shared styles for Privacy Policy and Terms of Service pages */
+
+.legal-page {
+  min-height: 100vh;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.legal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: #141414;
+  border-bottom: 1px solid #2a2a2a;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.legal-logo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f59e0b;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+}
+
+.legal-nav {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.legal-nav a {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.legal-nav a:hover {
+  color: #f59e0b;
+}
+
+/* Main content */
+.legal-content {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+  flex: 1;
+}
+
+.legal-content h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.3rem;
+}
+
+.legal-meta {
+  color: #777;
+  font-size: 0.9rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.legal-content section {
+  margin-bottom: 2.5rem;
+}
+
+.legal-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f59e0b;
+  margin-bottom: 0.75rem;
+  margin-top: 0;
+}
+
+.legal-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ddd;
+  margin-bottom: 0.5rem;
+  margin-top: 1rem;
+}
+
+.legal-content p {
+  color: #ccc;
+  line-height: 1.75;
+  margin-bottom: 0.75rem;
+}
+
+.legal-content ul {
+  color: #ccc;
+  line-height: 1.75;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.legal-content li {
+  margin-bottom: 0.4rem;
+}
+
+.legal-content a {
+  color: #f59e0b;
+  text-decoration: none;
+}
+
+.legal-content a:hover {
+  text-decoration: underline;
+}
+
+.legal-content code {
+  background: #1e1e1e;
+  color: #f59e0b;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.88em;
+}
+
+.legal-content strong {
+  color: #e0e0e0;
+}
+
+/* Footer */
+.legal-footer {
+  background: #141414;
+  border-top: 1px solid #2a2a2a;
+  padding: 1.5rem 2rem;
+  text-align: center;
+}
+
+.legal-footer p {
+  color: #666;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.legal-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legal-footer-links a {
+  color: #888;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+
+.legal-footer-links a:hover {
+  color: #f59e0b;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .legal-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .legal-nav {
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .legal-content {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .legal-content h1 {
+    font-size: 1.6rem;
+  }
+}

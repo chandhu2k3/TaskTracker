@@ -106,6 +106,11 @@ const Login = () => {
         <p className="auth-switch">
           Don't have an account? <a href="/register">Register</a>
         </p>
+        <p className="auth-legal">
+          By using this service you agree to our{" "}
+          <a href="/terms-of-service">Terms of Service</a> and{" "}
+          <a href="/privacy-policy">Privacy Policy</a>.
+        </p>
       </div>
     </div>
   );

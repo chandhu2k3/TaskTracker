@@ -239,6 +239,29 @@
   color: #1e293b;
 }
 
+.auth-legal {
+  text-align: center;
+  margin-top: 8px;
+  color: #4b5563;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.auth-legal-form {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.auth-legal a {
+  color: #9ca3af;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.auth-legal a:hover {
+  color: #F59E0B;
+}
+
 @media (max-width: 768px) {
   .auth-card {
     padding: 40px 25px;
