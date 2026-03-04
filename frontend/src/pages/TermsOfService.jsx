@@ -5,7 +5,7 @@ import "./Legal.css";
 const TermsOfService = () => {
   const LAST_UPDATED = "March 4, 2026";
   const APP_NAME = "Task Tracker Pro";
-  const CONTACT_EMAIL = "support@tasktrackerpro.app";
+  const CONTACT_EMAIL = "chandrakanthr876@gmail.com";
   const APP_URL = "https://task-tracker-gilt-three.vercel.app";
 
   return (
