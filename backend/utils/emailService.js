@@ -1,20 +1,38 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// From address — must be a verified domain on Resend
-// For free tier you can use onboarding@resend.dev OR a domain you verified
-const FROM_EMAIL = process.env.FROM_EMAIL || 'TaskTracker <onboarding@resend.dev>';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FROM_NAME = 'Task Tracker';
+
+// Lazily created transporter — skips gracefully if Gmail creds aren't set (local dev)
+let _transporter = null;
+const getTransporter = () => {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return null;
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD, // Gmail App Password — NOT your real password
+      },
+    });
+  }
+  return _transporter;
+};
 
 /**
  * Send email verification link after registration
  */
 const sendVerificationEmail = async (name, email, token) => {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('[emailService] Gmail credentials not set — skipping verification email for', email);
+    return;
+  }
+
   const verifyUrl = `${FRONTEND_URL}/verify-email/${token}`;
 
-  const { error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  await transporter.sendMail({
+    from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: 'Verify your Task Tracker account',
     html: `
@@ -29,14 +47,12 @@ const sendVerificationEmail = async (name, email, token) => {
           <tr>
             <td align="center">
               <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#1e293b;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-                <!-- Header -->
                 <tr>
                   <td style="background:linear-gradient(135deg,#F59E0B,#FBBF24);padding:32px;text-align:center;">
                     <h1 style="margin:0;color:#1a1a2e;font-size:28px;font-weight:800;letter-spacing:-0.5px;">✓ Task Tracker</h1>
                     <p style="margin:6px 0 0;color:#92400e;font-size:14px;font-weight:500;">Your productivity companion</p>
                   </td>
                 </tr>
-                <!-- Body -->
                 <tr>
                   <td style="padding:36px 32px;">
                     <h2 style="margin:0 0 12px;color:#f1f5f9;font-size:22px;font-weight:700;">Welcome, ${name}! 👋</h2>
@@ -53,7 +69,6 @@ const sendVerificationEmail = async (name, email, token) => {
                     <p style="margin:0;color:#64748b;font-size:12px;">This link expires in <strong style="color:#94a3b8;">24 hours</strong>. If you didn't create an account, you can safely ignore this email.</p>
                   </td>
                 </tr>
-                <!-- Footer -->
                 <tr>
                   <td style="background:#0f172a;padding:20px 32px;text-align:center;">
                     <p style="margin:0;color:#475569;font-size:12px;">© ${new Date().getFullYear()} Task Tracker Pro. All rights reserved.</p>
@@ -67,19 +82,20 @@ const sendVerificationEmail = async (name, email, token) => {
       </html>
     `,
   });
-
-  if (error) {
-    console.error('Resend error:', error);
-    throw new Error('Failed to send verification email');
-  }
 };
 
 /**
  * Send a welcome email after successful verification
  */
 const sendWelcomeEmail = async (name, email) => {
-  await resend.emails.send({
-    from: FROM_EMAIL,
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('[emailService] Gmail credentials not set — skipping welcome email for', email);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: 'Welcome to Task Tracker Pro! 🎉',
     html: `
@@ -105,6 +121,11 @@ const sendWelcomeEmail = async (name, email) => {
                        style="display:block;background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#1a1a2e;text-decoration:none;font-weight:700;font-size:16px;padding:14px 32px;border-radius:10px;text-align:center;">
                       Go to Dashboard
                     </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background:#0f172a;padding:20px 32px;text-align:center;">
+                    <p style="margin:0;color:#475569;font-size:12px;">© ${new Date().getFullYear()} Task Tracker Pro. All rights reserved.</p>
                   </td>
                 </tr>
               </table>
