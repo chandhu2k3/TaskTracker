@@ -96,7 +96,7 @@ body[data-theme="dark"] .picker-select:hover {
 
 body[data-theme="dark"] .picker-select:focus {
   background: rgba(0, 0, 0, 0.6);
-  border-color: #fbbf24;
+  border-color: #fde68a;
   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08);
 }
 

@@ -1,8 +1,8 @@
-/* Home.css — public landing page styles */
+/* Home.css Ã¢â‚¬â€ public landing page styles */
 
 :root {
-  --amber: #f59e0b;
-  --amber-dark: #d97706;
+  --amber: #fde68a;
+  --amber-dark: #e9b84a;
   --bg: #0f0f0f;
   --bg2: #141414;
   --bg3: #1a1a1a;
@@ -22,7 +22,7 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* ─── Header ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Header Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .home-header {
   background: rgba(15, 15, 15, 0.92);
   backdrop-filter: blur(10px);
@@ -81,7 +81,7 @@
   background: var(--amber-dark);
 }
 
-/* ─── Hero ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Hero Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .home-hero {
   max-width: 1100px;
   margin: 0 auto;
@@ -157,7 +157,7 @@
 
 .home-btn-secondary:hover {
   border-color: var(--amber);
-  background: rgba(245, 158, 11, 0.05);
+  background: rgba(233, 184, 74, 0.05);
 }
 
 .home-btn-large {
@@ -181,7 +181,7 @@
   font-size: 0.8rem;
 }
 
-/* ─── Features ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Features Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .home-features {
   background: var(--bg2);
   border-top: 1px solid var(--border);
@@ -215,7 +215,7 @@
 }
 
 .home-feature-card:hover {
-  border-color: rgba(245, 158, 11, 0.4);
+  border-color: rgba(233, 184, 74, 0.4);
 }
 
 .home-feature-icon {
@@ -237,7 +237,7 @@
   margin: 0;
 }
 
-/* ─── How it works ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ How it works Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .home-how {
   padding: 5rem 2rem;
   max-width: 1100px;
@@ -295,11 +295,11 @@
   padding-top: 1rem;
 }
 
-/* ─── CTA Banner ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CTA Banner Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .home-cta-banner {
   background: linear-gradient(135deg, #1a1500 0%, #0f0f0f 100%);
-  border-top: 1px solid rgba(245, 158, 11, 0.2);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+  border-top: 1px solid rgba(233, 184, 74, 0.2);
+  border-bottom: 1px solid rgba(233, 184, 74, 0.2);
   padding: 5rem 2rem;
   text-align: center;
 }
@@ -317,7 +317,7 @@
   margin-bottom: 2rem;
 }
 
-/* ─── Footer ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Footer Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .home-footer {
   background: var(--bg2);
   border-top: 1px solid var(--border);
@@ -397,7 +397,7 @@
   color: var(--amber);
 }
 
-/* ─── Responsive ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Responsive Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 768px) {
   .home-hero {
     padding: 4rem 1.25rem 3rem;

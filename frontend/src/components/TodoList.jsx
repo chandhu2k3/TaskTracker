@@ -89,7 +89,7 @@ const TodoList = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, isAddingTodo =
                   <span>Connect Google Calendar to enable background reminders</span>
                   <button
                     onClick={() => { closeToast(); onConnectCalendar(); }}
-                    style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', color: '#1a1a2e', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
+                    style={{ background: 'linear-gradient(135deg,#e9b84a,#fde68a)', color: '#1a1a2e', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
                   >Connect</button>
                 </div>
               ),

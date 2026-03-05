@@ -103,7 +103,7 @@
 .auth-card h1 {
   text-align: center;
   font-size: 1.8rem;
-  background: linear-gradient(135deg, #1e293b 0%, #F59E0B 50%, #FBBF24 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #fde68a 50%, #fde68a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -150,7 +150,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #FBBF24;
+  border-color: #fde68a;
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.08), 0 4px 12px rgba(245, 225, 200, 0.1);
 }
@@ -158,7 +158,7 @@
 .btn-submit {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #FBBF24 100%);
+  background: linear-gradient(135deg, #fde68a 0%, #fde68a 50%, #fde68a 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -190,7 +190,7 @@
 .btn-submit:hover:not(:disabled) {
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(245, 225, 200, 0.35);
-  background: linear-gradient(135deg, #F59E0B 0%, #DBBA98 50%, #C9A07A 100%);
+  background: linear-gradient(135deg, #fde68a 0%, #DBBA98 50%, #C9A07A 100%);
 }
 
 .btn-submit:active:not(:disabled) {
@@ -213,7 +213,7 @@
 }
 
 .auth-switch a {
-  color: #F59E0B;
+  color: #fde68a;
   text-decoration: none;
   font-weight: 700;
   transition: all 0.3s ease;
@@ -227,7 +227,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #FBBF24, #F59E0B);
+  background: linear-gradient(90deg, #fde68a, #fde68a);
   transition: width 0.3s ease;
 }
 
@@ -259,7 +259,7 @@
 }
 
 .auth-legal a:hover {
-  color: #F59E0B;
+  color: #fde68a;
 }
 
 @media (max-width: 768px) {
@@ -293,14 +293,14 @@
   }
 }
 
-/* ── Google Sign-In button ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Google Sign-In button Ã¢â€â‚¬Ã¢â€â‚¬ */
 .google-btn-wrap {
   display: flex;
   justify-content: center;
   margin: 8px 0 4px;
 }
 
-/* ── Divider between Google and email form ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Divider between Google and email form Ã¢â€â‚¬Ã¢â€â‚¬ */
 .auth-divider {
   display: flex;
   align-items: center;
@@ -320,7 +320,7 @@
   background: #e2e8f0;
 }
 
-/* ── Password show/hide wrapper ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Password show/hide wrapper Ã¢â€â‚¬Ã¢â€â‚¬ */
 .password-wrapper {
   position: relative;
   display: flex;
@@ -344,7 +344,7 @@
 }
 .toggle-pw:hover { opacity: 1; }
 
-/* ── Verify Pending page ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Verify Pending page Ã¢â€â‚¬Ã¢â€â‚¬ */
 .verify-card {
   text-align: center;
 }
@@ -360,7 +360,7 @@
   line-height: 1.6;
 }
 .verify-email {
-  color: #F59E0B;
+  color: #fde68a;
   font-size: 15px;
 }
 .verify-sub {
@@ -378,7 +378,7 @@
   margin: 0;
 }
 .link-btn {
-  color: #F59E0B;
+  color: #fde68a;
   cursor: pointer;
   font-weight: 600;
   text-decoration: underline;

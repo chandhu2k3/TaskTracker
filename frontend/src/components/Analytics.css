@@ -19,7 +19,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   padding: 20px;
   border-radius: 12px;
   text-align: center;
@@ -94,7 +94,7 @@
 .day-time,
 .category-time {
   font-weight: 600;
-  color: #F59E0B;
+  color: #fde68a;
   min-width: 60px;
   text-align: right;
 }
@@ -121,7 +121,7 @@
 
 .week-details span:first-child {
   font-weight: 600;
-  color: #F59E0B;
+  color: #fde68a;
 }
 
 .week-details span:last-child {
@@ -226,7 +226,7 @@
 
 .date-details span:first-child {
   font-weight: 600;
-  color: #F59E0B;
+  color: #fde68a;
 }
 
 .date-details span:last-child {
@@ -237,7 +237,7 @@
   padding: 15px;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid #FBBF24;
+  border-left: 4px solid #fde68a;
 }
 
 .day-stat-detailed .day-name {
@@ -281,7 +281,7 @@
 }
 
 .bar-fill.actual {
-  background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
 }
 
 .bar-fill.target {
@@ -332,7 +332,7 @@ body[data-theme="dark"] .analytics-container {
 }
 
 body[data-theme="dark"] .analytics-loading {
-  color: #fbbf24;
+  color: #fde68a;
 }
 
 body[data-theme="dark"] .stat-card {
@@ -420,7 +420,7 @@ body[data-theme="dark"] .day-meta {
 }
 
 body[data-theme="dark"] .day-stat-detailed {
-  border-left-color: #fbbf24;
+  border-left-color: #fde68a;
 }
 
 body[data-theme="dark"] .pie-chart-container {

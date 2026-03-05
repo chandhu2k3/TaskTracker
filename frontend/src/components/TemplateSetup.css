@@ -34,7 +34,7 @@
 
 .btn-new-template {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   color: white;
   border: none;
   border-radius: 10px;
@@ -56,7 +56,7 @@
     rgba(0, 0, 0, 0.06) 100%
   );
   backdrop-filter: blur(10px);
-  color: #F59E0B;
+  color: #fde68a;
   border: 1px solid rgba(245, 225, 200, 0.2);
   padding: 8px 16px;
   border-radius: 10px;
@@ -186,7 +186,7 @@
 }
 
 .day-tab.active {
-  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
@@ -233,7 +233,7 @@
 }
 
 .day-tab.active {
-  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
@@ -247,7 +247,7 @@
 
 .btn-add-task {
   padding: 8px 14px;
-  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   color: white;
   border: none;
   border-radius: 8px;
@@ -306,7 +306,7 @@
 
 .drag-handle-template {
   cursor: grab;
-  color: #FBBF24;
+  color: #fde68a;
   font-size: 1.2rem;
   opacity: 0.4;
   transition: opacity 0.3s;
@@ -519,7 +519,7 @@
     rgba(0, 0, 0, 0.04) 0%,
     rgba(0, 0, 0, 0.06) 100%
   );
-  color: #F59E0B;
+  color: #fde68a;
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -621,7 +621,7 @@ body[data-theme="dark"] .day-tab:hover {
 }
 
 body[data-theme="dark"] .day-tab.active {
-  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  background: linear-gradient(135deg, #fde68a 0%, #d97706 100%);
   color: #fff;
   border-color: transparent;
 }
@@ -645,7 +645,7 @@ body[data-theme="dark"] .template-task-row:hover {
 }
 
 body[data-theme="dark"] .drag-handle-template {
-  color: #fbbf24;
+  color: #fde68a;
 }
 
 body[data-theme="dark"] .task-name-input,

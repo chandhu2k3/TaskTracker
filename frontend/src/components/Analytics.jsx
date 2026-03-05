@@ -66,7 +66,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📅 By Day - Actual vs Planned</h4>
+            <h4>ðŸ“… By Day - Actual vs Planned</h4>
             <div className="day-breakdown">
               {analytics.byDay &&
                 Object.entries(analytics.byDay).map(([day, data]) => (
@@ -111,7 +111,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                       </div>
                     </div>
                     <div className="day-meta">
-                      {data.taskCount} tasks • {data.sessions} sessions
+                      {data.taskCount} tasks â€¢ {data.sessions} sessions
                     </div>
                   </div>
                 ))}
@@ -119,7 +119,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📊 Category Distribution - Time Achieved</h4>
+            <h4>ðŸ“Š Category Distribution - Time Achieved</h4>
             <div className="pie-chart-container">
               <div className="pie-chart-wrapper">
                 <svg
@@ -176,7 +176,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                       "#D97706",
                       "#10b981",
                       "#6366f1",
-                      "#f59e0b",
+                      "#e9b84a",
                       "#8b5cf6",
                       "#ec4899",
                     ];
@@ -258,7 +258,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                           "#D97706",
                           "#10b981",
                           "#6366f1",
-                          "#f59e0b",
+                          "#e9b84a",
                           "#8b5cf6",
                           "#ec4899",
                         ];
@@ -302,7 +302,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📂 By Category - Detailed</h4>
+            <h4>ðŸ“‚ By Category - Detailed</h4>
             <div className="category-breakdown">
               {analytics.byCategory &&
                 Object.entries(analytics.byCategory).map(([category, data]) => (
@@ -362,7 +362,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📊 By Week</h4>
+            <h4>ðŸ“Š By Week</h4>
             <div className="week-comparison">
               {analytics.byWeek &&
                 Object.entries(analytics.byWeek).map(([week, data]) => (
@@ -379,7 +379,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                             analytics.totalTime
                           ),
                           background:
-                            "linear-gradient(135deg, #f59e0b, #d97706)",
+                            "linear-gradient(135deg, #e9b84a, #d97706)",
                         }}
                       />
                     </div>
@@ -393,7 +393,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📂 By Category</h4>
+            <h4>ðŸ“‚ By Category</h4>
             <div className="category-breakdown">
               {analytics.byCategory &&
                 Object.entries(analytics.byCategory).map(([category, data]) => (
@@ -455,7 +455,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>⏱️ Time Comparison: Actual vs Planned</h4>
+            <h4>â±ï¸ Time Comparison: Actual vs Planned</h4>
             <div className="pie-chart-container">
               <div className="pie-chart-wrapper">
                 <svg
@@ -566,7 +566,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📅 Activity Over Time</h4>
+            <h4>ðŸ“… Activity Over Time</h4>
             <div className="date-timeline">
               {Object.entries(analytics.byDate || {}).map(([date, data]) => (
                 <div key={date} className="date-stat">

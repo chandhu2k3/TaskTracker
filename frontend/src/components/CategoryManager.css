@@ -23,7 +23,7 @@
 
 .btn-add-category {
   padding: 10px 18px;
-  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   color: white;
   border: none;
   border-radius: 10px;
@@ -174,7 +174,7 @@
 
 .category-modal-content .form-group input[type="text"]:focus {
   outline: none;
-  border-color: #FBBF24;
+  border-color: #fde68a;
   box-shadow: 0 0 0 3px rgba(245, 225, 200, 0.1);
 }
 
@@ -208,12 +208,12 @@
 }
 
 .icon-option:hover {
-  border-color: #FBBF24;
+  border-color: #fde68a;
   transform: scale(1.1);
 }
 
 .icon-option.selected {
-  border-color: #FBBF24;
+  border-color: #fde68a;
   background: rgba(245, 225, 200, 0.08);
 }
 
@@ -262,7 +262,7 @@
 }
 
 .category-modal-content input[type="color"]:hover {
-  border-color: #FBBF24;
+  border-color: #fde68a;
   transform: scale(1.1);
 }
 
@@ -307,12 +307,12 @@
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   color: white;
 }
 
 .btn-save:hover {
-  background: linear-gradient(135deg, #D97706, #F59E0B);
+  background: linear-gradient(135deg, #D97706, #fde68a);
 }
 
 /* Dark Mode Styles */

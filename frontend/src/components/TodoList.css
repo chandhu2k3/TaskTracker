@@ -37,7 +37,7 @@
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  background: linear-gradient(135deg, #fde68a 0%, #fde68a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -47,7 +47,7 @@
 }
 
 .todo-header h3::before {
-  content: '✨';
+  content: 'Ã¢Å“Â¨';
   font-size: 1.1rem;
   -webkit-text-fill-color: initial;
 }
@@ -78,7 +78,7 @@
 
 .todo-input:focus {
   outline: none;
-  border-color: #FBBF24;
+  border-color: #fde68a;
   box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.1);
   background: white;
 }
@@ -88,7 +88,7 @@
 }
 
 .todo-add-btn {
-  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  background: linear-gradient(135deg, #fde68a, #fde68a);
   color: white;
   border: none;
   padding: 14px 24px;
@@ -271,7 +271,7 @@
 }
 
 .overdue-tag::before {
-  content: '⚠️';
+  content: 'Ã¢Å¡Â Ã¯Â¸Â';
   font-size: 0.7rem;
 }
 
@@ -386,8 +386,8 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker {
 }
 
 body[data-theme="dark"] .todo-actions .calendar-picker-title {
-  color: #fbbf24;
-  border-bottom-color: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+  border-bottom-color: rgba(233, 184, 74, 0.12);
 }
 
 body[data-theme="dark"] .todo-actions .calendar-reminder-picker button {
@@ -395,8 +395,8 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button {
 }
 
 body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
+  background: rgba(233, 184, 74, 0.12);
+  color: #fde68a;
 }
 
 /* Delete Button */
@@ -460,7 +460,7 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
 }
 
 .todo-stats::before {
-  content: '📊';
+  content: 'Ã°Å¸â€œÅ ';
 }
 
 /* Mobile Responsiveness */
@@ -518,7 +518,7 @@ body[data-theme="dark"] .todo-input {
 }
 
 body[data-theme="dark"] .todo-input:focus {
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(233, 184, 74, 0.3);
   background: rgba(0, 0, 0, 0.4);
 }
 
@@ -583,7 +583,7 @@ body[data-theme="dark"] .todo-stats {
 
 .todo-deadline-input:focus {
   outline: none;
-  border-color: #FBBF24;
+  border-color: #fde68a;
   box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.1);
 }
 
