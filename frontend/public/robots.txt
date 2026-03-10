@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+
+Disallow: /dashboard
+Disallow: /api/
+
+Sitemap: https://task-tracker-frontend-lime.vercel.app/sitemap.xml

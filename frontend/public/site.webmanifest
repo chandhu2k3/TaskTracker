@@ -1,16 +1,24 @@
 {
-  "name": "Task Tracker Pro",
-  "short_name": "TaskTracker",
-  "description": "Track your daily tasks efficiently",
+  "name": "Task Tracker Pro – Daily Task & Productivity Manager",
+  "short_name": "Task Tracker",
+  "description": "Plan, track and manage your daily tasks, quick todos, and habits. Free app with Google Calendar sync, analytics and templates.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#92400e",
+  "background_color": "#0a0a0a",
+  "theme_color": "#d97706",
+  "categories": ["productivity", "utilities"],
+  "lang": "en-US",
   "icons": [
     {
       "src": "/logo.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
     }
   ]
 }
