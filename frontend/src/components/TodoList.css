@@ -1,13 +1,12 @@
-.todo-list-container {
+﻿.todo-list-container {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 24px;
   box-shadow: 
     0 4px 20px rgba(0, 0, 0, 0.04),
     0 1px 3px rgba(0, 0, 0, 0.05);
-  height: fit-content;
-  max-height: calc(100vh - 200px);
+  flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -37,7 +36,7 @@
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #fde68a 0%, #fde68a 100%);
+  background: linear-gradient(135deg, #111111 0%, #e9b84a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -46,11 +45,6 @@
   gap: 10px;
 }
 
-.todo-header h3::before {
-  content: 'Ã¢Å“Â¨';
-  font-size: 1.1rem;
-  -webkit-text-fill-color: initial;
-}
 
 .todo-subtitle {
   margin: 8px 0 0 0;
@@ -78,8 +72,8 @@
 
 .todo-input:focus {
   outline: none;
-  border-color: #fde68a;
-  box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.1);
+  border-color: #e9b84a;
+  box-shadow: 0 0 0 4px rgba(233, 184, 74, 0.1);
   background: white;
 }
 
@@ -88,8 +82,8 @@
 }
 
 .todo-add-btn {
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
   border: none;
   padding: 14px 24px;
   border-radius: 12px;
@@ -98,7 +92,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
-  box-shadow: 0 4px 15px rgba(245, 225, 200, 0.25);
+  box-shadow: 0 4px 15px rgba(233, 184, 74, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -120,7 +114,7 @@
 
 .todo-add-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(245, 225, 200, 0.3);
+  box-shadow: 0 6px 20px rgba(17, 17, 17, 0.3);
 }
 
 .todo-add-btn:active {
@@ -270,10 +264,6 @@
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
-.overdue-tag::before {
-  content: 'Ã¢Å¡Â Ã¯Â¸Â';
-  font-size: 0.7rem;
-}
 
 @keyframes pulseGlow {
   0%, 100% { 
@@ -380,13 +370,13 @@
 }
 
 body[data-theme="dark"] .todo-actions .calendar-reminder-picker {
-  background: #1e293b;
+  background: #111111;
   border-color: rgba(148, 163, 184, 0.2);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 body[data-theme="dark"] .todo-actions .calendar-picker-title {
-  color: #fde68a;
+  color: #e9b84a;
   border-bottom-color: rgba(233, 184, 74, 0.12);
 }
 
@@ -396,7 +386,7 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button {
 
 body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
   background: rgba(233, 184, 74, 0.12);
-  color: #fde68a;
+  color: #e9b84a;
 }
 
 /* Delete Button */
@@ -452,16 +442,13 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
   text-align: center;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #111111;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
 }
 
-.todo-stats::before {
-  content: 'Ã°Å¸â€œÅ ';
-}
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
@@ -490,7 +477,7 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
 
 /* Dark Mode Support */
 body[data-theme="dark"] .todo-list-container {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(17, 17, 17, 0.95) 0%, rgba(10, 10, 10, 0.95) 100%);
   border-color: rgba(148, 163, 184, 0.15);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
@@ -583,8 +570,8 @@ body[data-theme="dark"] .todo-stats {
 
 .todo-deadline-input:focus {
   outline: none;
-  border-color: #fde68a;
-  box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.1);
+  border-color: #e9b84a;
+  box-shadow: 0 0 0 4px rgba(233, 184, 74, 0.1);
 }
 
 .todo-deadline-input::-webkit-calendar-picker-indicator {
@@ -601,7 +588,7 @@ body[data-theme="dark"] .todo-stats {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, #fef3c7 0%, #e9b84a 100%);
   color: #92400e;
   font-size: 0.8rem;
   font-weight: 600;
@@ -660,9 +647,9 @@ body[data-theme="dark"] .todo-deadline-input:hover::-webkit-calendar-picker-indi
 }
 
 body[data-theme="dark"] .todo-deadline-badge {
-  background: linear-gradient(135deg, rgba(254, 243, 199, 0.15) 0%, rgba(253, 230, 138, 0.12) 100%);
-  color: #fde68a;
-  border-color: rgba(253, 230, 138, 0.2);
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.15) 0%, rgba(233, 184, 74, 0.12) 100%);
+  color: #e9b84a;
+  border-color: rgba(233, 184, 74, 0.2);
 }
 
 body[data-theme="dark"] .todo-item.completed .todo-deadline-badge {

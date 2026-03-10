@@ -1,4 +1,4 @@
-.category-manager {
+﻿.category-manager {
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   padding: 20px;
@@ -23,8 +23,8 @@
 
 .btn-add-category {
   padding: 10px 18px;
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -35,7 +35,7 @@
 
 .btn-add-category:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(245, 225, 200, 0.3);
+  box-shadow: 0 6px 16px rgba(233, 184, 74, 0.4);
 }
 
 .categories-list {
@@ -146,7 +146,7 @@
 .category-modal-content h3 {
   margin: 0 0 25px 0;
   font-size: 1.4rem;
-  color: #1e293b;
+  color: #111111;
   font-weight: 700;
 }
 
@@ -157,7 +157,7 @@
 .category-modal-content .form-group label {
   display: block;
   font-weight: 600;
-  color: #475569;
+  color: #222222;
   margin-bottom: 10px;
   font-size: 0.9rem;
 }
@@ -174,8 +174,8 @@
 
 .category-modal-content .form-group input[type="text"]:focus {
   outline: none;
-  border-color: #fde68a;
-  box-shadow: 0 0 0 3px rgba(245, 225, 200, 0.1);
+  border-color: #e9b84a;
+  box-shadow: 0 0 0 3px rgba(233, 184, 74, 0.12);
 }
 
 /* Icon Picker Grid */
@@ -208,13 +208,13 @@
 }
 
 .icon-option:hover {
-  border-color: #fde68a;
+  border-color: #e9b84a;
   transform: scale(1.1);
 }
 
 .icon-option.selected {
-  border-color: #fde68a;
-  background: rgba(245, 225, 200, 0.08);
+  border-color: #e9b84a;
+  background: rgba(233, 184, 74, 0.08);
 }
 
 .color-option {
@@ -231,8 +231,8 @@
 }
 
 .color-option.selected {
-  border-color: #1e293b;
-  box-shadow: 0 0 0 2px white, 0 0 0 4px #1e293b;
+  border-color: #111111;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #111111;
 }
 
 .custom-color-picker {
@@ -262,7 +262,7 @@
 }
 
 .category-modal-content input[type="color"]:hover {
-  border-color: #fde68a;
+  border-color: #e9b84a;
   transform: scale(1.1);
 }
 
@@ -299,7 +299,7 @@
 
 .btn-cancel {
   background: #e2e8f0;
-  color: #1e293b;
+  color: #111111;
 }
 
 .btn-cancel:hover {
@@ -307,12 +307,12 @@
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
 }
 
 .btn-save:hover {
-  background: linear-gradient(135deg, #D97706, #fde68a);
+  background: linear-gradient(135deg, #d97706, #b45309);
 }
 
 /* Dark Mode Styles */

@@ -1,4 +1,4 @@
-.analytics-container {
+﻿.analytics-container {
   background: white;
   padding: 25px;
   border-radius: 12px;
@@ -19,11 +19,11 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #fde68a, #fde68a);
+  background: linear-gradient(135deg, #e9b84a, #d97706);
   padding: 20px;
   border-radius: 12px;
   text-align: center;
-  color: white;
+  color: #1a1a2e;
 }
 
 .stat-value {
@@ -43,7 +43,7 @@
 
 .analytics-section h4 {
   margin-bottom: 15px;
-  color: #1e293b;
+  color: #111111;
   font-size: 1.1rem;
 }
 
@@ -71,7 +71,7 @@
 .category-name-analytics,
 .week-label {
   font-weight: 600;
-  color: #1e293b;
+  color: #111111;
 }
 
 .day-bar-container,
@@ -94,7 +94,7 @@
 .day-time,
 .category-time {
   font-weight: 600;
-  color: #fde68a;
+  color: #64748b;
   min-width: 60px;
   text-align: right;
 }
@@ -121,7 +121,7 @@
 
 .week-details span:first-child {
   font-weight: 600;
-  color: #fde68a;
+  color: #111111;
 }
 
 .week-details span:last-child {
@@ -172,7 +172,7 @@
 }
 
 .legend-label {
-  color: #475569;
+  color: #222222;
   font-weight: 500;
 }
 
@@ -200,7 +200,7 @@
 
 .date-label {
   font-weight: 600;
-  color: #334155;
+  color: #1a1a1a;
   font-size: 0.9rem;
 }
 
@@ -226,7 +226,7 @@
 
 .date-details span:first-child {
   font-weight: 600;
-  color: #fde68a;
+  color: #111111;
 }
 
 .date-details span:last-child {
@@ -237,12 +237,12 @@
   padding: 15px;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid #fde68a;
+  border-left: 4px solid #e9b84a;
 }
 
 .day-stat-detailed .day-name {
   font-weight: 700;
-  color: #1e293b;
+  color: #111111;
   margin-bottom: 10px;
   font-size: 1rem;
 }
@@ -281,7 +281,7 @@
 }
 
 .bar-fill.actual {
-  background: linear-gradient(135deg, #fde68a, #fde68a);
+  background: linear-gradient(135deg, #e9b84a, #d97706);
 }
 
 .bar-fill.target {
@@ -291,7 +291,7 @@
 .bar-value {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #111111;
   text-align: right;
 }
 
@@ -332,7 +332,7 @@ body[data-theme="dark"] .analytics-container {
 }
 
 body[data-theme="dark"] .analytics-loading {
-  color: #fde68a;
+  color: #e9b84a;
 }
 
 body[data-theme="dark"] .stat-card {
@@ -420,7 +420,7 @@ body[data-theme="dark"] .day-meta {
 }
 
 body[data-theme="dark"] .day-stat-detailed {
-  border-left-color: #fde68a;
+  border-left-color: #e9b84a;
 }
 
 body[data-theme="dark"] .pie-chart-container {

@@ -159,13 +159,13 @@ body {
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
 }
 
 .btn-save:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(245, 225, 200, 0.3);
+  box-shadow: 0 8px 20px rgba(233, 184, 74, 0.4);
 }
 
 .btn-cancel {

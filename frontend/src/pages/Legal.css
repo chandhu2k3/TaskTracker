@@ -25,7 +25,7 @@
 .legal-logo {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #fde68a;
+  color: #e9b84a;
   text-decoration: none;
   letter-spacing: -0.5px;
 }
@@ -44,7 +44,7 @@
 }
 
 .legal-nav a:hover {
-  color: #fde68a;
+  color: #e9b84a;
 }
 
 /* Main content */
@@ -78,7 +78,7 @@
 .legal-content h2 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #fde68a;
+  color: #e9b84a;
   margin-bottom: 0.75rem;
   margin-top: 0;
 }
@@ -109,7 +109,7 @@
 }
 
 .legal-content a {
-  color: #fde68a;
+  color: #e9b84a;
   text-decoration: none;
 }
 
@@ -119,7 +119,7 @@
 
 .legal-content code {
   background: #1e1e1e;
-  color: #fde68a;
+  color: #e9b84a;
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-size: 0.88em;
@@ -158,7 +158,7 @@
 }
 
 .legal-footer-links a:hover {
-  color: #fde68a;
+  color: #e9b84a;
 }
 
 /* Responsive */

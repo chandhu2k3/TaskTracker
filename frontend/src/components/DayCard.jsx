@@ -29,6 +29,7 @@ const DayCard = forwardRef(
     const [scheduledEndTime, setScheduledEndTime] = useState("");
     const [draggedTask, setDraggedTask] = useState(null);
     const [isAddFormExpanded, setIsAddFormExpanded] = useState(false);
+    const [formErrors, setFormErrors] = useState({});
 
     const [localTasks, setLocalTasks] = useState(tasks);
 
@@ -73,24 +74,32 @@ const DayCard = forwardRef(
     };
 
     const handleAddTask = () => {
-      if (taskInput.trim() && selectedCategory) {
-        const plannedMinutes = parseInt(plannedTime) || 0;
-        onAddTask(
-          date,
-          taskInput.trim(),
-          selectedCategory,
-          plannedMinutes * 60 * 1000,
-          isAutomated,
-          scheduledStartTime || null,
-          scheduledEndTime || null
-        );
-        setTaskInput("");
-        setPlannedTime("");
-        setIsAutomated(false);
-        setScheduledStartTime("");
-        setScheduledEndTime("");
-        setIsAddFormExpanded(false); // Collapse after adding
+      const errors = {};
+      if (!taskInput.trim()) errors.taskInput = 'Task name is required';
+      if (!selectedCategory) errors.selectedCategory = 'Please select a category';
+
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors);
+        return;
       }
+      setFormErrors({});
+
+      const plannedMinutes = parseInt(plannedTime) || 0;
+      onAddTask(
+        date,
+        taskInput.trim(),
+        selectedCategory,
+        plannedMinutes * 60 * 1000,
+        isAutomated,
+        scheduledStartTime || null,
+        scheduledEndTime || null
+      );
+      setTaskInput("");
+      setPlannedTime("");
+      setIsAutomated(false);
+      setScheduledStartTime("");
+      setScheduledEndTime("");
+      setIsAddFormExpanded(false);
     };
 
     const handleKeyPress = (e) => {
@@ -173,10 +182,10 @@ const DayCard = forwardRef(
           {!isAddFormExpanded ? (
             <button 
               className="btn-expand-add-task"
-              onClick={() => setIsAddFormExpanded(true)}
+              onClick={() => { setIsAddFormExpanded(true); setFormErrors({}); }}
             >
               <span className="btn-expand-icon">+</span>
-              <span>Add Task</span>
+              <span>Add New Task</span>
             </button>
           ) : (
             <>
@@ -191,22 +200,25 @@ const DayCard = forwardRef(
                 </button>
               </div>
               <div className="category-row">
+                <div className="field-group">
                 <select
-                  className="category-select"
+                  className={`category-select${formErrors.selectedCategory ? ' has-error' : ''}`}
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={(e) => { setSelectedCategory(e.target.value); if (formErrors.selectedCategory) setFormErrors(p => ({...p, selectedCategory: undefined})); }}
                 >
-                  <option value="">Select Category</option>
+                  <option value="">Select Category *</option>
                   {categories.map((cat) => (
                     <option key={cat._id} value={cat._id}>
                       {cat.icon} {cat.name}
                     </option>
                   ))}
                 </select>
+                {formErrors.selectedCategory && <span className="field-error">{formErrors.selectedCategory}</span>}
+                </div>
                 <input
                   type="number"
                   className="time-input"
-                  placeholder="Time (min)"
+                  placeholder="Time (min) — optional"
                   value={plannedTime}
                   onChange={(e) => setPlannedTime(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -214,15 +226,18 @@ const DayCard = forwardRef(
                 />
               </div>
               <div className="task-input-row">
+                <div className="field-group task-field-group">
                 <input
                   type="text"
-                  className="task-input"
-                  placeholder="Add new task..."
+                  className={`task-input${formErrors.taskInput ? ' has-error' : ''}`}
+                  placeholder="Task name (required)"
                   value={taskInput}
-                  onChange={(e) => setTaskInput(e.target.value)}
+                  onChange={(e) => { setTaskInput(e.target.value); if (formErrors.taskInput) setFormErrors(p => ({...p, taskInput: undefined})); }}
                   onKeyPress={handleKeyPress}
                   autoFocus
                 />
+                {formErrors.taskInput && <span className="field-error">{formErrors.taskInput}</span>}
+                </div>
                 <label
                   className="automated-checkbox"
                   title="Automated tasks are tracked daily"
@@ -237,9 +252,10 @@ const DayCard = forwardRef(
                 <button
                   className="btn-add"
                   onClick={handleAddTask}
-                  disabled={!taskInput.trim() || !selectedCategory || isAddingTask}
+                  disabled={isAddingTask}
+                  title="Add task"
                 >
-                  {isAddingTask ? "..." : "+"}
+                  {isAddingTask ? "..." : "Add"}
                 </button>
               </div>
               <div className="time-slot-row">

@@ -134,13 +134,13 @@
   margin-top: 20px;
   padding: 15px;
   background: #fffbeb;
-  border-left: 4px solid #fde68a;
+  border-left: 4px solid #e9b84a;
   border-radius: 4px;
 }
 
 .dark-mode .recommendations {
   background: #7c2d12;
-  border-left-color: #fde68a;
+  border-left-color: #e9b84a;
 }
 
 .recommendations h3 {
@@ -150,7 +150,7 @@
 }
 
 .dark-mode .recommendations h3 {
-  color: #fde68a;
+  color: #e9b84a;
 }
 
 .recommendations p {

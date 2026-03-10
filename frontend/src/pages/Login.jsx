@@ -14,6 +14,11 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', saved);
+  }, []);
+
   // Handle redirect back from email verification link
   useEffect(() => {
     const verified = searchParams.get("verified");

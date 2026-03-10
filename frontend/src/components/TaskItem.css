@@ -1,4 +1,4 @@
-.task-item {
+﻿.task-item {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
@@ -53,7 +53,7 @@
 
 .drag-handle {
   cursor: grab;
-  color: #fde68a;
+  color: #94a3b8;
   font-size: 1.2rem;
   opacity: 0.4;
   transition: opacity 0.3s;
@@ -72,13 +72,13 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(245, 225, 200, 0.1);
+  background: rgba(17, 17, 17, 0.08);
   padding: 3px 10px;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #fde68a;
-  border: 1px solid rgba(245, 225, 200, 0.2);
+  color: #64748b;
+  border: 1px solid rgba(17, 17, 17, 0.12);
 }
 
 .automated-badge {
@@ -98,13 +98,13 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(245, 225, 200, 0.1);
+  background: rgba(17, 17, 17, 0.08);
   padding: 3px 10px;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #fde68a;
-  border: 1px solid rgba(245, 225, 200, 0.2);
+  color: #64748b;
+  border: 1px solid rgba(17, 17, 17, 0.12);
   margin-left: 6px;
 }
 
@@ -255,13 +255,13 @@
 }
 
 body[data-theme="dark"] .calendar-reminder-picker {
-  background: #1e293b;
+  background: #111111;
   border-color: rgba(148, 163, 184, 0.2);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 body[data-theme="dark"] .calendar-picker-title {
-  color: #fde68a;
+  color: #e9b84a;
   border-bottom-color: rgba(245, 158, 11, 0.15);
 }
 
@@ -271,7 +271,7 @@ body[data-theme="dark"] .calendar-reminder-picker button {
 
 body[data-theme="dark"] .calendar-reminder-picker button:hover {
   background: rgba(245, 158, 11, 0.12);
-  color: #fde68a;
+  color: #e9b84a;
 }
 
 .btn-notification {
@@ -409,7 +409,7 @@ body[data-theme="dark"] .calendar-reminder-picker button:hover {
 
 .planned-time-label {
   font-weight: 600;
-  color: #fde68a;
+  color: #64748b;
   white-space: nowrap;
   font-size: 0.75rem;
 }
@@ -428,8 +428,8 @@ body[data-theme="dark"] .calendar-reminder-picker button:hover {
 }
 
 .task-sessions {
-  background: rgba(245, 225, 200, 0.12);
-  color: #fde68a;
+  background: rgba(17, 17, 17, 0.08);
+  color: #64748b;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -654,7 +654,7 @@ body[data-theme="dark"] .calendar-reminder-picker button:hover {
 
 .time-input-group label span {
   font-weight: 600;
-  color: #334155;
+  color: #1a1a1a;
   font-size: 0.9rem;
 }
 
@@ -711,7 +711,7 @@ body[data-theme="dark"] .calendar-reminder-picker button:hover {
 
 /* Dark mode support for time picker */
 body[data-theme="dark"] .time-picker-modal {
-  background: #1e293b;
+  background: #111111;
 }
 
 body[data-theme="dark"] .time-picker-info {
@@ -723,23 +723,23 @@ body[data-theme="dark"] .time-input-group label span {
 }
 
 body[data-theme="dark"] .time-input-group input[type="time"] {
-  background: #0f172a;
-  border-color: #334155;
+  background: #0a0a0a;
+  border-color: #1a1a1a;
   color: #e2e8f0;
 }
 
 body[data-theme="dark"] .time-input-group input[type="time"]:focus {
   border-color: #667eea;
-  background: #1e293b;
+  background: #111111;
 }
 
 body[data-theme="dark"] .btn-cancel {
-  background: #334155;
+  background: #1a1a1a;
   color: #cbd5e1;
 }
 
 body[data-theme="dark"] .btn-cancel:hover {
-  background: #475569;
+  background: #222222;
 }
 
 @media (max-width: 768px) {

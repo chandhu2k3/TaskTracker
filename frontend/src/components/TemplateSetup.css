@@ -1,4 +1,4 @@
-.template-setup {
+﻿.template-setup {
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   padding: 20px;
@@ -34,8 +34,8 @@
 
 .btn-new-template {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -46,7 +46,7 @@
 
 .btn-new-template:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(245, 225, 200, 0.3);
+  box-shadow: 0 6px 16px rgba(233, 184, 74, 0.4);
 }
 
 .btn-apply-template {
@@ -56,8 +56,8 @@
     rgba(0, 0, 0, 0.06) 100%
   );
   backdrop-filter: blur(10px);
-  color: #fde68a;
-  border: 1px solid rgba(245, 225, 200, 0.2);
+  color: #64748b;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 8px 16px;
   border-radius: 10px;
   cursor: pointer;
@@ -186,10 +186,10 @@
 }
 
 .day-tab.active {
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
   border-color: transparent;
-  box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
+  box-shadow: 0 4px 16px rgba(233, 184, 74, 0.4);
 }
 
 .day-task-count {
@@ -233,10 +233,10 @@
 }
 
 .day-tab.active {
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
   border-color: transparent;
-  box-shadow: 0 4px 16px rgba(245, 225, 200, 0.25);
+  box-shadow: 0 4px 16px rgba(233, 184, 74, 0.4);
 }
 
 .day-task-count {
@@ -247,8 +247,8 @@
 
 .btn-add-task {
   padding: 8px 14px;
-  background: linear-gradient(135deg, #fde68a, #fde68a);
-  color: white;
+  background: linear-gradient(135deg, #e9b84a, #d97706);
+  color: #1a1a2e;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -259,7 +259,7 @@
 
 .btn-add-task:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(245, 225, 200, 0.3);
+  box-shadow: 0 6px 16px rgba(233, 184, 74, 0.4);
 }
 
 .no-tasks {
@@ -306,7 +306,7 @@
 
 .drag-handle-template {
   cursor: grab;
-  color: #fde68a;
+  color: #94a3b8;
   font-size: 1.2rem;
   opacity: 0.4;
   transition: opacity 0.3s;
@@ -519,7 +519,7 @@
     rgba(0, 0, 0, 0.04) 0%,
     rgba(0, 0, 0, 0.06) 100%
   );
-  color: #fde68a;
+  color: #64748b;
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -621,8 +621,8 @@ body[data-theme="dark"] .day-tab:hover {
 }
 
 body[data-theme="dark"] .day-tab.active {
-  background: linear-gradient(135deg, #fde68a 0%, #d97706 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #e9b84a 0%, #d97706 100%);
+  color: #0a0a0a;
   border-color: transparent;
 }
 
@@ -645,7 +645,7 @@ body[data-theme="dark"] .template-task-row:hover {
 }
 
 body[data-theme="dark"] .drag-handle-template {
-  color: #fde68a;
+  color: #e9b84a;
 }
 
 body[data-theme="dark"] .task-name-input,

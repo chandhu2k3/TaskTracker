@@ -1,8 +1,17 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./Home.css";
 
 const Home = () => {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
   return (
     <div className="home-page">
       {/* Navigation */}
@@ -12,6 +21,9 @@ const Home = () => {
           <nav className="home-nav">
             <Link to="/login" className="home-nav-link">Login</Link>
             <Link to="/register" className="home-nav-btn">Get Started Free</Link>
+            <button className="home-theme-toggle" onClick={toggleTheme} title="Toggle theme">
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
           </nav>
         </div>
       </header>

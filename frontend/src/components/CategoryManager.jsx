@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import "./CategoryManager.css";
 
@@ -8,36 +8,36 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
   const [formData, setFormData] = useState({
     name: "",
     color: "#6366f1",
-    icon: "ðŸ“‹",
+    icon: "📋",
   });
 
   const popularIcons = [
-    "ðŸ’ª",
-    "ðŸ“š",
-    "ðŸ’»",
-    "ðŸƒ",
-    "ðŸŽ¨",
-    "ðŸ“–",
-    "ðŸŽ¯",
-    "ðŸ§˜",
-    "ðŸŽ",
-    "ðŸŽµ",
-    "ðŸ“",
-    "ðŸ‹ï¸",
-    "ðŸŽ®",
-    "ðŸ“",
-    "âš½",
-    "ðŸ€",
-    "ðŸŽ¾",
-    "ðŸ",
-    "ðŸŽ¸",
-    "ðŸŽ¬",
-    "ðŸ“·",
-    "ðŸ³",
-    "ðŸ§‘â€ðŸ’»",
-    "ðŸ“Š",
-    "ðŸš´",
-    "ðŸŠ",
+    "💪",
+    "📚",
+    "💻",
+    "🏃",
+    "🎨",
+    "📖",
+    "🎯",
+    "🧘",
+    "🍎",
+    "🎵",
+    "📝",
+    "🏋️",
+    "🎮",
+    "🏓",
+    "⚽",
+    "🏀",
+    "🎾",
+    "🏐",
+    "🎸",
+    "🎬",
+    "📷",
+    "🍳",
+    "🧑‍💻",
+    "📊",
+    "🚴",
+    "🏊",
   ];
   const popularColors = [
     "#6366f1",
@@ -61,7 +61,7 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
   };
 
   const resetForm = () => {
-    setFormData({ name: "", color: "#6366f1", icon: "ðŸ“‹" });
+    setFormData({ name: "", color: "#6366f1", icon: "📋" });
     setEditingCategory(null);
     setShowModal(false);
   };
@@ -138,7 +138,7 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
               ))}
             </div>
             <div className="custom-color-picker">
-              <span className="picker-label">ðŸŽ¨ Custom:</span>
+              <span className="picker-label">🎨 Custom:</span>
               <input
                 type="color"
                 value={formData.color}
@@ -171,7 +171,7 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
   return (
     <div className="category-manager">
       <div className="category-header">
-        <h3>ðŸ“‚ Categories</h3>
+        <h3>📂 Categories</h3>
         <button onClick={() => setShowModal(true)} className="btn-add-category">
           + Add Category
         </button>
@@ -196,7 +196,7 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
                   onClick={() => handleEdit(category)}
                   className="btn-edit"
                 >
-                  âœï¸
+                  ✏️
                 </button>
                 <button
                   onClick={() => {
@@ -211,7 +211,7 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
                   className="btn-delete-cat"
                   disabled={deletingCategory[category._id]}
                 >
-                  {deletingCategory[category._id] ? "..." : "Ã—"}
+                  {deletingCategory[category._id] ? "..." : "�"}
                 </button>
               </div>
             </div>

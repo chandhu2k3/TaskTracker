@@ -1,7 +1,7 @@
 /* Home.css Ã¢â‚¬â€ public landing page styles */
 
 :root {
-  --amber: #fde68a;
+  --amber: #e9b84a;
   --amber-dark: #e9b84a;
   --bg: #0f0f0f;
   --bg2: #141414;
@@ -395,6 +395,152 @@
 
 .home-footer-bottom a:hover {
   color: var(--amber);
+}
+
+/* Theme toggle button */
+.home-theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.6rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.home-theme-toggle:hover {
+  border-color: var(--amber);
+  background: rgba(233, 184, 74, 0.1);
+}
+
+/* ─── Light Mode ─── */
+body[data-theme="light"] {
+  --bg: #faf8f5;
+  --bg2: #f2ece3;
+  --bg3: #e9e0d3;
+  --border: #d5c9b8;
+  --text: #1a1007;
+  --muted: #5d4e40;
+}
+
+body[data-theme="light"] .home-page {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body[data-theme="light"] .home-header {
+  background: rgba(250, 248, 245, 0.94);
+  border-bottom-color: var(--border);
+}
+
+body[data-theme="light"] .home-hero-title {
+  color: #1a1007;
+}
+
+body[data-theme="light"] .home-hero-sub {
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-btn-secondary {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body[data-theme="light"] .home-btn-secondary:hover {
+  border-color: var(--amber);
+}
+
+body[data-theme="light"] .home-badge {
+  background: var(--bg3);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-nav-link {
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-nav-link:hover {
+  color: var(--text);
+}
+
+body[data-theme="light"] .home-features {
+  background: var(--bg2);
+  border-color: var(--border);
+}
+
+body[data-theme="light"] .home-section-title {
+  color: var(--text);
+}
+
+body[data-theme="light"] .home-feature-card {
+  background: var(--bg3);
+  border-color: var(--border);
+}
+
+body[data-theme="light"] .home-feature-card h3 {
+  color: var(--text);
+}
+
+body[data-theme="light"] .home-feature-card p {
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-step h3 {
+  color: var(--text);
+}
+
+body[data-theme="light"] .home-step p {
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-step-arrow {
+  color: var(--border);
+}
+
+body[data-theme="light"] .home-cta-banner {
+  background: linear-gradient(135deg, #fdf3e3 0%, #faf8f5 100%);
+  border-color: rgba(233, 184, 74, 0.3);
+}
+
+body[data-theme="light"] .home-cta-banner h2 {
+  color: var(--text);
+}
+
+body[data-theme="light"] .home-cta-banner p {
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-footer {
+  background: var(--bg2);
+  border-color: var(--border);
+}
+
+body[data-theme="light"] .home-footer-inner {
+  border-bottom-color: var(--border);
+}
+
+body[data-theme="light"] .home-footer-brand p {
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-footer-links h4 {
+  color: var(--text);
+}
+
+body[data-theme="light"] .home-footer-links a {
+  color: var(--muted);
+}
+
+body[data-theme="light"] .home-footer-bottom p,
+body[data-theme="light"] .home-footer-bottom a {
+  color: #8a7a6e;
+}
+
+body[data-theme="light"] .home-theme-toggle {
+  border-color: var(--border);
+  color: var(--text);
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Responsive Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */

@@ -1,6 +1,9 @@
 const nodemailer = require('nodemailer');
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const isProd = process.env.NODE_ENV === 'production';
+
+const FRONTEND_URL = process.env.FRONTEND_URL || (isProd ? 'https://your-frontend.vercel.app' : 'http://localhost:3000');
+const BACKEND_URL  = process.env.BACKEND_URL  || (isProd ? 'https://your-backend.vercel.app'  : 'http://localhost:5000');
 const FROM_NAME = 'Task Tracker';
 
 // Lazily created transporter — skips gracefully if Gmail creds aren't set (local dev)

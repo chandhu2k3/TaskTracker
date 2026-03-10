@@ -12,6 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyPending from "./pages/VerifyPending";
+import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import CalendarCallback from "./pages/CalendarCallback";
 import Home from "./pages/Home";
@@ -42,6 +43,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/verify-pending" element={<VerifyPending />} />
+              <Route path="/verify-email/:token" element={<VerifyEmail />} />
               <Route path="/calendar/callback" element={<CalendarCallback />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
