@@ -3,10 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import Seo from "../components/Seo";
 import "./Auth.css";
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -14,20 +20,27 @@ const Register = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem('theme') || 'dark';
-    document.body.setAttribute('data-theme', saved);
+    const saved = localStorage.getItem("theme") || "dark";
+    document.body.setAttribute("data-theme", saved);
   }, []);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) return toast.error("Passwords do not match");
-    if (formData.password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (formData.password !== formData.confirmPassword)
+      return toast.error("Passwords do not match");
+    if (formData.password.length < 6)
+      return toast.error("Password must be at least 6 characters");
 
     setIsLoading(true);
     try {
-      const data = await register({ name: formData.name, email: formData.email, password: formData.password });
+      const data = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
       // Navigate to verify pending — do NOT log in
       navigate(`/verify-pending?email=${encodeURIComponent(data.email)}`);
     } catch (error) {
@@ -47,7 +60,9 @@ const Register = () => {
     try {
       const data = await googleLogin(credentialResponse.credential);
       sessionStorage.setItem("isNewRegistration", "true");
-      toast.success(`Account created! Welcome, ${data.name?.split(" ")[0]}! 🎉`);
+      toast.success(
+        `Account created! Welcome, ${data.name?.split(" ")[0]}! 🎉`,
+      );
       navigate("/dashboard");
     } catch (error) {
       toast.error(error.response?.data?.message || "Google Sign-Up failed");
@@ -56,6 +71,12 @@ const Register = () => {
 
   return (
     <div className="auth-container">
+      <Seo
+        title="Register"
+        description="Create your free Task Tracker Pro account and start organizing tasks, todos, and reminders."
+        path="/register"
+        noindex
+      />
       <div className="auth-card">
         <div className="auth-logo">
           <img src="/logo.svg" alt="Task Tracker" />
@@ -76,29 +97,64 @@ const Register = () => {
           />
         </div>
 
-        <div className="auth-divider"><span>or register with email</span></div>
+        <div className="auth-divider">
+          <span>or register with email</span>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Name</label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter your name" />
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              placeholder="Enter your name"
+            />
           </div>
           <div className="form-group">
             <label>Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Enter your email" />
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="Enter your email"
+            />
           </div>
           <div className="form-group">
             <label>Password</label>
             <div className="password-wrapper">
-              <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required placeholder="At least 6 characters" />
-              <button type="button" className="toggle-pw" onClick={() => setShowPassword(v => !v)} tabIndex={-1}>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                placeholder="At least 6 characters"
+              />
+              <button
+                type="button"
+                className="toggle-pw"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+              >
                 {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
           </div>
           <div className="form-group">
             <label>Confirm Password</label>
-            <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Confirm your password" />
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              placeholder="Confirm your password"
+            />
           </div>
           <button type="submit" className="btn-submit" disabled={isLoading}>
             {isLoading ? "Creating Account..." : "Create Account"}

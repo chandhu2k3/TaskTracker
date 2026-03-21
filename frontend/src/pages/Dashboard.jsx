@@ -16,6 +16,7 @@ import notificationService from "../services/notificationService";
 import calendarService from "../services/calendarService";
 import keepAliveService from "../services/keepAliveService";
 import Onboarding from "../components/Onboarding";
+import Seo from "../components/Seo";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -24,8 +25,8 @@ const Dashboard = () => {
   // Helper function to get local date string (not UTC)
   const getLocalDateString = (date = new Date()) => {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
@@ -80,7 +81,7 @@ const Dashboard = () => {
   const [categories, setCategories] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Specific loading states for button disabling
   const [addingTask, setAddingTask] = useState(false);
   const [deletingTask, setDeletingTask] = useState({});
@@ -95,16 +96,22 @@ const Dashboard = () => {
   const [togglingTodo, setTogglingTodo] = useState({});
   const [deletingTodo, setDeletingTodo] = useState({});
   const [expandedPanel, setExpandedPanel] = useState(null); // null | 'tasks' | 'todos'
-  
+
   const [activeTab, setActiveTab] = useState("week"); // week, categories, template, analytics
   const [viewMode, setViewMode] = useState("day"); // day or week
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsType, setAnalyticsType] = useState("week"); // week, month, category
   const [selectedAnalyticsCategory, setSelectedAnalyticsCategory] =
     useState("");
-  const [selectedAnalyticsYear, setSelectedAnalyticsYear] = useState(new Date().getFullYear());
-  const [selectedAnalyticsMonth, setSelectedAnalyticsMonth] = useState(new Date().getMonth());
-  const [selectedAnalyticsWeek, setSelectedAnalyticsWeek] = useState(Math.ceil(new Date().getDate() / 7));
+  const [selectedAnalyticsYear, setSelectedAnalyticsYear] = useState(
+    new Date().getFullYear(),
+  );
+  const [selectedAnalyticsMonth, setSelectedAnalyticsMonth] = useState(
+    new Date().getMonth(),
+  );
+  const [selectedAnalyticsWeek, setSelectedAnalyticsWeek] = useState(
+    Math.ceil(new Date().getDate() / 7),
+  );
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplateForApply, setSelectedTemplateForApply] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -116,22 +123,22 @@ const Dashboard = () => {
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [user] = useState(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'light';
+    return localStorage.getItem("theme") || "light";
   });
 
   // Check if user needs onboarding (first time) - using database value
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const isNewUser = sessionStorage.getItem('isNewRegistration');
-    
+    const user = JSON.parse(localStorage.getItem("user"));
+    const isNewUser = sessionStorage.getItem("isNewRegistration");
+
     // Show onboarding for new registrations or if never completed (from database)
-    if (isNewUser === 'true' || (user && !user.onboardingComplete)) {
+    if (isNewUser === "true" || (user && !user.onboardingComplete)) {
       setShowOnboarding(true);
-      sessionStorage.removeItem('isNewRegistration');
+      sessionStorage.removeItem("isNewRegistration");
     }
   }, []);
 
@@ -146,33 +153,36 @@ const Dashboard = () => {
 
   // Theme toggle function
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+    const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+    localStorage.setItem("theme", newTheme);
   };
 
   // Apply theme class to document
   useEffect(() => {
-    document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute("data-theme", theme);
   }, [theme]);
 
   // Close profile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileMenuOpen && !event.target.closest('.profile-dropdown-container')) {
+      if (
+        profileMenuOpen &&
+        !event.target.closest(".profile-dropdown-container")
+      ) {
         setProfileMenuOpen(false);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [profileMenuOpen]);
 
   // Keep serverless function warm - aggressive ping strategy to prevent cold starts
   useEffect(() => {
     // Start the keep-alive service
     keepAliveService.start();
-    
+
     // Cleanup on unmount
     return () => {
       keepAliveService.stop();
@@ -209,34 +219,34 @@ const Dashboard = () => {
       const height = 600;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
-      
+
       const popup = window.open(
         authUrl,
-        'Google Calendar Authorization',
-        `width=${width},height=${height},left=${left},top=${top}`
+        "Google Calendar Authorization",
+        `width=${width},height=${height},left=${left},top=${top}`,
       );
 
       // Listen for OAuth callback
       const handleMessage = async (event) => {
-        if (event.data?.type === 'GOOGLE_CALENDAR_CALLBACK') {
-          window.removeEventListener('message', handleMessage);
+        if (event.data?.type === "GOOGLE_CALENDAR_CALLBACK") {
+          window.removeEventListener("message", handleMessage);
           popup?.close();
-          
+
           if (event.data.code) {
             try {
               await calendarService.handleCallback(event.data.code);
               setGoogleCalendarConnected(true);
-              toast.success('📅 Google Calendar connected!');
+              toast.success("📅 Google Calendar connected!");
             } catch (error) {
-              toast.error('Failed to connect Google Calendar');
+              toast.error("Failed to connect Google Calendar");
             }
           }
         }
       };
-      window.addEventListener('message', handleMessage);
+      window.addEventListener("message", handleMessage);
     } catch (error) {
-      toast.error('Failed to connect Google Calendar');
-      console.error('Calendar connect error:', error);
+      toast.error("Failed to connect Google Calendar");
+      console.error("Calendar connect error:", error);
     }
   };
 
@@ -245,9 +255,9 @@ const Dashboard = () => {
     try {
       await calendarService.disconnect();
       setGoogleCalendarConnected(false);
-      toast.success('Google Calendar disconnected');
+      toast.success("Google Calendar disconnected");
     } catch (error) {
-      toast.error('Failed to disconnect calendar');
+      toast.error("Failed to disconnect calendar");
     }
   };
 
@@ -400,7 +410,11 @@ const Dashboard = () => {
   // Handle analytics period changes
   const handleAnalyticsYearChange = (year) => {
     setSelectedAnalyticsYear(year);
-    setSelectedDate({ year, month: selectedAnalyticsMonth, week: selectedAnalyticsWeek });
+    setSelectedDate({
+      year,
+      month: selectedAnalyticsMonth,
+      week: selectedAnalyticsWeek,
+    });
   };
 
   const handleAnalyticsMonthChange = (month) => {
@@ -413,7 +427,11 @@ const Dashboard = () => {
 
   const handleAnalyticsWeekChange = (week) => {
     setSelectedAnalyticsWeek(week);
-    setSelectedDate({ year: selectedAnalyticsYear, month: selectedAnalyticsMonth, week });
+    setSelectedDate({
+      year: selectedAnalyticsYear,
+      month: selectedAnalyticsMonth,
+      week,
+    });
   };
 
   const navigateWeek = (direction) => {
@@ -458,11 +476,11 @@ const Dashboard = () => {
   const navigateDay = (direction) => {
     const currentDate = new Date(selectedDayDate);
     currentDate.setDate(currentDate.getDate() + direction);
-    
+
     const newDateString = getLocalDateString(currentDate);
     setSelectedDayDate(newDateString);
     setDisplayDate(newDateString);
-    
+
     // Update week selection for the new date
     const newSelection = dateToWeekSelection(newDateString);
     setSelectedDate(newSelection);
@@ -512,16 +530,16 @@ const Dashboard = () => {
       // If trying to start a task while sleep mode is active, prompt to turn off sleep
       if (isActive && sleepMode) {
         const shouldWakeUp = window.confirm(
-          '😴 Sleep mode is currently active!\n\nYou cannot start tasks while sleeping. Would you like to turn off sleep mode and start this task?'
+          "😴 Sleep mode is currently active!\n\nYou cannot start tasks while sleeping. Would you like to turn off sleep mode and start this task?",
         );
-        
+
         if (shouldWakeUp) {
           await toggleSleepMode(); // Turn off sleep mode
         } else {
           return; // Don't start the task
         }
       }
-      
+
       // If trying to start a task, check if another task is running
       if (isActive) {
         const currentlyActiveTask = tasks.find(
@@ -555,36 +573,48 @@ const Dashboard = () => {
 
   const handleDeleteTask = async (taskId) => {
     if (deletingTask[taskId]) return;
-    setDeletingTask(prev => ({ ...prev, [taskId]: true }));
+    setDeletingTask((prev) => ({ ...prev, [taskId]: true }));
     // Save the task for undo
-    const deletedTask = tasks.find(t => t._id === taskId);
+    const deletedTask = tasks.find((t) => t._id === taskId);
     try {
       await taskService.deleteTask(taskId);
       setTasks(tasks.filter((task) => task._id !== taskId));
       // Show undo toast
       toast.info(
         ({ closeToast }) => (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span>Task deleted</span>
             <button
               onClick={async () => {
                 closeToast();
                 try {
                   await taskService.restoreTask(taskId);
-                  setTasks(prev => [...prev, deletedTask]);
-                  toast.success('Task restored!');
-                } catch { toast.error('Failed to restore task'); }
+                  setTasks((prev) => [...prev, deletedTask]);
+                  toast.success("Task restored!");
+                } catch {
+                  toast.error("Failed to restore task");
+                }
               }}
-              style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}
-            >Undo</button>
+              style={{
+                background: "#6366f1",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "4px 12px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Undo
+            </button>
           </div>
         ),
-        { autoClose: 5000 }
+        { autoClose: 5000 },
       );
     } catch (error) {
       toast.error("Failed to delete task");
     } finally {
-      setDeletingTask(prev => {
+      setDeletingTask((prev) => {
         const newState = { ...prev };
         delete newState[taskId];
         return newState;
@@ -766,7 +796,7 @@ const Dashboard = () => {
 
   const handleUpdateTemplate = async (templateId, templateData) => {
     if (updatingTemplate[templateId]) return;
-    setUpdatingTemplate(prev => ({ ...prev, [templateId]: true }));
+    setUpdatingTemplate((prev) => ({ ...prev, [templateId]: true }));
     try {
       await templateService.updateTemplate(templateId, templateData);
       toast.success("Template updated successfully");
@@ -774,7 +804,7 @@ const Dashboard = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update template");
     } finally {
-      setUpdatingTemplate(prev => {
+      setUpdatingTemplate((prev) => {
         const newState = { ...prev };
         delete newState[templateId];
         return newState;
@@ -784,7 +814,7 @@ const Dashboard = () => {
 
   const handleDeleteTemplate = async (templateId) => {
     if (deletingTemplate[templateId]) return;
-    setDeletingTemplate(prev => ({ ...prev, [templateId]: true }));
+    setDeletingTemplate((prev) => ({ ...prev, [templateId]: true }));
     try {
       await templateService.deleteTemplate(templateId);
       toast.success("Template deleted successfully");
@@ -792,7 +822,7 @@ const Dashboard = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete template");
     } finally {
-      setDeletingTemplate(prev => {
+      setDeletingTemplate((prev) => {
         const newState = { ...prev };
         delete newState[templateId];
         return newState;
@@ -816,7 +846,7 @@ const Dashboard = () => {
 
   const handleUpdateCategory = async (categoryId, categoryData) => {
     if (updatingCategory[categoryId]) return;
-    setUpdatingCategory(prev => ({ ...prev, [categoryId]: true }));
+    setUpdatingCategory((prev) => ({ ...prev, [categoryId]: true }));
     try {
       await categoryService.updateCategory(categoryId, categoryData);
       toast.success("Category updated successfully");
@@ -824,7 +854,7 @@ const Dashboard = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update category");
     } finally {
-      setUpdatingCategory(prev => {
+      setUpdatingCategory((prev) => {
         const newState = { ...prev };
         delete newState[categoryId];
         return newState;
@@ -834,7 +864,7 @@ const Dashboard = () => {
 
   const handleDeleteCategory = async (categoryId) => {
     if (deletingCategory[categoryId]) return;
-    setDeletingCategory(prev => ({ ...prev, [categoryId]: true }));
+    setDeletingCategory((prev) => ({ ...prev, [categoryId]: true }));
     try {
       await categoryService.deleteCategory(categoryId);
       toast.success("Category deleted successfully");
@@ -842,7 +872,7 @@ const Dashboard = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete category");
     } finally {
-      setDeletingCategory(prev => {
+      setDeletingCategory((prev) => {
         const newState = { ...prev };
         delete newState[categoryId];
         return newState;
@@ -991,8 +1021,6 @@ const Dashboard = () => {
   console.log("Week Days:", weekDays);
   console.log("Grouped Tasks:", groupedTasks);
 
-  
-
   // Todo handlers - API-based
   const handleAddTodo = async (text, deadline = null) => {
     if (addingTodo) return;
@@ -1009,7 +1037,7 @@ const Dashboard = () => {
 
   const handleToggleTodo = async (id) => {
     if (togglingTodo[id]) return;
-    setTogglingTodo(prev => ({ ...prev, [id]: true }));
+    setTogglingTodo((prev) => ({ ...prev, [id]: true }));
     try {
       const todo = todos.find((t) => t._id === id);
       if (todo) {
@@ -1019,7 +1047,7 @@ const Dashboard = () => {
     } catch (error) {
       toast.error("Failed to update todo");
     } finally {
-      setTogglingTodo(prev => {
+      setTogglingTodo((prev) => {
         const newState = { ...prev };
         delete newState[id];
         return newState;
@@ -1029,35 +1057,47 @@ const Dashboard = () => {
 
   const handleDeleteTodo = async (id) => {
     if (deletingTodo[id]) return;
-    setDeletingTodo(prev => ({ ...prev, [id]: true }));
-    const deletedTodo = todos.find(t => t._id === id);
+    setDeletingTodo((prev) => ({ ...prev, [id]: true }));
+    const deletedTodo = todos.find((t) => t._id === id);
     try {
       await todoService.deleteTodo(id);
       setTodos(todos.filter((todo) => todo._id !== id));
       // Show undo toast
       toast.info(
         ({ closeToast }) => (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span>Todo deleted</span>
             <button
               onClick={async () => {
                 closeToast();
                 try {
                   await todoService.restoreTodo(id);
-                  setTodos(prev => [...prev, deletedTodo]);
-                  toast.success('Todo restored!');
-                } catch { toast.error('Failed to restore todo'); }
+                  setTodos((prev) => [...prev, deletedTodo]);
+                  toast.success("Todo restored!");
+                } catch {
+                  toast.error("Failed to restore todo");
+                }
               }}
-              style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}
-            >Undo</button>
+              style={{
+                background: "#6366f1",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "4px 12px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Undo
+            </button>
           </div>
         ),
-        { autoClose: 5000 }
+        { autoClose: 5000 },
       );
     } catch (error) {
       toast.error("Failed to delete todo");
     } finally {
-      setDeletingTodo(prev => {
+      setDeletingTodo((prev) => {
         const newState = { ...prev };
         delete newState[id];
         return newState;
@@ -1066,7 +1106,13 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={`dashboard ${sleepMode ? 'sleep-mode-active' : ''}`}>
+    <div className={`dashboard ${sleepMode ? "sleep-mode-active" : ""}`}>
+      <Seo
+        title="Dashboard"
+        description="Your private Task Tracker Pro dashboard."
+        path="/dashboard"
+        noindex
+      />
       {/* Sleep Mode Overlay */}
       {sleepMode && (
         <div className="sleep-mode-overlay">
@@ -1077,12 +1123,10 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      
+
       {/* Onboarding Modal for new users */}
-      {showOnboarding && (
-        <Onboarding onComplete={handleOnboardingComplete} />
-      )}
-      
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
+
       <div className="dashboard-header">
         <div className="header-left">
           {/* Hamburger menu - mobile only, on the left */}
@@ -1093,13 +1137,17 @@ const Dashboard = () => {
           >
             {mobileMenuOpen ? "✕" : "☰"}
           </button>
-          <div 
-            className="logo-container" 
+          <div
+            className="logo-container"
             onClick={() => setActiveTab("week")}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: "pointer" }}
             title="Go to Home"
           >
-            <img src="\logo.svg" alt="Task Tracker Pro Logo" className="app-logo" />
+            <img
+              src="\logo.svg"
+              alt="Task Tracker Pro Logo"
+              className="app-logo"
+            />
             <h1>Task Tracker</h1>
           </div>
         </div>
@@ -1108,16 +1156,20 @@ const Dashboard = () => {
           <button
             className={`btn-sleep-mode ${sleepMode ? "active" : ""}`}
             onClick={toggleSleepMode}
-            title={sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"}
+            title={
+              sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"
+            }
           >
             {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
           </button>
           <button
             className="btn-theme-toggle"
             onClick={toggleTheme}
-            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            title={
+              theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"
+            }
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            {theme === "light" ? "🌙" : "☀️"}
           </button>
         </div>
         <div className="header-nav">
@@ -1150,50 +1202,60 @@ const Dashboard = () => {
           <button
             className={`btn-sleep-mode ${sleepMode ? "active" : ""}`}
             onClick={toggleSleepMode}
-            title={sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"}
+            title={
+              sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"
+            }
           >
             {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
           </button>
           <button
             className="btn-theme-toggle"
             onClick={toggleTheme}
-            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            title={
+              theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"
+            }
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            {theme === "light" ? "🌙" : "☀️"}
           </button>
           <div className="profile-dropdown-container">
-            <button 
-              className={`btn-profile ${profileMenuOpen ? 'active' : ''}`}
+            <button
+              className={`btn-profile ${profileMenuOpen ? "active" : ""}`}
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
               title="Profile menu"
             >
               <span className="profile-avatar">
-                {user?.name?.charAt(0)?.toUpperCase() || '👤'}
+                {user?.name?.charAt(0)?.toUpperCase() || "👤"}
               </span>
-              <span className="profile-name">{user?.name?.split(' ')[0] || 'Profile'}</span>
-              <span className="dropdown-arrow">{profileMenuOpen ? '▲' : '▼'}</span>
+              <span className="profile-name">
+                {user?.name?.split(" ")[0] || "Profile"}
+              </span>
+              <span className="dropdown-arrow">
+                {profileMenuOpen ? "▲" : "▼"}
+              </span>
             </button>
             {profileMenuOpen && (
               <div className="profile-dropdown-menu">
                 <div className="profile-dropdown-header">
                   <span className="profile-avatar-large">
-                    {user?.name?.charAt(0)?.toUpperCase() || '👤'}
+                    {user?.name?.charAt(0)?.toUpperCase() || "👤"}
                   </span>
                   <div className="profile-info">
-                    <span className="profile-name-full">{user?.name || 'User'}</span>
-                    <span className="profile-email">{user?.email || ''}</span>
+                    <span className="profile-name-full">
+                      {user?.name || "User"}
+                    </span>
+                    <span className="profile-email">{user?.email || ""}</span>
                   </div>
                 </div>
                 <div className="profile-dropdown-divider"></div>
-                <button 
+                <button
                   className="profile-dropdown-item theme-toggle"
                   onClick={() => {
                     toggleTheme();
                   }}
                 >
-                  {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                  {theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}
                 </button>
-                <button 
+                <button
                   className="profile-dropdown-item"
                   onClick={() => {
                     setProfileMenuOpen(false);
@@ -1202,8 +1264,8 @@ const Dashboard = () => {
                 >
                   🎯 Tour Guide
                 </button>
-                <button 
-                  className={`profile-dropdown-item ${googleCalendarConnected ? 'connected' : ''}`}
+                <button
+                  className={`profile-dropdown-item ${googleCalendarConnected ? "connected" : ""}`}
                   onClick={() => {
                     if (googleCalendarConnected) {
                       handleDisconnectCalendar();
@@ -1212,9 +1274,11 @@ const Dashboard = () => {
                     }
                   }}
                 >
-                  {googleCalendarConnected ? '📅 Disconnect Calendar' : '📅 Connect Google Calendar'}
+                  {googleCalendarConnected
+                    ? "📅 Disconnect Calendar"
+                    : "📅 Connect Google Calendar"}
                 </button>
-                <button 
+                <button
                   className="profile-dropdown-item logout"
                   onClick={() => {
                     setProfileMenuOpen(false);
@@ -1286,7 +1350,7 @@ const Dashboard = () => {
             🎯 Tour Guide
           </button>
           <button
-            className={`mobile-menu-item ${googleCalendarConnected ? 'connected' : ''}`}
+            className={`mobile-menu-item ${googleCalendarConnected ? "connected" : ""}`}
             onClick={() => {
               setMobileMenuOpen(false);
               if (googleCalendarConnected) {
@@ -1296,7 +1360,9 @@ const Dashboard = () => {
               }
             }}
           >
-            {googleCalendarConnected ? '📅 Disconnect Calendar' : '📅 Connect Google Calendar'}
+            {googleCalendarConnected
+              ? "📅 Disconnect Calendar"
+              : "📅 Connect Google Calendar"}
           </button>
           <button
             className="mobile-menu-item logout-item"
@@ -1370,8 +1436,12 @@ const Dashboard = () => {
                   <div className="week-navigation">
                     <button
                       className="btn-week-nav"
-                      onClick={() => viewMode === "day" ? navigateDay(-1) : navigateWeek(-1)}
-                      title={viewMode === "day" ? "Previous Day" : "Previous Week"}
+                      onClick={() =>
+                        viewMode === "day" ? navigateDay(-1) : navigateWeek(-1)
+                      }
+                      title={
+                        viewMode === "day" ? "Previous Day" : "Previous Week"
+                      }
                     >
                       ← {viewMode === "day" ? "Previous Day" : "Previous Week"}
                     </button>
@@ -1384,7 +1454,9 @@ const Dashboard = () => {
                     />
                     <button
                       className="btn-week-nav"
-                      onClick={() => viewMode === "day" ? navigateDay(1) : navigateWeek(1)}
+                      onClick={() =>
+                        viewMode === "day" ? navigateDay(1) : navigateWeek(1)
+                      }
                       title={viewMode === "day" ? "Next Day" : "Next Week"}
                     >
                       {viewMode === "day" ? "Next Day" : "Next Week"} →
@@ -1396,7 +1468,9 @@ const Dashboard = () => {
                       onClick={handleApplyTemplate}
                       disabled={loading}
                     >
-                      {loading ? "Applying..." : "✨ Apply Template to This Week"}
+                      {loading
+                        ? "Applying..."
+                        : "✨ Apply Template to This Week"}
                     </button>
                     <button
                       className="btn-reset-week"
@@ -1411,25 +1485,41 @@ const Dashboard = () => {
                 {loading ? (
                   <div className="loading">Loading tasks...</div>
                 ) : viewMode === "day" ? (
-                  <div className={`day-with-todos${expandedPanel ? ' has-expanded' : ''}`}>
-                    <div className={`day-section${expandedPanel === 'tasks' ? ' panel-expanded' : expandedPanel === 'todos' ? ' panel-hidden' : ''}`}>
+                  <div
+                    className={`day-with-todos${expandedPanel ? " has-expanded" : ""}`}
+                  >
+                    <div
+                      className={`day-section${expandedPanel === "tasks" ? " panel-expanded" : expandedPanel === "todos" ? " panel-hidden" : ""}`}
+                    >
                       <div className="panel-toggle-bar">
                         <button
                           className="panel-toggle-btn"
-                          title={expandedPanel === 'tasks' ? 'Restore split view' : 'Expand tasks to full screen'}
-                          onClick={() => setExpandedPanel(expandedPanel === 'tasks' ? null : 'tasks')}
+                          title={
+                            expandedPanel === "tasks"
+                              ? "Restore split view"
+                              : "Expand tasks to full screen"
+                          }
+                          onClick={() =>
+                            setExpandedPanel(
+                              expandedPanel === "tasks" ? null : "tasks",
+                            )
+                          }
                         >
-                          {expandedPanel === 'tasks' ? '⊠' : '⤢'}
+                          {expandedPanel === "tasks" ? "⊠" : "⤢"}
                         </button>
                       </div>
                       {(() => {
                         const today = new Date();
                         const todayStr = getLocalDateString(today);
-                        const selectedTask = weekDays.find(day => day.date === selectedDayDate);
+                        const selectedTask = weekDays.find(
+                          (day) => day.date === selectedDayDate,
+                        );
                         return selectedTask ? (
                           <DayCard
                             key={selectedTask.date}
-                            ref={(el) => (dayCardRefs.current[selectedTask.date] = el)}
+                            ref={(el) =>
+                              (dayCardRefs.current[selectedTask.date] = el)
+                            }
                             date={selectedTask.date}
                             dayName={selectedTask.displayName}
                             tasks={groupedTasks[selectedTask.date] || []}
@@ -1443,18 +1533,30 @@ const Dashboard = () => {
                             isToday={selectedTask.date === todayStr}
                           />
                         ) : (
-                          <div className="empty-state">No tasks for this date</div>
+                          <div className="empty-state">
+                            No tasks for this date
+                          </div>
                         );
                       })()}
                     </div>
-                    <div className={`todos-section${expandedPanel === 'todos' ? ' panel-expanded' : expandedPanel === 'tasks' ? ' panel-hidden' : ''}`}>
+                    <div
+                      className={`todos-section${expandedPanel === "todos" ? " panel-expanded" : expandedPanel === "tasks" ? " panel-hidden" : ""}`}
+                    >
                       <div className="panel-toggle-bar">
                         <button
                           className="panel-toggle-btn"
-                          title={expandedPanel === 'todos' ? 'Restore split view' : 'Expand todos to full screen'}
-                          onClick={() => setExpandedPanel(expandedPanel === 'todos' ? null : 'todos')}
+                          title={
+                            expandedPanel === "todos"
+                              ? "Restore split view"
+                              : "Expand todos to full screen"
+                          }
+                          onClick={() =>
+                            setExpandedPanel(
+                              expandedPanel === "todos" ? null : "todos",
+                            )
+                          }
                         >
-                          {expandedPanel === 'todos' ? '⊠' : '⤢'}
+                          {expandedPanel === "todos" ? "⊠" : "⤢"}
                         </button>
                       </div>
                       <TodoList
@@ -1496,7 +1598,6 @@ const Dashboard = () => {
                 )}
               </>
             )}
-
           </div>
         )}
 
@@ -1560,14 +1661,16 @@ const Dashboard = () => {
                   Category View
                 </button>
               </div>
-              
+
               {/* Week View Selectors */}
               {analyticsType === "week" && (
                 <div className="analytics-date-selectors">
                   <select
                     className="analytics-selector"
                     value={selectedAnalyticsYear}
-                    onChange={(e) => handleAnalyticsYearChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      handleAnalyticsYearChange(Number(e.target.value))
+                    }
                   >
                     {[...Array(5)].map((_, i) => {
                       const year = new Date().getFullYear() - 2 + i;
@@ -1581,11 +1684,23 @@ const Dashboard = () => {
                   <select
                     className="analytics-selector"
                     value={selectedAnalyticsMonth}
-                    onChange={(e) => handleAnalyticsMonthChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      handleAnalyticsMonthChange(Number(e.target.value))
+                    }
                   >
                     {[
-                      "January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"
+                      "January",
+                      "February",
+                      "March",
+                      "April",
+                      "May",
+                      "June",
+                      "July",
+                      "August",
+                      "September",
+                      "October",
+                      "November",
+                      "December",
                     ].map((month, index) => (
                       <option key={index} value={index}>
                         {month}
@@ -1595,9 +1710,18 @@ const Dashboard = () => {
                   <select
                     className="analytics-selector"
                     value={selectedAnalyticsWeek}
-                    onChange={(e) => handleAnalyticsWeekChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      handleAnalyticsWeekChange(Number(e.target.value))
+                    }
                   >
-                    {[...Array(getMaxWeeksInMonth(selectedAnalyticsYear, selectedAnalyticsMonth))].map((_, i) => (
+                    {[
+                      ...Array(
+                        getMaxWeeksInMonth(
+                          selectedAnalyticsYear,
+                          selectedAnalyticsMonth,
+                        ),
+                      ),
+                    ].map((_, i) => (
                       <option key={i + 1} value={i + 1}>
                         Week {i + 1}
                       </option>
@@ -1605,14 +1729,16 @@ const Dashboard = () => {
                   </select>
                 </div>
               )}
-              
+
               {/* Month View Selectors */}
               {analyticsType === "month" && (
                 <div className="analytics-date-selectors">
                   <select
                     className="analytics-selector"
                     value={selectedAnalyticsYear}
-                    onChange={(e) => handleAnalyticsYearChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      handleAnalyticsYearChange(Number(e.target.value))
+                    }
                   >
                     {[...Array(5)].map((_, i) => {
                       const year = new Date().getFullYear() - 2 + i;
@@ -1626,11 +1752,23 @@ const Dashboard = () => {
                   <select
                     className="analytics-selector"
                     value={selectedAnalyticsMonth}
-                    onChange={(e) => handleAnalyticsMonthChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      handleAnalyticsMonthChange(Number(e.target.value))
+                    }
                   >
                     {[
-                      "January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"
+                      "January",
+                      "February",
+                      "March",
+                      "April",
+                      "May",
+                      "June",
+                      "July",
+                      "August",
+                      "September",
+                      "October",
+                      "November",
+                      "December",
                     ].map((month, index) => (
                       <option key={index} value={index}>
                         {month}
@@ -1639,7 +1777,7 @@ const Dashboard = () => {
                   </select>
                 </div>
               )}
-              
+
               {analyticsType === "category" && (
                 <select
                   className="category-filter"
@@ -1656,7 +1794,11 @@ const Dashboard = () => {
               )}
             </div>
             {analyticsData ? (
-              <Analytics analytics={analyticsData} type={analyticsType} todos={todos} />
+              <Analytics
+                analytics={analyticsData}
+                type={analyticsType}
+                todos={todos}
+              />
             ) : (
               <div className="empty-state-large">
                 <div className="empty-icon">📊</div>
@@ -1672,55 +1814,54 @@ const Dashboard = () => {
       </div>
 
       {/* Template Modal - rendered via Portal to appear above all content */}
-      {showTemplateModal && ReactDOM.createPortal(
-        <div
-          className="modal-overlay"
-          onClick={() => setShowTemplateModal(false)}
-        >
+      {showTemplateModal &&
+        ReactDOM.createPortal(
           <div
-            className="modal-content template-apply-modal"
-            onClick={(e) => e.stopPropagation()}
+            className="modal-overlay"
+            onClick={() => setShowTemplateModal(false)}
           >
-            <h3>Select Template to Apply</h3>
-            <div className="form-group">
-              <label>Choose a template:</label>
-              <select
-                value={selectedTemplateForApply}
-                onChange={(e) =>
-                  setSelectedTemplateForApply(e.target.value)
-                }
-                className="template-select"
-              >
-                <option value="">Select a template...</option>
-                {templates.map((template) => (
-                  <option key={template._id} value={template._id}>
-                    {template.name} ({template.tasks?.length || 0} tasks)
-                  </option>
-                ))}
-              </select>
+            <div
+              className="modal-content template-apply-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>Select Template to Apply</h3>
+              <div className="form-group">
+                <label>Choose a template:</label>
+                <select
+                  value={selectedTemplateForApply}
+                  onChange={(e) => setSelectedTemplateForApply(e.target.value)}
+                  className="template-select"
+                >
+                  <option value="">Select a template...</option>
+                  {templates.map((template) => (
+                    <option key={template._id} value={template._id}>
+                      {template.name} ({template.tasks?.length || 0} tasks)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-actions">
+                <button
+                  onClick={() => {
+                    setShowTemplateModal(false);
+                    setSelectedTemplateForApply("");
+                  }}
+                  className="btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleApplyTemplate}
+                  className="btn-save"
+                  disabled={!selectedTemplateForApply || loading}
+                >
+                  {loading ? "Applying..." : "Apply Template"}
+                </button>
+              </div>
             </div>
-            <div className="modal-actions">
-              <button
-                onClick={() => {
-                  setShowTemplateModal(false);
-                  setSelectedTemplateForApply("");
-                }}
-                className="btn-cancel"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleApplyTemplate}
-                className="btn-save"
-                disabled={!selectedTemplateForApply || loading}
-              >
-                {loading ? "Applying..." : "Apply Template"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

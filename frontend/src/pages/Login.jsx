@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import Seo from "../components/Seo";
 import "./Auth.css";
 
 const Login = () => {
@@ -91,6 +92,12 @@ const Login = () => {
 
   return (
     <div className="auth-container">
+      <Seo
+        title="Login"
+        description="Sign in to Task Tracker Pro to manage your tasks, todos, categories, and calendar reminders."
+        path="/login"
+        noindex
+      />
       <div className="auth-card">
         <div className="auth-logo">
           <img src="/logo.svg" alt="Task Tracker" />

@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
+const Category = require("../models/Category");
+const TaskTemplate = require("../models/TaskTemplate");
 const {
   sendVerificationEmail,
   sendWelcomeEmail,
@@ -16,6 +18,82 @@ const generateToken = (id) =>
 
 // Generate a secure random verification token
 const generateVerificationToken = () => crypto.randomBytes(32).toString("hex");
+
+const STARTER_CATEGORIES = [
+  { name: "Deep Work", color: "#0ea5e9", icon: "\ud83d\udcbb" },
+  { name: "Learning", color: "#8b5cf6", icon: "\ud83d\udcda" },
+  { name: "Health", color: "#10b981", icon: "\ud83c\udfcb\ufe0f" },
+  { name: "Personal", color: "#f59e0b", icon: "\ud83c\udfe1" },
+];
+
+const STARTER_TEMPLATE = {
+  name: "Starter Week",
+  tasks: [
+    {
+      name: "Plan top 3 priorities",
+      category: "Deep Work",
+      day: "monday",
+      plannedTime: 30 * 60 * 1000,
+      scheduledStartTime: "09:00",
+      scheduledEndTime: "09:30",
+    },
+    {
+      name: "Focused project block",
+      category: "Deep Work",
+      day: "monday",
+      plannedTime: 90 * 60 * 1000,
+      scheduledStartTime: "10:00",
+      scheduledEndTime: "11:30",
+    },
+    {
+      name: "Skill building",
+      category: "Learning",
+      day: "wednesday",
+      plannedTime: 60 * 60 * 1000,
+      scheduledStartTime: "19:00",
+      scheduledEndTime: "20:00",
+    },
+    {
+      name: "Workout / movement",
+      category: "Health",
+      day: "thursday",
+      plannedTime: 45 * 60 * 1000,
+      scheduledStartTime: "07:00",
+      scheduledEndTime: "07:45",
+    },
+    {
+      name: "Weekly review",
+      category: "Personal",
+      day: "sunday",
+      plannedTime: 45 * 60 * 1000,
+      scheduledStartTime: "18:00",
+      scheduledEndTime: "18:45",
+    },
+  ],
+};
+
+const seedStarterWorkspace = async (userId) => {
+  const [categoryCount, templateCount] = await Promise.all([
+    Category.countDocuments({ user: userId }),
+    TaskTemplate.countDocuments({ user: userId }),
+  ]);
+
+  if (categoryCount === 0) {
+    await Category.insertMany(
+      STARTER_CATEGORIES.map((category) => ({
+        user: userId,
+        ...category,
+      })),
+    );
+  }
+
+  if (templateCount === 0) {
+    await TaskTemplate.create({
+      user: userId,
+      ...STARTER_TEMPLATE,
+    });
+  }
+};
 
 // @desc    Register new user — sends verification email, does NOT log in
 // @route   POST /api/auth/register
@@ -43,7 +121,7 @@ const register = async (req, res) => {
     }
 
     const verificationToken = generateVerificationToken();
-    await User.create({
+    const user = await User.create({
       name,
       email,
       password,
@@ -52,6 +130,10 @@ const register = async (req, res) => {
       verificationToken,
       verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
       onboardingComplete: false,
+    });
+
+    seedStarterWorkspace(user._id).catch((err) => {
+      console.error("Starter data seed failed (register):", err.message);
     });
 
     try {
@@ -225,6 +307,7 @@ const googleLogin = async (req, res) => {
     let user = await User.findOne({ $or: [{ googleId }, { email }] }).select(
       "+googleId",
     );
+    let isNewUser = false;
     if (user) {
       if (!user.googleId) {
         user.googleId = googleId;
@@ -240,6 +323,13 @@ const googleLogin = async (req, res) => {
         authProvider: "google",
         emailVerified: true,
         onboardingComplete: false,
+      });
+      isNewUser = true;
+    }
+
+    if (isNewUser) {
+      seedStarterWorkspace(user._id).catch((err) => {
+        console.error("Starter data seed failed (google):", err.message);
       });
     }
 

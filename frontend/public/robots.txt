@@ -1,9 +1,12 @@
 User-agent: *
 Allow: /
-Allow: /login
-Allow: /register
 
 Disallow: /dashboard
+Disallow: /login
+Disallow: /register
+Disallow: /verify-pending
+Disallow: /verify-email/
+Disallow: /calendar/callback
 Disallow: /api/
 
 Sitemap: https://task-tracker-frontend-lime.vercel.app/sitemap.xml
