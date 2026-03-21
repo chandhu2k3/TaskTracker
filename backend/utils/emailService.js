@@ -1,10 +1,20 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === "production";
 
-const FRONTEND_URL = process.env.FRONTEND_URL || (isProd ? 'https://your-frontend.vercel.app' : 'http://localhost:3000');
-const BACKEND_URL  = process.env.BACKEND_URL  || (isProd ? 'https://your-backend.vercel.app'  : 'http://localhost:5000');
-const FROM_NAME = 'Task Tracker';
+// Strip any accidental path suffix (e.g. /dashboard) from the env var
+const FRONTEND_URL = (
+  process.env.FRONTEND_URL ||
+  (isProd
+    ? "https://task-tracker-frontend-lime.vercel.app"
+    : "http://localhost:3000")
+)
+  .replace(/\/(dashboard|verify-email).*$/, "")
+  .replace(/\/+$/, "");
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  (isProd ? "https://your-backend.vercel.app" : "http://localhost:5000");
+const FROM_NAME = "Task Tracker";
 
 // Lazily created transporter — skips gracefully if Gmail creds aren't set (local dev)
 let _transporter = null;
@@ -12,7 +22,7 @@ const getTransporter = () => {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return null;
   if (!_transporter) {
     _transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD, // Gmail App Password — NOT your real password
@@ -28,7 +38,10 @@ const getTransporter = () => {
 const sendVerificationEmail = async (name, email, token) => {
   const transporter = getTransporter();
   if (!transporter) {
-    console.warn('[emailService] Gmail credentials not set — skipping verification email for', email);
+    console.warn(
+      "[emailService] Gmail credentials not set — skipping verification email for",
+      email,
+    );
     return;
   }
 
@@ -37,7 +50,7 @@ const sendVerificationEmail = async (name, email, token) => {
   await transporter.sendMail({
     from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: 'Verify your Task Tracker account',
+    subject: "Verify your Task Tracker account",
     html: `
       <!DOCTYPE html>
       <html>
@@ -93,15 +106,19 @@ const sendVerificationEmail = async (name, email, token) => {
 const sendWelcomeEmail = async (name, email) => {
   const transporter = getTransporter();
   if (!transporter) {
-    console.warn('[emailService] Gmail credentials not set — skipping welcome email for', email);
+    console.warn(
+      "[emailService] Gmail credentials not set — skipping welcome email for",
+      email,
+    );
     return;
   }
 
-  await transporter.sendMail({
-    from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: 'Welcome to Task Tracker Pro! 🎉',
-    html: `
+  await transporter
+    .sendMail({
+      from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: "Welcome to Task Tracker Pro! 🎉",
+      html: `
       <!DOCTYPE html>
       <html>
       <body style="margin:0;padding:0;background:#0f172a;font-family:'Segoe UI',Arial,sans-serif;">
@@ -138,7 +155,8 @@ const sendWelcomeEmail = async (name, email) => {
       </body>
       </html>
     `,
-  }).catch(err => console.error('Welcome email error (non-critical):', err));
+    })
+    .catch((err) => console.error("Welcome email error (non-critical):", err));
 };
 
 module.exports = { sendVerificationEmail, sendWelcomeEmail };
