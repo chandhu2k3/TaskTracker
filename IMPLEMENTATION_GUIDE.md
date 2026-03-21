@@ -1,103 +1,329 @@
-# MAJOR UPDATE - Task Tracker with Advanced Features
+# Implementation Guide v2.1
 
-## ✅ Backend Changes Completed
+**Patch**: Authentication & Email Verification  
+**Updated**: March 21, 2026  
+**Status**: Ready for Production Deployment
 
-### New Models Created:
+---
 
-1. **Task.js** - Updated with:
+## Phase 1: Environment Variable Setup
 
-   - `date` field (specific date)
-   - `category` field
-   - `sessions` array (for multiple on/off toggles per day)
-   - Calculates sum of all sessions
+### Step 1.1: Backend Host (Render/Railway)
 
-2. **Category.js** - New model for task categories
-3. **TaskTemplate.js** - New model for weekly schedule templates
+**Vercel contains:** `BACKEND_URL` and `FRONTEND_URL` for frontend  
+**Backend host must have:** `FRONTEND_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 
-### New Controllers Created:
+**If using Render:**
 
-1. **taskController.js** - Completely rewritten with:
+1. Dashboard → Your App → Environment
+2. Add/Update these 3 variables:
+   ```
+   FRONTEND_URL=https://task-tracker-frontend-lime.vercel.app
+   GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   ```
+3. Click "Deploy" or just save — backend auto-redeploys with new vars
 
-   - `getTasksByWeek` - Get tasks for specific week
-   - `getWeeklyAnalytics` - Week-by-week analysis
-   - `getMonthlyAnalytics` - Month analysis
-   - `getCategoryAnalytics` - Category-based analysis
+**If using Railway:**
 
-2. **categoryController.js** - Manage categories (CRUD)
-3. **templateController.js** - Manage and apply weekly templates
+1. Project → Variables
+2. Add the same 3 variables
+3. Service auto-redeployed
 
-### New Routes:
+**Verify:**
 
-- `/api/categories` - Category management
-- `/api/templates` - Template management
-- `/api/tasks/week/:year/:month/:weekNumber` - Get week tasks
-- `/api/tasks/analytics/*` - Various analytics endpoints
+```bash
+# Check logs in Render/Railway dashboard
+# Should see:
+# Server running on port 5000
+# MongoDB connected
+# Ready for requests
+```
 
-## 🚀 How to Use the Updated System
+---
 
-### 1. Restart Backend Server
+### Step 1.2: Vercel Frontend (Critical!)
+
+Create React App **only exposes `REACT_APP_*` variables**
+
+1. Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Add these 2:
+   ```
+   REACT_APP_API_URL=https://your-backend-url.com
+   REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+   ```
+3. **Save** → Automatically triggers redeploy (watch Deployments tab)
+4. Wait for "Ready" status (1-2 minutes)
+
+**Check:**
+
+- Build logs show no warnings about missing env vars
+- Prod frontend at `https://task-tracker-frontend-lime.vercel.app/login` loads without errors
+
+---
+
+### Step 1.3: Google Cloud OAuth Client
+
+**Go to:** [Google Cloud Console](https://console.cloud.google.com)  
+→ APIs & Services → Credentials → OAuth 2.0 Client ID
+
+**Update Authorized JavaScript Origins:**
+
+```
+https://task-tracker-frontend-lime.vercel.app
+http://localhost:3000
+```
+
+**Update Authorized Redirect URIs:**
+
+```
+https://task-tracker-frontend-lime.vercel.app/calendar/callback
+http://localhost:3000/calendar/callback
+```
+
+**Save → Wait 1-2 minutes for propagation**
+
+---
+
+## Phase 2: Local Testing
+
+### Step 2.1: Backend
 
 ```bash
 cd backend
-npm run dev
+npm install
+node server.js
 ```
 
-### 2. Frontend Updates Needed
-
-The backend is FULLY READY. Now you need to update the frontend Dashboard to:
-
-#### A. Add Date Selection Funnel (Year → Month → Week)
-
-Already created: `DatePicker.js` component
-
-#### B. Create Category Management
-
-Create a CategoryManager component that allows:
-
-- Adding new categories (gym, dsa, study, etc.)
-- Each category has name, color, icon
-
-#### C. Create Template Setup
-
-Create a TemplateSetup component that lets you define:
-
-- Fixed weekly schedule (which tasks on which days)
-- Apply template to any week
-
-#### D. Update Dashboard
-
-The main Dashboard should:
-
-1. Show DatePicker at top
-2. Load tasks for selected week
-3. Display tasks grouped by day
-4. Allow multiple toggle on/off per day (creates sessions)
-5. Show analytics based on selected period
-
-## 📋 Quick Start Guide
-
-### Step 1: Test Backend
-
-Run backend and test these endpoints in Postman/Browser:
+**Expected Output:**
 
 ```
-POST /api/categories
-Body: { "name": "gym", "color": "#10b981", "icon": "💪" }
-
-POST /api/templates
-Body: {
-  "name": "My Schedule",
-  "tasks": [
-    { "name": "Morning Workout", "category": "gym", "day": "monday" },
-    { "name": "DSA Practice", "category": "dsa", "day": "monday" }
-  ]
-}
-
-GET /api/tasks/week/2026/0/1
-(Gets week 1 of January 2026)
+Server running on port 5000
+MongoDB connected
+Auth routes ready
+Listening on http://localhost:5000
 ```
 
-### Step 2: Key Behavior Changes
+---
+
+### Step 2.2: Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+**Expected:**
+
+- Starts on `http://localhost:3000`
+- No env-var related warnings in console
+- Logo and "Task Tracker" title visible
+
+---
+
+### Step 2.3: Test Email Verification (Local)
+
+1. Go to `http://localhost:3000/register`
+2. Register new account (name, email, password)
+3. Backend logs will show verification token:
+   ```
+   Verification token: abc123xyz789...
+   ```
+4. Copy token → visit `http://localhost:3000/verify-email/abc123xyz789...`
+5. Should redirect to `/login?verified=success`
+6. Should see toast: "✅ Email verified! You can now log in."
+
+---
+
+### Step 2.4: Test Google Sign-In (Local)
+
+1. Go to `http://localhost:3000/login`
+2. Click "Sign in with Google"
+3. Should see real Google popup (not error)
+4. Select Google account
+5. Should redirect to dashboard
+
+**If Error:**
+
+- Check browser console (F12) for detailed error
+- If `REACT_APP_GOOGLE_CLIENT_ID` not set locally, add to `frontend/.env.development`:
+  ```
+  REACT_APP_API_URL=http://localhost:5000
+  REACT_APP_GOOGLE_CLIENT_ID=<your_client_id>
+  ```
+- Restart `npm start`
+
+---
+
+## Phase 3: Production Testing
+
+### Step 3.1: Test Email Verification (Production)
+
+1. Open `https://task-tracker-frontend-lime.vercel.app/register` in **incognito**
+2. Register with a real email address
+3. Check inbox for verification email (arrives within 30 seconds)
+4. Click link in email
+5. Should land on login with toast: "✅ Email verified!"
+6. Try logging in with the email + password
+
+**If Blank Page:**
+
+- Backend's `FRONTEND_URL` has path suffix like `/dashboard`
+- Fix: Backend host env vars → Remove path from `FRONTEND_URL`
+- Restart backend
+
+---
+
+### Step 3.2: Test Google Sign-In (Production)
+
+1. Open `https://task-tracker-frontend-lime.vercel.app/login` in **incognito**
+2. Click "Sign in with Google"
+3. Should see real Google OAuth popup
+
+**If Error 401 (invalid_client):**
+
+- `REACT_APP_GOOGLE_CLIENT_ID` not set in Vercel
+- Add it in Vercel Settings → Environment Variables
+- Redeploy frontend
+
+**If Error 400 (origin_mismatch):**
+
+- Frontend domain not in Google OAuth client's authorized list
+- Add `https://task-tracker-frontend-lime.vercel.app` to Google Cloud Console
+- Wait 1-2 minutes and retry
+
+---
+
+## Phase 4: Security Hardening
+
+### Step 4.1: Rotate Exposed Credentials
+
+**If you committed `.env*` files to Git:**
+
+1. Google Cloud Console → Delete old OAuth Client (revokes all tokens)
+2. Create new OAuth 2.0 Client
+3. Copy new Client ID + Secret
+4. Update all environment variables:
+   - Vercel `REACT_APP_GOOGLE_CLIENT_ID` = new Client ID
+   - Backend `GOOGLE_CLIENT_ID` = new Client ID
+   - Backend `GOOGLE_CLIENT_SECRET` = new Secret
+5. Redeploy both
+
+---
+
+### Step 4.2: Fix `.gitignore`
+
+```bash
+# Ensure backend/.gitignore and frontend/.gitignore contain:
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+```
+
+**Never commit real secrets!**
+
+---
+
+## Phase 5: Full Test Checklist
+
+### Email Verification
+
+- [ ] Registration page loads
+- [ ] Can enter name, email, password
+- [ ] Gets verification email within 30s
+- [ ] Link in email works
+- [ ] Redirects to login with success toast
+- [ ] Can now log in with email + password
+- [ ] Expired token shows error
+- [ ] Resend verification works
+
+### Google Sign-In
+
+- [ ] Login page has "Sign in with Google" button
+- [ ] Button is styled (dark/light mode appropriate)
+- [ ] Clicking shows real Google OAuth popup
+- [ ] Can select Google account
+- [ ] After login, redirected to dashboard
+- [ ] Welcome toast shows
+- [ ] User can create tasks
+
+### Dark/Light Mode (Already Implemented)
+
+- [ ] Home page has sun/moon toggle
+- [ ] Selected theme persists on login/register
+- [ ] Auth pages respect theme
+- [ ] Dashboard theme persists
+- [ ] Light mode: amber accents, white inputs
+- [ ] Dark mode: pitch black bg, white text
+
+---
+
+## 🚨 Common Issues & Fixes
+
+### "Can't sign up / can't login"
+
+1. Check MongoDB connection: `MONGODB_URI` set on backend?
+2. Check backend is running: Port 5000 accessible?
+3. Check `REACT_APP_API_URL` points to correct backend
+
+### Email verification link doesn't work
+
+1. Check `FRONTEND_URL` has NO `/dashboard` suffix
+2. Check email link in inbox matches `https://task-tracker-frontend-lime.vercel.app/verify-email/TOKEN`
+3. Try resending verification email
+4. Check backend logs for errors
+
+### Google Sign-In shows error every time
+
+1. **Error 401**: `REACT_APP_GOOGLE_CLIENT_ID` not set in Vercel
+   - Add it, redeploy frontend, clear browser cache
+2. **Error 400**: Frontend domain not in Google Cloud OAuth client
+   - Add `https://task-tracker-frontend-lime.vercel.app` to authorized origins
+   - Wait 1-2 minutes
+   - Test in incognito
+
+### Blank page after email verification link
+
+1. Backend `FRONTEND_URL` has accidental path → Remove it
+2. Restart backend after env var change
+3. Generate new verification email
+4. Click link again
+
+---
+
+## Deployment Checklist
+
+Before declaring "Done":
+
+- [ ] Backend updated with all 3 env vars (FRONTEND_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
+- [ ] Vercel frontend has both env vars (REACT_APP_API_URL, REACT_APP_GOOGLE_CLIENT_ID)
+- [ ] Google Cloud OAuth client has correct origins + redirect URIs
+- [ ] Old Google credentials deleted (if they were exposed)
+- [ ] Frontend redeploy triggered
+- [ ] Backend redeploy triggered
+- [ ] Email verification works in production
+- [ ] Google Sign-In works in production
+- [ ] `.gitignore` prevents `.env*` commits
+- [ ] No `REACT_APP_` warnings in Vercel build logs
+
+---
+
+## Next Steps After v2.1
+
+1. **Calendar Integration**: Connect Google Calendar to task creation
+2. **Notifications**: Browser push notifications for task reminders
+3. **Mobile Optimization**: Fine-tune responsive design
+4. **Performance**: Profile & optimize slow API calls
+5. **Advanced Filtering**: Search, tags, recurring tasks
+
+---
+
+**Status**: ✅ v2.1 Complete — Ready for v2.2  
+**Author**: GitHub Copilot  
+**Last Updated**: March 21, 2026
 
 **OLD**: Tasks were just Monday-Sunday without dates
 **NEW**: Each task has a specific date (e.g., January 6, 2026)
@@ -287,17 +513,21 @@ Full Google Calendar API integration via OAuth2. Tasks and todos can be automati
 ## 🎨 UI/UX Updates (Feb 2026)
 
 ### DayCard Styling
+
 - Today's card: slate gray header (`#64748b`), light background (`#f1f5f9`)
 - Went through iterations: blue → white → slate gray
 
 ### Navigation Fixes
+
 - Day view shows "Next Day" / "Previous Day" (was "Next Week")
 - Date picker in day view shows selected date's tasks (was hardcoded to today)
 
 ### Analytics Enhancements
+
 - Quick Todos tracking: completed/total count and missed todos stats
 - Added `todos` prop to Analytics component
 
 ### Vercel Optimization
+
 - Cache headers configured in `vercel.json` for API responses
 - Addressed timeout issues with Vercel serverless functions

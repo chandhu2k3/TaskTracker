@@ -33,13 +33,11 @@ const register = async (req, res) => {
     const userExists = await User.findOne({ email }).select("+emailVerified");
     if (userExists) {
       if (!userExists.emailVerified && userExists.authProvider === "local") {
-        return res
-          .status(400)
-          .json({
-            message: "Account exists but email not verified.",
-            unverified: true,
-            email,
-          });
+        return res.status(400).json({
+          message: "Account exists but email not verified.",
+          unverified: true,
+          email,
+        });
       }
       return res.status(400).json({ message: "User already exists" });
     }
@@ -62,13 +60,11 @@ const register = async (req, res) => {
       console.error("Verification email failed:", e.message);
     }
 
-    res
-      .status(201)
-      .json({
-        message: "Account created! Please check your email to verify.",
-        email,
-        requiresVerification: true,
-      });
+    res.status(201).json({
+      message: "Account created! Please check your email to verify.",
+      email,
+      requiresVerification: true,
+    });
   } catch (error) {
     console.error("Register error:", error);
     res.status(500).json({ message: error.message });
@@ -90,21 +86,17 @@ const login = async (req, res) => {
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     if (!user.emailVerified && user.authProvider === "local") {
-      return res
-        .status(403)
-        .json({
-          message: "Please verify your email before logging in.",
-          requiresVerification: true,
-          email,
-        });
+      return res.status(403).json({
+        message: "Please verify your email before logging in.",
+        requiresVerification: true,
+        email,
+      });
     }
     if (!user.password) {
-      return res
-        .status(401)
-        .json({
-          message:
-            "This account uses Google Sign-In. Please sign in with Google.",
-        });
+      return res.status(401).json({
+        message:
+          "This account uses Google Sign-In. Please sign in with Google.",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -153,7 +145,20 @@ const verifyEmail = async (req, res) => {
     await user.save();
 
     sendWelcomeEmail(user.name, user.email).catch(() => {});
-    res.redirect(`${FRONTEND_URL}/login?verified=success`);
+
+    // Auto-login right after verification to reduce drop-off.
+    const sessionToken = generateToken(user._id);
+    const params = new URLSearchParams({
+      verified: "success",
+      autologin: "1",
+      token: sessionToken,
+      id: String(user._id),
+      name: user.name || "",
+      email: user.email || "",
+      onboardingComplete: user.onboardingComplete ? "1" : "0",
+    });
+
+    res.redirect(`${FRONTEND_URL}/login?${params.toString()}`);
   } catch (error) {
     console.error("Verify email error:", error);
     res.redirect(

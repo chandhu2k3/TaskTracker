@@ -3,7 +3,7 @@
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.04),
     0 1px 3px rgba(0, 0, 0, 0.05);
   flex: 1;
@@ -11,11 +11,14 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease;
 }
 
 /* Decorative background accent */
 .todo-list-container::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -50px;
   right: -50px;
@@ -44,7 +47,6 @@
   align-items: center;
   gap: 10px;
 }
-
 
 .todo-subtitle {
   margin: 8px 0 0 0;
@@ -98,13 +100,18 @@
 }
 
 .todo-add-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s;
 }
 
@@ -157,10 +164,15 @@
   background: white;
   border: 1px solid #e7e5e4;
   border-radius: 14px;
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    background-color 0.28s ease,
+    border-color 0.28s ease;
   position: relative;
   overflow: hidden;
   animation: slideIn 0.35s ease-out;
+  will-change: transform;
 }
 
 @keyframes slideIn {
@@ -177,8 +189,8 @@
 .todo-item:hover {
   background: #fffbeb;
   border-color: rgba(0, 0, 0, 0.1);
-  transform: translateX(3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateX(5px) translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
 }
 
 .todo-item.completed {
@@ -227,9 +239,15 @@
 }
 
 @keyframes checkPop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Todo Text */
@@ -264,13 +282,13 @@
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
-
 @keyframes pulseGlow {
-  0%, 100% { 
+  0%,
+  100% {
     opacity: 1;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
   }
-  50% { 
+  50% {
     opacity: 0.85;
     box-shadow: 0 2px 15px rgba(239, 68, 68, 0.5);
   }
@@ -282,11 +300,15 @@
   gap: 4px;
   align-items: center;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transform: translateX(4px);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 .todo-item:hover .todo-actions {
   opacity: 1;
+  transform: translateX(0);
 }
 
 /* Calendar Button */
@@ -298,7 +320,10 @@
   cursor: pointer;
   padding: 6px 8px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
   line-height: 1;
 }
 
@@ -317,76 +342,266 @@
   transform: none;
 }
 
-.todo-actions .calendar-btn-wrapper {
+.calendar-btn-wrapper {
   position: relative;
 }
 
-.todo-actions .calendar-reminder-picker {
+.calendar-picker-overlay {
   position: fixed;
-  margin-top: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    145deg,
+    rgba(10, 10, 10, 0.58) 0%,
+    rgba(10, 10, 10, 0.42) 100%
+  );
+  backdrop-filter: blur(4px);
   z-index: 10000;
-  min-width: 170px;
-  padding: 6px;
-  animation: todoPickerFadeIn 0.15s ease-out;
+  animation: todoOverlayFadeIn 0.18s ease-out;
 }
 
-@keyframes todoPickerFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes todoOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.todo-actions .calendar-picker-title {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #6b7280;
+.calendar-reminder-picker {
+  width: min(420px, calc(100vw - 28px));
+  background: linear-gradient(160deg, #fffdf8 0%, #fff8e8 100%);
+  border: 1px solid rgba(217, 119, 6, 0.22);
+  border-radius: 16px;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.26),
+    0 0 0 1px rgba(233, 184, 74, 0.12);
+  padding: 16px;
+  animation: todoModalPopIn 0.24s cubic-bezier(0.18, 0.85, 0.25, 1);
+}
+
+@keyframes todoModalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.calendar-picker-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #92400e;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 4px 8px 6px;
-  border-bottom: 1px solid #f3f4f6;
-  margin-bottom: 4px;
+  letter-spacing: 0.6px;
+  padding: 2px 2px 10px;
+  border-bottom: 1px solid rgba(217, 119, 6, 0.2);
+  margin-bottom: 13px;
 }
 
-.todo-actions .calendar-reminder-picker button {
+.calendar-picker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.calendar-picker-context {
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  padding: 9px 10px;
+  margin-bottom: 11px;
+}
+
+.calendar-picker-context-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+  color: #a16207;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.calendar-picker-context-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 2px;
+  line-height: 1.35;
+}
+
+.calendar-picker-context-meta {
+  font-size: 0.76rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.calendar-picker-field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.calendar-picker-field span {
+  display: block;
+  font-size: 0.74rem;
+  color: #7c5a12;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.calendar-picker-field input,
+.calendar-picker-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(217, 119, 6, 0.18);
+  background: rgba(255, 255, 255, 0.82);
+  font-size: 0.84rem;
+  color: #1f2937;
+  border-radius: 9px;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.calendar-picker-field input:focus,
+.calendar-picker-field select:focus {
+  outline: none;
+  border-color: rgba(217, 119, 6, 0.5);
+  box-shadow: 0 0 0 3px rgba(233, 184, 74, 0.18);
+}
+
+.calendar-picker-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.calendar-reminder-picker button {
   display: block;
   width: 100%;
-  text-align: left;
-  padding: 6px 10px;
-  border: none;
-  background: none;
-  font-size: 0.8rem;
-  color: #374151;
-  border-radius: 6px;
+  text-align: center;
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #334155;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
 }
 
-.todo-actions .calendar-reminder-picker button:hover {
-  background: rgba(16, 185, 129, 0.1);
-  color: #059669;
+.calendar-reminder-picker button:hover {
+  background: #ffffff;
+  border-color: rgba(100, 116, 139, 0.5);
+  transform: translateY(-1px);
 }
 
-body[data-theme="dark"] .todo-actions .calendar-reminder-picker {
-  background: #111111;
-  border-color: rgba(148, 163, 184, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+.calendar-picker-actions .btn-cancel {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #475569;
 }
 
-body[data-theme="dark"] .todo-actions .calendar-picker-title {
+.calendar-picker-actions .btn-add {
+  background: linear-gradient(135deg, #e9b84a 0%, #d97706 100%);
+  border-color: rgba(146, 64, 14, 0.45);
+  color: #111827;
+  box-shadow: 0 8px 16px rgba(217, 119, 6, 0.24);
+}
+
+.calendar-picker-actions .btn-add:hover {
+  background: linear-gradient(135deg, #f2c45d 0%, #e08411 100%);
+  border-color: rgba(146, 64, 14, 0.58);
+  color: #0b1020;
+}
+
+body[data-theme="dark"] .calendar-picker-overlay {
+  background: linear-gradient(
+    145deg,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+body[data-theme="dark"] .calendar-reminder-picker {
+  background: linear-gradient(165deg, #0f0f0f 0%, #181818 100%);
+  border-color: rgba(233, 184, 74, 0.22);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"] .calendar-picker-title {
   color: #e9b84a;
-  border-bottom-color: rgba(233, 184, 74, 0.12);
+  border-bottom-color: rgba(233, 184, 74, 0.2);
 }
 
-body[data-theme="dark"] .todo-actions .calendar-reminder-picker button {
+body[data-theme="dark"] .calendar-reminder-picker button {
   color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.28);
+  background: #191919;
 }
 
-body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
+body[data-theme="dark"] .calendar-reminder-picker button:hover {
   background: rgba(233, 184, 74, 0.12);
   color: #e9b84a;
+  border-color: rgba(233, 184, 74, 0.35);
+}
+
+body[data-theme="dark"] .calendar-picker-field span {
+  color: #f3d18a;
+}
+
+body[data-theme="dark"] .calendar-picker-context {
+  background: rgba(20, 20, 20, 0.75);
+  border-color: rgba(233, 184, 74, 0.24);
+}
+
+body[data-theme="dark"] .calendar-picker-context-label {
+  color: #e9b84a;
+}
+
+body[data-theme="dark"] .calendar-picker-context-title {
+  color: #f8fafc;
+}
+
+body[data-theme="dark"] .calendar-picker-context-meta {
+  color: #cbd5e1;
+}
+
+body[data-theme="dark"] .calendar-picker-field input,
+body[data-theme="dark"] .calendar-picker-field select {
+  background: #0f0f0f;
+  color: #e2e8f0;
+  border-color: rgba(233, 184, 74, 0.22);
+}
+
+body[data-theme="dark"] .calendar-picker-actions .btn-cancel {
+  background: #151515;
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.32);
+}
+
+body[data-theme="dark"] .calendar-picker-actions .btn-add {
+  background: linear-gradient(135deg, #e9b84a 0%, #c7770a 100%);
+  color: #111111;
+  border-color: rgba(233, 184, 74, 0.45);
+  box-shadow: 0 10px 20px rgba(233, 184, 74, 0.2);
+}
+
+@media (max-width: 560px) {
+  .calendar-picker-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 
 /* Delete Button */
@@ -422,8 +637,13 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .todo-empty p {
@@ -437,7 +657,11 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
 .todo-stats {
   padding: 16px;
   margin: 0 -24px -24px -24px;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.01) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.02) 0%,
+    rgba(0, 0, 0, 0.01) 100%
+  );
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   text-align: center;
   font-size: 0.9rem;
@@ -448,7 +672,6 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
   align-items: center;
   gap: 8px;
 }
-
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
@@ -477,7 +700,11 @@ body[data-theme="dark"] .todo-actions .calendar-reminder-picker button:hover {
 
 /* Dark Mode Support */
 body[data-theme="dark"] .todo-list-container {
-  background: linear-gradient(135deg, rgba(17, 17, 17, 0.95) 0%, rgba(10, 10, 10, 0.95) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(17, 17, 17, 0.95) 0%,
+    rgba(10, 10, 10, 0.95) 100%
+  );
   border-color: rgba(148, 163, 184, 0.15);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
@@ -544,7 +771,11 @@ body[data-theme="dark"] .todo-empty p {
 }
 
 body[data-theme="dark"] .todo-stats {
-  background: linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(100, 116, 139, 0.06) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(148, 163, 184, 0.1) 0%,
+    rgba(100, 116, 139, 0.06) 100%
+  );
   border-top-color: rgba(148, 163, 184, 0.12);
   color: #ffffff;
 }
@@ -595,6 +826,16 @@ body[data-theme="dark"] .todo-stats {
   border-radius: 8px;
   margin-left: 8px;
   border: 1px solid rgba(146, 64, 14, 0.1);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.todo-deadline-badge.deadline-today {
+  background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%);
+  color: #14532d;
+  border-color: rgba(20, 83, 45, 0.2);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
 }
 
 .todo-item.completed .todo-deadline-badge {
@@ -617,7 +858,11 @@ body[data-theme="dark"] .todo-stats {
 }
 
 body[data-theme="dark"] .todo-deadline-badge.deadline-overdue {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.15) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.2) 0%,
+    rgba(220, 38, 38, 0.15) 100%
+  );
   color: #fca5a5;
   border-color: rgba(239, 68, 68, 0.3);
 }
@@ -638,18 +883,34 @@ body[data-theme="dark"] .todo-deadline-input:focus {
   box-shadow: 0 0 0 4px rgba(245, 225, 200, 0.08);
 }
 
-body[data-theme="dark"] .todo-deadline-input::-webkit-calendar-picker-indicator {
+body[data-theme="dark"]
+  .todo-deadline-input::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(0.6);
 }
 
-body[data-theme="dark"] .todo-deadline-input:hover::-webkit-calendar-picker-indicator {
+body[data-theme="dark"]
+  .todo-deadline-input:hover::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(1);
 }
 
 body[data-theme="dark"] .todo-deadline-badge {
-  background: linear-gradient(135deg, rgba(254, 243, 199, 0.15) 0%, rgba(233, 184, 74, 0.12) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(254, 243, 199, 0.15) 0%,
+    rgba(233, 184, 74, 0.12) 100%
+  );
   color: #e9b84a;
   border-color: rgba(233, 184, 74, 0.2);
+}
+
+body[data-theme="dark"] .todo-deadline-badge.deadline-today {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.24) 0%,
+    rgba(21, 128, 61, 0.28) 100%
+  );
+  color: #bbf7d0;
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
 body[data-theme="dark"] .todo-item.completed .todo-deadline-badge {

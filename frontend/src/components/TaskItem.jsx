@@ -152,12 +152,12 @@ const TaskItem = ({
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", task._id);
     // Add opacity to the dragging element for visual effect
-    e.currentTarget.style.opacity = '0.5';
+    e.currentTarget.style.opacity = "0.5";
     onDragStart(e, task);
   };
 
   const handleDragEnd = (e) => {
-    e.currentTarget.style.opacity = '1';
+    e.currentTarget.style.opacity = "1";
   };
 
   const handleMouseDown = (e) => {
@@ -177,29 +177,31 @@ const TaskItem = ({
   React.useEffect(() => {
     const handleClickOutside = (e) => {
       if (
-        calendarPickerRef.current && !calendarPickerRef.current.contains(e.target) &&
-        calendarBtnRef.current && !calendarBtnRef.current.contains(e.target)
+        calendarPickerRef.current &&
+        !calendarPickerRef.current.contains(e.target) &&
+        calendarBtnRef.current &&
+        !calendarBtnRef.current.contains(e.target)
       ) {
         setShowCalendarPicker(false);
       }
     };
     if (showCalendarPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showCalendarPicker]);
 
   // State for time picker when task has no scheduled time
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedStartTime, setSelectedStartTime] = useState('');
-  const [selectedEndTime, setSelectedEndTime] = useState('');
+  const [selectedStartTime, setSelectedStartTime] = useState("");
+  const [selectedEndTime, setSelectedEndTime] = useState("");
   const [pendingReminderMinutes, setPendingReminderMinutes] = useState(0);
 
   // Toggle reminder picker on calendar button click
   const handleCalendarClick = (e) => {
     e.stopPropagation();
     if (task.calendarEventId) {
-      toast.info('📅 This task already has a calendar reminder');
+      toast.info("📅 This task already has a calendar reminder");
       return;
     }
     if (!showCalendarPicker && calendarBtnRef.current) {
@@ -212,28 +214,33 @@ const TaskItem = ({
   // Add task to Google Calendar via API with chosen reminder
   const handleAddToCalendar = async (reminderMinutes) => {
     setShowCalendarPicker(false);
-    
+
     // Check if task has time slot - if not, show time picker
     if (!task.scheduledStartTime || !task.scheduledEndTime) {
       setPendingReminderMinutes(reminderMinutes);
       setShowTimePicker(true);
       return;
     }
-    
-    await createCalendarEvent(reminderMinutes, task.scheduledStartTime, task.scheduledEndTime);
+
+    await createCalendarEvent(
+      reminderMinutes,
+      task.scheduledStartTime,
+      task.scheduledEndTime,
+    );
   };
 
   // Create calendar event with time information
   const createCalendarEvent = async (reminderMinutes, startTime, endTime) => {
-    setCalendarStatus('adding');
+    setCalendarStatus("adding");
     const plannedMinutes = Math.round((task.plannedTime || 1800000) / 60000);
+    const eventDate = task.date || new Date().toISOString().split("T")[0];
 
     try {
       const result = await calendarService.smartAddToCalendar(
         {
           title: `📋 ${task.name}`,
           description: `Task from Task Tracker Pro\n\nPlanned time: ${formatTime(task.plannedTime || 0)}`,
-          date: task.date,
+          date: eventDate,
           startTime: startTime || null,
           endTime: endTime || null,
           durationMinutes: plannedMinutes,
@@ -241,25 +248,27 @@ const TaskItem = ({
           taskId: task._id,
         },
         () => {
-          setCalendarStatus('error');
-          toast.error('❌ Please connect Google Calendar first from the profile menu.');
-        }
+          setCalendarStatus("error");
+          toast.error(
+            "❌ Please connect Google Calendar first from the profile menu.",
+          );
+        },
       );
 
       if (result.success) {
         if (result.duplicate) {
           // Task already has a calendar event
           const confirmRecreate = window.confirm(
-            '⚠️ This task already has a calendar reminder.\n\nDo you want to create another reminder?'
+            "⚠️ This task already has a calendar reminder.\n\nDo you want to create another reminder?",
           );
-          
+
           if (confirmRecreate) {
             // User wants to create duplicate - need to force create by not sending taskId
             const retryResult = await calendarService.smartAddToCalendar(
               {
                 title: `📋 ${task.name}`,
                 description: `Task from Task Tracker Pro\n\nPlanned time: ${formatTime(task.plannedTime || 0)}`,
-                date: task.date,
+                date: eventDate,
                 startTime: startTime || null,
                 endTime: endTime || null,
                 durationMinutes: plannedMinutes,
@@ -267,13 +276,13 @@ const TaskItem = ({
                 taskId: null, // Don't send taskId to avoid duplicate check
               },
               () => {
-                toast.error('❌ Failed to connect calendar');
-              }
+                toast.error("❌ Failed to connect calendar");
+              },
             );
-            
+
             if (retryResult.success) {
-              setCalendarStatus('added');
-              toast.success('✅ Reminder set successfully!');
+              setCalendarStatus("added");
+              toast.success("✅ Reminder set successfully!");
               setTimeout(() => setCalendarStatus(null), 3000);
             }
           } else {
@@ -281,17 +290,17 @@ const TaskItem = ({
           }
         } else {
           // Successfully created new event
-          setCalendarStatus('added');
-          toast.success('✅ Reminder set successfully!');
+          setCalendarStatus("added");
+          toast.success("✅ Reminder set successfully!");
           setTimeout(() => setCalendarStatus(null), 3000);
         }
       } else {
         setCalendarStatus(null);
       }
     } catch (err) {
-      console.error('Calendar error:', err);
-      setCalendarStatus('error');
-      toast.error('❌ Failed to set reminder');
+      console.error("Calendar error:", err);
+      setCalendarStatus("error");
+      toast.error("❌ Failed to set reminder");
       setTimeout(() => setCalendarStatus(null), 2000);
     }
   };
@@ -299,23 +308,27 @@ const TaskItem = ({
   // Handle time picker submission
   const handleTimePickerSubmit = () => {
     if (!selectedStartTime || !selectedEndTime) {
-      toast.warning('⚠️ Please select both start and end times');
+      toast.warning("⚠️ Please select both start and end times");
       return;
     }
-    
+
     // Validate time range
-    const [startH, startM] = selectedStartTime.split(':').map(Number);
-    const [endH, endM] = selectedEndTime.split(':').map(Number);
+    const [startH, startM] = selectedStartTime.split(":").map(Number);
+    const [endH, endM] = selectedEndTime.split(":").map(Number);
     const startMins = startH * 60 + startM;
     const endMins = endH * 60 + endM;
-    
+
     if (endMins <= startMins) {
-      toast.warning('⚠️ End time must be after start time');
+      toast.warning("⚠️ End time must be after start time");
       return;
     }
-    
+
     setShowTimePicker(false);
-    createCalendarEvent(pendingReminderMinutes, selectedStartTime, selectedEndTime);
+    createCalendarEvent(
+      pendingReminderMinutes,
+      selectedStartTime,
+      selectedEndTime,
+    );
   };
 
   return (
@@ -331,7 +344,7 @@ const TaskItem = ({
       onDrop={(e) => onDrop(e, task)}
       onMouseDown={handleMouseDown}
     >
-    <div className="task-header">
+      <div className="task-header">
         <div className="task-name">
           <span className="drag-handle" title="Drag to reorder">
             ⋮⋮
@@ -366,66 +379,118 @@ const TaskItem = ({
           <div className="calendar-btn-wrapper">
             <button
               ref={calendarBtnRef}
-              className={`btn-calendar ${calendarStatus === 'added' || task.calendarEventId ? 'calendar-added' : ''}`}
+              className={`btn-calendar ${calendarStatus === "added" || task.calendarEventId ? "calendar-added" : ""}`}
               onClick={handleCalendarClick}
-              title={task.calendarEventId ? 'Already in Google Calendar' : calendarStatus === 'added' ? 'Added to Calendar!' : calendarStatus === 'adding' ? 'Adding...' : 'Add to Google Calendar'}
+              title={
+                task.calendarEventId
+                  ? "Already in Google Calendar"
+                  : calendarStatus === "added"
+                    ? "Added to Calendar!"
+                    : calendarStatus === "adding"
+                      ? "Adding..."
+                      : "Add to Google Calendar"
+              }
               draggable="false"
-              disabled={calendarStatus === 'adding'}
+              disabled={calendarStatus === "adding"}
             >
-              {calendarStatus === 'adding' ? '⏳' : (calendarStatus === 'added' || task.calendarEventId) ? '✅' : '📅'}
+              {calendarStatus === "adding"
+                ? "⏳"
+                : calendarStatus === "added" || task.calendarEventId
+                  ? "✅"
+                  : "📅"}
             </button>
-            {showCalendarPicker && ReactDOM.createPortal(
-              <div
-                ref={calendarPickerRef}
-                className="calendar-reminder-picker"
-                style={{ top: pickerPos.top, left: pickerPos.left }}
-              >
-                <div className="calendar-picker-title">Set Reminder</div>
-                <button onClick={() => handleAddToCalendar(0)}>No reminder</button>
-                <button onClick={() => handleAddToCalendar(5)}>5 min before</button>
-                <button onClick={() => handleAddToCalendar(10)}>10 min before</button>
-                <button onClick={() => handleAddToCalendar(15)}>15 min before</button>
-                <button onClick={() => handleAddToCalendar(30)}>30 min before</button>
-                <button onClick={() => handleAddToCalendar(60)}>1 hour before</button>
-              </div>,
-              document.body
-            )}
-            {showTimePicker && ReactDOM.createPortal(
-              <div className="time-picker-modal-overlay" onClick={() => setShowTimePicker(false)}>
-                <div className="time-picker-modal" onClick={(e) => e.stopPropagation()}>
-                  <div className="time-picker-header">
-                    <h3>⏰ Select Time Slot</h3>
-                    <button className="time-picker-close" onClick={() => setShowTimePicker(false)}>✕</button>
-                  </div>
-                  <div className="time-picker-content">
-                    <p className="time-picker-info">This task doesn't have a scheduled time. Please select when you want to work on it:</p>
-                    <div className="time-input-group">
-                      <label>
-                        <span>Start Time:</span>
-                        <input 
-                          type="time" 
-                          value={selectedStartTime}
-                          onChange={(e) => setSelectedStartTime(e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span>End Time:</span>
-                        <input 
-                          type="time" 
-                          value={selectedEndTime}
-                          onChange={(e) => setSelectedEndTime(e.target.value)}
-                        />
-                      </label>
+            {showCalendarPicker &&
+              ReactDOM.createPortal(
+                <div
+                  ref={calendarPickerRef}
+                  className="calendar-reminder-picker"
+                  style={{ top: pickerPos.top, left: pickerPos.left }}
+                >
+                  <div className="calendar-picker-title">Set Reminder</div>
+                  <button onClick={() => handleAddToCalendar(0)}>
+                    No reminder
+                  </button>
+                  <button onClick={() => handleAddToCalendar(5)}>
+                    5 min before
+                  </button>
+                  <button onClick={() => handleAddToCalendar(10)}>
+                    10 min before
+                  </button>
+                  <button onClick={() => handleAddToCalendar(15)}>
+                    15 min before
+                  </button>
+                  <button onClick={() => handleAddToCalendar(30)}>
+                    30 min before
+                  </button>
+                  <button onClick={() => handleAddToCalendar(60)}>
+                    1 hour before
+                  </button>
+                </div>,
+                document.body,
+              )}
+            {showTimePicker &&
+              ReactDOM.createPortal(
+                <div
+                  className="time-picker-modal-overlay"
+                  onClick={() => setShowTimePicker(false)}
+                >
+                  <div
+                    className="time-picker-modal"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="time-picker-header">
+                      <h3>⏰ Select Time Slot</h3>
+                      <button
+                        className="time-picker-close"
+                        onClick={() => setShowTimePicker(false)}
+                      >
+                        ✕
+                      </button>
                     </div>
-                    <div className="time-picker-actions">
-                      <button className="btn-cancel" onClick={() => setShowTimePicker(false)}>Cancel</button>
-                      <button className="btn-confirm" onClick={handleTimePickerSubmit}>Set Reminder</button>
+                    <div className="time-picker-content">
+                      <p className="time-picker-info">
+                        This task doesn't have a scheduled time. Please select
+                        when you want to work on it:
+                      </p>
+                      <div className="time-input-group">
+                        <label>
+                          <span>Start Time:</span>
+                          <input
+                            type="time"
+                            value={selectedStartTime}
+                            onChange={(e) =>
+                              setSelectedStartTime(e.target.value)
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>End Time:</span>
+                          <input
+                            type="time"
+                            value={selectedEndTime}
+                            onChange={(e) => setSelectedEndTime(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                      <div className="time-picker-actions">
+                        <button
+                          className="btn-cancel"
+                          onClick={() => setShowTimePicker(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="btn-confirm"
+                          onClick={handleTimePickerSubmit}
+                        >
+                          Set Reminder
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>,
-              document.body
-            )}
+                </div>,
+                document.body,
+              )}
           </div>
           {task.scheduledStartTime && (
             <div className="notification-controls">

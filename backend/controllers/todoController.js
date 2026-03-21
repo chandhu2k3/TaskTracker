@@ -1,6 +1,12 @@
 const Todo = require("../models/Todo");
 const tz = require("../utils/timezone");
-const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
+const {
+  cacheKey,
+  getCache,
+  setCache,
+  invalidateCache,
+  TTL,
+} = require("../config/redis");
 
 // @desc    Get todos for today (with overdue carryover)
 // @route   GET /api/todos
@@ -26,8 +32,8 @@ const getTodos = async (req, res) => {
     const updatedTodos = await Promise.all(
       todos.map(async (todo) => {
         const isOverdueNow = todo.deadline
-          ? todo.deadline < today && !todo.completed   // Overdue = deadline passed
-          : todo.date < today && !todo.completed;      // Legacy: date-based overdue
+          ? todo.deadline < today && !todo.completed // Overdue = deadline passed
+          : todo.date < today && !todo.completed; // Legacy: date-based overdue
 
         if (todo.date < today && !todo.completed) {
           // Carry forward to today
@@ -41,7 +47,7 @@ const getTodos = async (req, res) => {
           await Todo.findByIdAndUpdate(todo._id, { isOverdue: isOverdueNow });
         }
         return { ...todo, isOverdue: isOverdueNow };
-      })
+      }),
     );
 
     res.json(updatedTodos);
@@ -70,7 +76,7 @@ const createTodo = async (req, res) => {
       completed: false,
       date: today,
       isOverdue: false,
-      deadline: deadline || null,
+      deadline: deadline || today,
     });
 
     await invalidateCache(`user:${req.user._id}:todos*`);
@@ -143,11 +149,11 @@ const clearCompleted = async (req, res) => {
   try {
     const result = await Todo.updateMany(
       { user: req.user._id, completed: true, deleted: { $ne: true } },
-      { $set: { deleted: true, deletedAt: new Date() } }
+      { $set: { deleted: true, deletedAt: new Date() } },
     );
     await invalidateCache(`user:${req.user._id}:todos*`);
     res.json({
-      message: `Soft deleted ${result.modifiedCount} completed todo(s)` ,
+      message: `Soft deleted ${result.modifiedCount} completed todo(s)`,
       deletedCount: result.modifiedCount,
     });
   } catch (error) {
@@ -165,7 +171,9 @@ const getDeletedTodos = async (req, res) => {
       user: req.user._id,
       deleted: true,
       deletedAt: { $gte: since },
-    }).sort({ deletedAt: -1 }).lean();
+    })
+      .sort({ deletedAt: -1 })
+      .lean();
     res.json(todos);
   } catch (error) {
     res.status(500).json({ message: error.message });

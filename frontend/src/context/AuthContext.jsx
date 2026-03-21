@@ -31,13 +31,29 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const hydrateUser = (userData) => {
+    if (!userData?.token) return;
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+  };
+
   const logout = () => {
     authService.logout();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, googleLogin, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        register,
+        login,
+        googleLogin,
+        hydrateUser,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

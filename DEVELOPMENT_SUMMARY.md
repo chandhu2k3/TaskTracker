@@ -1,5 +1,47 @@
 # Task Tracker Pro - Development Summary
 
+**Latest Patch**: v2.1 - Authentication & Email Verification (March 21, 2026)  
+**Overall Status**: ✅ Core features complete, Auth fully functional, Production ready
+
+---
+
+## 🚀 Patch v2.1: Authentication & Email Verification
+
+### What Was Fixed
+
+| Issue                 | Before                                   | After                                     |
+| --------------------- | ---------------------------------------- | ----------------------------------------- |
+| Email verification    | ❌ Blank page / spinner forever          | ✅ Redirects to login with success toast  |
+| Google Sign-In        | ❌ "Error 401 invalid_client"            | ✅ Real OAuth popup, full authentication  |
+| OAuth origin          | ❌ "Error 400 origin_mismatch"           | ✅ Domain registered in Google Cloud      |
+| Env configuration     | ❌ Placeholder URLs in `.env.production` | ✅ Defensive code strips accidental paths |
+| Production deployment | ❌ Can't sign up / login                 | ✅ Both email + Google methods work       |
+
+### Code Changes
+
+1. **Defensive FRONTEND_URL stripping** in [backend/controllers/authController.js](backend/controllers/authController.js#L133-L143)
+   - Strips `/dashboard` or `/verify-email` if accidentally included
+   - Prevents similar bugs in the future
+2. **Environment variable requirements** clearly documented
+   - Frontend: `REACT_APP_API_URL`, `REACT_APP_GOOGLE_CLIENT_ID`
+   - Backend: `FRONTEND_URL` (no path suffix), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+3. **Google Cloud OAuth setup** validated
+   - Authorized JavaScript origins must include production frontend URL
+   - Authorized redirect URIs must include callback endpoints
+
+### Deployment Requirement
+
+- ✅ Backend: Updated env vars on Render/Railway
+- ✅ Frontend: Updated env vars on Vercel
+- ✅ Google Cloud: Authorized production domain
+- ✅ Credentials: Rotated (old ones exposed in repo)
+
+### Next: Start Next Patch
+
+Ready to move to Phase 3 improvements (calendar, notifications, optimization, etc.)
+
+---
+
 ## Project Transformation
 
 ### Initial Request
@@ -20,6 +62,8 @@ Advanced task management system with:
 - **Multiple sessions per day** (toggle on/off many times)
 - **Comprehensive analytics** (weekly, monthly, by category)
 - **Historical tracking** (view any week, any month, any year)
+- **Email & Google Authentication** ✅ (v2.1)
+- **Google Calendar Integration** (scheduled for next patch)
 
 ## Architecture
 
@@ -27,47 +71,53 @@ Advanced task management system with:
 
 #### Models (4)
 
-1. **User.js** - Authentication and user management
+1. **User.js** - Authentication and user management (email verified, Google OAuth)
 2. **Task.js** - Core task model with sessions array
 3. **Category.js** - User-defined task categories
 4. **TaskTemplate.js** - Reusable weekly schedules
 
-#### Controllers (4)
+#### Controllers (4+1)
 
-1. **authController.js** - Register/Login
+1. **authController.js** - Register/Login/Email Verification/Google OAuth (✅ v2.1)
 2. **taskController.js** - CRUD + Analytics (weekly/monthly/category)
 3. **categoryController.js** - Category management
-4. **templateController.js** - Template CRUD + application logic
+4. **templateController.js** - Template CRUD + application logic + Calendar sync
+5. **calendarController.js** - Google Calendar OAuth + event management
 
-#### Routes (4)
+#### Routes (5)
 
 1. **/api/auth** - Authentication endpoints
 2. **/api/tasks** - Task CRUD + analytics endpoints
 3. **/api/categories** - Category CRUD
 4. **/api/templates** - Template CRUD + apply
+5. **/api/calendar** - Google Calendar integration
 
 ### Frontend (React 18)
 
-#### Components (6)
+#### Components (8)
 
 1. **DatePicker.js** - Progressive date selection (Year → Month → Week)
 2. **CategoryManager.js** - Category CRUD with modal UI
 3. **TemplateSetup.js** - Weekly template management
-4. **DayCard.js** - Daily task list with add/toggle/delete
+4. **DayCard.js** - Daily task list with add/toggle/delete, dark mode
 5. **TaskItem.js** - Individual task with session count
 6. **Analytics.js** - Visual analytics dashboard
+7. **NetworkDiagnostics.js** - Debug component for API connectivity
+8. **VerifyEmail.jsx** - Email verification flow (✅ v2.1)
 
-#### Pages (3)
+#### Pages (4)
 
-1. **Login.js** - User login
-2. **Register.js** - User registration
-3. **Dashboard.js** - Main app with 4 tabs (Week, Categories, Template, Analytics)
+1. **Home.jsx** - Landing page with theme toggle
+2. **Login.jsx** - Email + Google Sign-In (✅ v2.1)
+3. **Register.jsx** - Email + Google Sign-Up (✅ v2.1)
+4. **Dashboard.jsx** - Main app with 4 tabs (Week, Categories, Template, Analytics)
 
-#### Services (3)
+#### Services (4)
 
-1. **taskService.js** - Task API calls
-2. **categoryService.js** - Category API calls
-3. **templateService.js** - Template API calls
+1. **authService.js** - Login/Register/Google OAuth (✅ v2.1)
+2. **taskService.js** - Task API calls
+3. **categoryService.js** - Category API calls
+4. **templateService.js** - Template API calls
 
 ## Key Technical Features
 
@@ -115,13 +165,11 @@ sessions: [
 ## User Workflow
 
 1. **First Time Setup**
-
    - Register account
    - Create categories (Gym, DSA, Study, etc.)
    - Setup weekly template with tasks
 
 2. **Weekly Usage**
-
    - Select week (Year → Month → Week)
    - Apply template (one click)
    - Track tasks (toggle on/off multiple times)

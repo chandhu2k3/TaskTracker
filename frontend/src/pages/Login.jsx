@@ -10,29 +10,50 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, googleLogin } = useContext(AuthContext);
+  const { login, googleLogin, hydrateUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const saved = localStorage.getItem('theme') || 'dark';
-    document.body.setAttribute('data-theme', saved);
+    const saved = localStorage.getItem("theme") || "dark";
+    document.body.setAttribute("data-theme", saved);
   }, []);
 
   // Handle redirect back from email verification link
   useEffect(() => {
     const verified = searchParams.get("verified");
     const email = searchParams.get("email");
-    if (verified === "success") toast.success("✅ Email verified! You can now log in.");
+    const autologin = searchParams.get("autologin");
+    const token = searchParams.get("token");
+
+    if (verified === "success" && autologin === "1" && token) {
+      const userData = {
+        _id: searchParams.get("id") || "",
+        name: searchParams.get("name") || "User",
+        email: searchParams.get("email") || "",
+        onboardingComplete: searchParams.get("onboardingComplete") === "1",
+        emailVerified: true,
+        token,
+      };
+      hydrateUser(userData);
+      toast.success("✅ Email verified! You're now logged in.");
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    if (verified === "success")
+      toast.success("✅ Email verified! You can now log in.");
     else if (verified === "expired") {
       toast.warn("⚠️ Verification link expired. Request a new one.");
       if (email) navigate(`/verify-pending?email=${encodeURIComponent(email)}`);
-    }
-    else if (verified === "invalid") toast.error("❌ Invalid verification link.");
-    else if (verified === "error") toast.error("Something went wrong. Please try again.");
-  }, [searchParams, navigate]);
+    } else if (verified === "invalid")
+      toast.error("❌ Invalid verification link.");
+    else if (verified === "error")
+      toast.error("Something went wrong. Please try again.");
+  }, [searchParams, navigate, hydrateUser]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +66,9 @@ const Login = () => {
       const data = error.response?.data;
       if (data?.requiresVerification) {
         toast.warn("Please verify your email first.");
-        navigate(`/verify-pending?email=${encodeURIComponent(data.email || formData.email)}`);
+        navigate(
+          `/verify-pending?email=${encodeURIComponent(data.email || formData.email)}`,
+        );
       } else {
         toast.error(data?.message || "Login failed");
       }
@@ -57,7 +80,9 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       const data = await googleLogin(credentialResponse.credential);
-      toast.success(`Welcome${data.isNewUser ? "" : " back"}, ${data.name?.split(" ")[0]}! 👋`);
+      toast.success(
+        `Welcome${data.isNewUser ? "" : " back"}, ${data.name?.split(" ")[0]}! 👋`,
+      );
       navigate("/dashboard");
     } catch (error) {
       toast.error(error.response?.data?.message || "Google Sign-In failed");
@@ -86,18 +111,39 @@ const Login = () => {
           />
         </div>
 
-        <div className="auth-divider"><span>or sign in with email</span></div>
+        <div className="auth-divider">
+          <span>or sign in with email</span>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Enter your email" />
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="Enter your email"
+            />
           </div>
           <div className="form-group">
             <label>Password</label>
             <div className="password-wrapper">
-              <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required placeholder="Enter your password" />
-              <button type="button" className="toggle-pw" onClick={() => setShowPassword(v => !v)} tabIndex={-1}>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                className="toggle-pw"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+              >
                 {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
