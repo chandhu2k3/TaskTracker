@@ -525,8 +525,14 @@ const Dashboard = () => {
     }
   };
 
-  const handleToggleTask = async (taskId, isActive) => {
+  const handleToggleTask = async (taskId, isActive, manualFinish = false) => {
     try {
+      if (manualFinish) {
+        await loadTasks();
+        toast.success("Task marked as finished manually");
+        return;
+      }
+
       // If trying to start a task while sleep mode is active, prompt to turn off sleep
       if (isActive && sleepMode) {
         const shouldWakeUp = window.confirm(

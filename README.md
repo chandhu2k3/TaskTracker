@@ -12,6 +12,7 @@ An advanced task tracking application with categories, templates, multiple daily
 - **Multiple Sessions**: Toggle tasks on/off multiple times per day
 - **Session Tracking**: Track each work session with start/end times
 - **Real-time Updates**: Live time tracking for active tasks
+- **Manual Finish Option**: Mark a task as finished manually with a single tap if you forgot to track it live
 
 ### 📈 Analytics
 

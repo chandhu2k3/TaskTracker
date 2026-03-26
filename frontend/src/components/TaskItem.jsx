@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import "./TaskItem.css";
 import calendarService from "../services/calendarService";
 
+import { manualFinishTask } from "../services/taskService";
+
 const TaskItem = ({
   task,
   onToggle,
@@ -19,6 +21,24 @@ const TaskItem = ({
   isDragging,
   isDeleting = false,
 }) => {
+  const [isFinishing, setIsFinishing] = useState(false);
+
+  // Handler for manual finish
+  const handleManualFinish = async () => {
+    setIsFinishing(true);
+    try {
+      await manualFinishTask(task._id);
+      if (typeof onToggle === "function") {
+        await onToggle(task._id, false, true);
+      } else {
+        toast.success("Task marked as finished!");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to finish task");
+    } finally {
+      setIsFinishing(false);
+    }
+  };
   const overtimeCheckRef = useRef(null);
 
   // Debug: Log task data
@@ -69,6 +89,13 @@ const TaskItem = ({
   };
 
   const canToggle = isToday();
+  const isManuallyCompleted = !task.isActive && task.totalTime > 0;
+  const progressDenominator =
+    task.plannedTime > 0
+      ? task.plannedTime
+      : isManuallyCompleted
+        ? task.totalTime
+        : 1;
 
   const sessionCount = task.sessions ? task.sessions.length : 0;
   const totalSessionCount = sessionCount + (task.isActive ? 1 : 0);
@@ -334,8 +361,8 @@ const TaskItem = ({
   return (
     <div
       className={`task-item ${task.isActive ? "active" : ""} ${
-        isDragging ? "dragging" : ""
-      }`}
+        isManuallyCompleted ? "completed" : ""
+      } ${isDragging ? "dragging" : ""}`}
       draggable="true"
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -376,6 +403,22 @@ const TaskItem = ({
           )}
         </div>
         <div className="task-controls" draggable="false">
+          {/* Manual Finish Button: Only show if not active and not finished */}
+          {!task.isActive && task.totalTime === 0 && !isFinishing && (
+            <button
+              className="btn-manual-finish"
+              onClick={handleManualFinish}
+              title="Mark as finished manually"
+              draggable="false"
+            >
+              ✓ Finish
+            </button>
+          )}
+          {isFinishing && (
+            <button className="btn-manual-finish finishing" disabled>
+              Finishing...
+            </button>
+          )}
           <div className="calendar-btn-wrapper">
             <button
               ref={calendarBtnRef}
@@ -571,13 +614,10 @@ const TaskItem = ({
             <div
               className="progress-bar-fill"
               style={{
-                width:
-                  task.plannedTime > 0
-                    ? `${Math.min(
-                        (calculateTime() / task.plannedTime) * 100,
-                        100,
-                      )}%`
-                    : "0%",
+                width: `${Math.min(
+                  (calculateTime() / progressDenominator) * 100,
+                  100,
+                )}%`,
               }}
             >
               <span className="progress-text">
@@ -587,7 +627,7 @@ const TaskItem = ({
             </div>
           </div>
           <span className="planned-time-label">
-            🎯 {formatTime(task.plannedTime || 0)}
+            🎯 {formatTime(task.plannedTime || task.totalTime || 0)}
           </span>
         </div>
       </div>

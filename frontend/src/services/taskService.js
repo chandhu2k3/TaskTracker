@@ -1,6 +1,12 @@
 import api from "./api";
 import { getUserTimezone } from "../utils/timezone";
 
+// Manually finish a task
+const manualFinishTask = async (id) => {
+  const response = await api.put(`/api/tasks/${id}/finish`, {}, getConfig());
+  return response.data;
+};
+
 // Get timezone header (auth is handled by api interceptor)
 const getConfig = () => ({
   headers: {
@@ -12,7 +18,7 @@ const getConfig = () => ({
 const getTasksByDateRange = async (startDate, endDate) => {
   const response = await api.get(
     `/api/tasks/range?startDate=${startDate}&endDate=${endDate}`,
-    getConfig()
+    getConfig(),
   );
   return response.data;
 };
@@ -21,46 +27,32 @@ const getTasksByDateRange = async (startDate, endDate) => {
 const getTasksByWeek = async (year, month, weekNumber) => {
   const response = await api.get(
     `/api/tasks/week/${year}/${month}/${weekNumber}`,
-    getConfig()
+    getConfig(),
   );
   return response.data;
 };
 
 // Create task
 const createTask = async (taskData) => {
-  const response = await api.post(
-    `/api/tasks`,
-    taskData,
-    getConfig()
-  );
+  const response = await api.post(`/api/tasks`, taskData, getConfig());
   return response.data;
 };
 
 // Update task (toggle, edit)
 const updateTask = async (id, taskData) => {
-  const response = await api.put(
-    `/api/tasks/${id}`,
-    taskData,
-    getConfig()
-  );
+  const response = await api.put(`/api/tasks/${id}`, taskData, getConfig());
   return response.data;
 };
 
 // Delete task
 const deleteTask = async (id) => {
-  const response = await api.delete(
-    `/api/tasks/${id}`,
-    getConfig()
-  );
+  const response = await api.delete(`/api/tasks/${id}`, getConfig());
   return response.data;
 };
 
 // Delete all tasks for a specific day
 const deleteTasksByDay = async (date) => {
-  const response = await api.delete(
-    `/api/tasks/day/${date}`,
-    getConfig()
-  );
+  const response = await api.delete(`/api/tasks/day/${date}`, getConfig());
   return response.data;
 };
 
@@ -68,7 +60,7 @@ const deleteTasksByDay = async (date) => {
 const deleteTasksByWeek = async (year, month, weekNumber) => {
   const response = await api.delete(
     `/api/tasks/week/${year}/${month}/${weekNumber}`,
-    getConfig()
+    getConfig(),
   );
   return response.data;
 };
@@ -77,7 +69,7 @@ const deleteTasksByWeek = async (year, month, weekNumber) => {
 const getWeeklyAnalytics = async (year, month, weekNumber) => {
   const response = await api.get(
     `/api/tasks/analytics/week/${year}/${month}/${weekNumber}`,
-    getConfig()
+    getConfig(),
   );
   return response.data;
 };
@@ -86,7 +78,7 @@ const getWeeklyAnalytics = async (year, month, weekNumber) => {
 const getMonthlyAnalytics = async (year, month) => {
   const response = await api.get(
     `/api/tasks/analytics/month/${year}/${month}`,
-    getConfig()
+    getConfig(),
   );
   return response.data;
 };
@@ -106,12 +98,13 @@ const stopTask = async (id) => {
   const response = await api.put(
     `/api/tasks/${id}`,
     { isActive: false },
-    getConfig()
+    getConfig(),
   );
   return response.data;
 };
 
 const taskService = {
+  manualFinishTask,
   getTasksByDateRange,
   getTasksByWeek,
   createTask,
@@ -134,3 +127,4 @@ const taskService = {
 };
 
 export default taskService;
+export { manualFinishTask };

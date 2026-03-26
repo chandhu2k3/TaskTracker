@@ -33,6 +33,16 @@
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
 }
 
+.task-item.completed {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: linear-gradient(
+    180deg,
+    rgba(34, 197, 94, 0.08),
+    rgba(255, 255, 255, 0.98)
+  );
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.1);
+}
+
 .task-header {
   display: flex;
   justify-content: space-between;
@@ -116,6 +126,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
   pointer-events: auto;
 }
 
@@ -202,6 +213,49 @@
   transform: none;
 }
 
+.btn-manual-finish {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.16),
+    rgba(34, 197, 94, 0.14)
+  );
+  color: #166534;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-manual-finish:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.16);
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.22),
+    rgba(34, 197, 94, 0.2)
+  );
+}
+
+.btn-manual-finish.finishing,
+.btn-manual-finish:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  transform: none;
+}
+
 .calendar-btn-wrapper {
   position: relative;
 }
@@ -220,8 +274,14 @@
 }
 
 @keyframes pickerFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .calendar-picker-title {
@@ -387,8 +447,8 @@ body[data-theme="dark"] .calendar-reminder-picker button:hover {
   height: 100%;
   background: linear-gradient(
     90deg,
-    rgba(245, 225, 200, 0.5) 0%,
-    rgba(232, 205, 176, 0.5) 100%
+    rgba(245, 158, 11, 0.62) 0%,
+    rgba(34, 197, 94, 0.78) 100%
   );
   border-radius: 10px;
   transition: width 0.5s ease;
@@ -412,6 +472,41 @@ body[data-theme="dark"] .calendar-reminder-picker button:hover {
   color: #64748b;
   white-space: nowrap;
   font-size: 0.75rem;
+}
+
+.task-item.completed .progress-bar-wrapper {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.18);
+}
+
+.task-item.completed .planned-time-label {
+  color: #166534;
+}
+
+body[data-theme="dark"] .btn-manual-finish {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.14),
+    rgba(34, 197, 94, 0.1)
+  );
+  color: #d1fae5;
+  border-color: rgba(34, 197, 94, 0.22);
+}
+
+body[data-theme="dark"] .btn-manual-finish:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.2),
+    rgba(34, 197, 94, 0.16)
+  );
+}
+
+body[data-theme="dark"] .task-item.completed {
+  background: linear-gradient(
+    180deg,
+    rgba(34, 197, 94, 0.08),
+    rgba(17, 17, 17, 0.96)
+  );
 }
 
 .task-meta {

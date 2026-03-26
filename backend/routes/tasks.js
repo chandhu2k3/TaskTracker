@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getTasksByDateRange,
   getTasksByWeek,
+  finishTaskManually,
   createTask,
   updateTask,
   deleteTask,
@@ -40,5 +41,8 @@ router.get("/analytics/category/:category", getCategoryAnalytics);
 
 // Individual task routes
 router.route("/:id").put(updateTask).delete(deleteTask);
+
+// Manual finish route
+router.put("/:id/finish", finishTaskManually);
 
 module.exports = router;

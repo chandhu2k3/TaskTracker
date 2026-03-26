@@ -2,7 +2,45 @@ const Task = require("../models/Task");
 const Category = require("../models/Category");
 const Sleep = require("../models/Sleep");
 const tz = require("../utils/timezone");
-const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
+const {
+  cacheKey,
+  getCache,
+  setCache,
+  invalidateCache,
+  TTL,
+} = require("../config/redis");
+
+// @desc    Manually finish a task (if user forgot to toggle on)
+// @route   PUT /api/tasks/:id/finish
+// @access  Private
+const finishTaskManually = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+    if (task.totalTime > 0 || (task.sessions && task.sessions.length > 0)) {
+      return res
+        .status(400)
+        .json({ message: "Task already finished or has sessions" });
+    }
+    const timezone = tz.getTimezoneFromRequest(req);
+    const now = tz.getNow(timezone).toJSDate();
+    const duration = task.plannedTime > 0 ? task.plannedTime : 60 * 60 * 1000;
+    const startTime = new Date(now.getTime() - duration);
+    const endTime = now;
+    task.sessions.push({ startTime, endTime, duration });
+    task.totalTime = duration;
+    task.completionCount = (task.completionCount || 0) + 1;
+    await task.save();
+    res.json({ message: "Task marked as finished manually", task });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // @desc    Get tasks by date range
 // @route   GET /api/tasks/range?startDate=...&endDate=...&page=1&limit=50
@@ -63,19 +101,21 @@ const getTasksByWeek = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
     const timezone = tz.getTimezoneFromRequest(req);
-    
+
     const { startDate, endDate } = tz.getWeekDates(
       parseInt(year),
       parseInt(month),
       parseInt(weekNumber),
-      timezone
+      timezone,
     );
 
     const tasks = await Task.find({
       user: req.user._id,
       date: { $gte: startDate, $lte: endDate },
       deleted: { $ne: true },
-    }).sort({ date: 1, order: 1, createdAt: 1 }).lean();
+    })
+      .sort({ date: 1, order: 1, createdAt: 1 })
+      .lean();
 
     // Auto-complete automated tasks for today and past dates
     const todayStr = tz.getTodayString(timezone);
@@ -93,13 +133,22 @@ const getTasksByWeek = async (req, res) => {
           // Use scheduled time or default to start of day
           let startTime;
           let endTime;
-          
+
           if (task.scheduledStartTime && task.scheduledEndTime) {
             // Parse scheduled time (format: "HH:MM")
-            const [startHour, startMin] = task.scheduledStartTime.split(':').map(Number);
-            const [endHour, endMin] = task.scheduledEndTime.split(':').map(Number);
-            
-            startTime = tz.createDateTime(taskDateStr, startHour, startMin, timezone);
+            const [startHour, startMin] = task.scheduledStartTime
+              .split(":")
+              .map(Number);
+            const [endHour, endMin] = task.scheduledEndTime
+              .split(":")
+              .map(Number);
+
+            startTime = tz.createDateTime(
+              taskDateStr,
+              startHour,
+              startMin,
+              timezone,
+            );
             endTime = tz.createDateTime(taskDateStr, endHour, endMin, timezone);
           } else {
             // No scheduled time - complete at 1 AM
@@ -114,15 +163,15 @@ const getTasksByWeek = async (req, res) => {
             endTime: endTime,
             duration: task.plannedTime,
           };
-          
+
           await Task.findByIdAndUpdate(task._id, {
             $push: { sessions: newSession },
-            $set: { 
+            $set: {
               totalTime: task.plannedTime,
-              completionCount: (task.completionCount || 0) + 1
-            }
+              completionCount: (task.completionCount || 0) + 1,
+            },
           });
-          
+
           // Update local task object for response
           task.sessions.push(newSession);
           task.totalTime = task.plannedTime;
@@ -194,12 +243,21 @@ const createTask = async (req, res) => {
       if (taskDateStr <= todayStr) {
         let startTime;
         let endTime;
-        
+
         if (task.scheduledStartTime && task.scheduledEndTime) {
-          const [startHour, startMin] = task.scheduledStartTime.split(':').map(Number);
-          const [endHour, endMin] = task.scheduledEndTime.split(':').map(Number);
-          
-          startTime = tz.createDateTime(taskDateStr, startHour, startMin, timezone);
+          const [startHour, startMin] = task.scheduledStartTime
+            .split(":")
+            .map(Number);
+          const [endHour, endMin] = task.scheduledEndTime
+            .split(":")
+            .map(Number);
+
+          startTime = tz.createDateTime(
+            taskDateStr,
+            startHour,
+            startMin,
+            timezone,
+          );
           endTime = tz.createDateTime(taskDateStr, endHour, endMin, timezone);
         } else {
           startTime = tz.createDateTime(taskDateStr, 1, 0, timezone);
@@ -326,16 +384,16 @@ const deleteTask = async (req, res) => {
 const deleteTasksByDay = async (req, res) => {
   try {
     const { date } = req.params;
-    
+
     const result = await Task.updateMany(
       { user: req.user._id, date: date, deleted: { $ne: true } },
-      { $set: { deleted: true, deletedAt: new Date() } }
+      { $set: { deleted: true, deletedAt: new Date() } },
     );
     await invalidateCache(`user:${req.user._id}:tasks*`);
     await invalidateCache(`user:${req.user._id}:analytics*`);
-    res.json({ 
-      message: `Soft deleted ${result.modifiedCount} task(s)` ,
-      deletedCount: result.modifiedCount 
+    res.json({
+      message: `Soft deleted ${result.modifiedCount} task(s)`,
+      deletedCount: result.modifiedCount,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -349,23 +407,27 @@ const deleteTasksByWeek = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
     const timezone = tz.getTimezoneFromRequest(req);
-    
+
     const { startDate, endDate } = tz.getWeekDates(
       parseInt(year),
       parseInt(month),
       parseInt(weekNumber),
-      timezone
+      timezone,
     );
 
     const result = await Task.updateMany(
-      { user: req.user._id, date: { $gte: startDate, $lte: endDate }, deleted: { $ne: true } },
-      { $set: { deleted: true, deletedAt: new Date() } }
+      {
+        user: req.user._id,
+        date: { $gte: startDate, $lte: endDate },
+        deleted: { $ne: true },
+      },
+      { $set: { deleted: true, deletedAt: new Date() } },
     );
     await invalidateCache(`user:${req.user._id}:tasks*`);
     await invalidateCache(`user:${req.user._id}:analytics*`);
-    res.json({ 
+    res.json({
       message: `Soft deleted ${result.modifiedCount} task(s) from week ${weekNumber}`,
-      deletedCount: result.modifiedCount 
+      deletedCount: result.modifiedCount,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -381,17 +443,24 @@ const getWeeklyAnalytics = async (req, res) => {
     const timezone = tz.getTimezoneFromRequest(req);
 
     // Check cache first
-    const key = cacheKey(req.user._id, "analytics", "week", year, month, weekNumber);
+    const key = cacheKey(
+      req.user._id,
+      "analytics",
+      "week",
+      year,
+      month,
+      weekNumber,
+    );
     const cached = await getCache(key);
     if (cached) {
       return res.json(typeof cached === "string" ? JSON.parse(cached) : cached);
     }
-    
+
     const { startDate, endDate } = tz.getWeekDates(
       parseInt(year),
       parseInt(month),
       parseInt(weekNumber),
-      timezone
+      timezone,
     );
 
     // Fetch tasks and sleep in parallel for speed
@@ -441,7 +510,7 @@ const getWeeklyAnalytics = async (req, res) => {
     tasks.forEach((task) => {
       let taskTime = task.totalTime;
       const isActive = task.isActive;
-      
+
       if (isActive && task.startTime) {
         taskTime += Date.now() - new Date(task.startTime).getTime();
         analytics.activeTasks++;
@@ -483,7 +552,7 @@ const getWeeklyAnalytics = async (req, res) => {
     if (sleepSessions.length > 0) {
       const totalSleepTime = sleepSessions.reduce(
         (sum, session) => sum + session.duration,
-        0
+        0,
       );
       analytics.byCategory["Sleep"] = {
         taskCount: sleepSessions.length,
@@ -574,7 +643,7 @@ const getMonthlyAnalytics = async (req, res) => {
     if (sleepSessions.length > 0) {
       const totalSleepTime = sleepSessions.reduce(
         (sum, session) => sum + session.duration,
-        0
+        0,
       );
       analytics.byCategory["Sleep"] = {
         taskCount: sleepSessions.length,
@@ -600,7 +669,14 @@ const getCategoryAnalytics = async (req, res) => {
     const { startDate, endDate } = req.query;
 
     // Check cache first
-    const key = cacheKey(req.user._id, "analytics", "cat", category, startDate || "all", endDate || "all");
+    const key = cacheKey(
+      req.user._id,
+      "analytics",
+      "cat",
+      category,
+      startDate || "all",
+      endDate || "all",
+    );
     const cached = await getCache(key);
     if (cached) {
       return res.json(typeof cached === "string" ? JSON.parse(cached) : cached);
@@ -669,7 +745,9 @@ const getDeletedTasks = async (req, res) => {
       user: req.user._id,
       deleted: true,
       deletedAt: { $gte: since },
-    }).sort({ deletedAt: -1 }).lean();
+    })
+      .sort({ deletedAt: -1 })
+      .lean();
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -697,6 +775,7 @@ const restoreTask = async (req, res) => {
 module.exports = {
   getTasksByDateRange,
   getTasksByWeek,
+  finishTaskManually,
   createTask,
   updateTask,
   deleteTask,
