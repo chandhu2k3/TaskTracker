@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { toast } from "react-toastify";
 import "./TodoList.css";
+import TodoAssistant from "./TodoAssistant";
 import calendarService from "../services/calendarService";
 
 const TodoList = ({
@@ -171,6 +172,12 @@ const TodoList = ({
         <h3>✓ Quick Todos</h3>
         <p className="todo-subtitle">Simple checklist for daily tasks</p>
       </div>
+
+      <TodoAssistant
+        onCreateTodo={async ({ text, deadline }) => {
+          await onAddTodo(text, deadline || todayStr);
+        }}
+      />
 
       <form onSubmit={handleSubmit} className="todo-input-form">
         <div className="todo-input-group">
