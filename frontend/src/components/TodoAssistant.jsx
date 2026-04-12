@@ -8,6 +8,7 @@ const SpeechRecognitionAPI =
   (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 const TodoAssistant = ({ onCreateTodo }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [parsed, setParsed] = useState(null);
   const [isListening, setIsListening] = useState(false);
@@ -30,6 +31,10 @@ const TodoAssistant = ({ onCreateTodo }) => {
   };
 
   const handleVerifyAndAdd = async () => {
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+
     if (!prompt.trim()) {
       toast.info("Type or speak a task to analyze first.");
       return;
@@ -60,6 +65,10 @@ const TodoAssistant = ({ onCreateTodo }) => {
     if (!canUseVoice) {
       toast.error("Voice input is not supported in this browser.");
       return;
+    }
+
+    if (!isOpen) {
+      setIsOpen(true);
     }
 
     if (isListening) {
@@ -107,58 +116,79 @@ const TodoAssistant = ({ onCreateTodo }) => {
 
   return (
     <div className="todo-assistant">
-      <div className="todo-assistant-header">
-        <div>
-          <p className="todo-assistant-kicker">Assistant</p>
-          <h4>Quick voice prompt</h4>
-        </div>
+      {isOpen ? (
+        <>
+          <div className="todo-assistant-header">
+            <div>
+              <p className="todo-assistant-kicker">Assistant</p>
+              <h4>Quick todo assistant</h4>
+            </div>
+            <button
+              type="button"
+              className={`todo-assistant-voice ${isListening ? "listening" : ""}`}
+              onClick={handleVoice}
+              title={
+                canUseVoice
+                  ? "Speak a todo with deadline"
+                  : "Voice not supported"
+              }
+              disabled={isListening}
+            >
+              {isListening ? "🎙️ Listening" : "🎙️ Voice"}
+            </button>
+          </div>
+
+          <textarea
+            className="todo-assistant-input"
+            value={prompt}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              setParsed(null);
+            }}
+            placeholder='Try: "Pay electricity bill next Friday" or "Call mom tomorrow"'
+            rows={3}
+          />
+
+          <div className="todo-assistant-actions">
+            <button
+              type="button"
+              className="todo-assistant-secondary"
+              onClick={() => setIsOpen(false)}
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              className="todo-assistant-primary todo-assistant-full"
+              onClick={handleVerifyAndAdd}
+            >
+              Verify & Add
+            </button>
+          </div>
+
+          <div className="todo-assistant-preview">
+            <div className="todo-assistant-preview-label">Parsed result</div>
+            <div className="todo-assistant-preview-grid">
+              <div>
+                <span>Todo</span>
+                <strong>{parsed?.text || "Waiting for input"}</strong>
+              </div>
+              <div>
+                <span>Deadline</span>
+                <strong>{parsed?.deadline || "No deadline detected"}</strong>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
         <button
           type="button"
-          className={`todo-assistant-voice ${isListening ? "listening" : ""}`}
-          onClick={handleVoice}
-          title={
-            canUseVoice ? "Speak a todo with deadline" : "Voice not supported"
-          }
-          disabled={isListening}
+          className="todo-assistant-launcher"
+          onClick={() => setIsOpen(true)}
         >
-          {isListening ? "🎙️ Listening" : "🎙️ Voice"}
+          🎙️ Open quick assistant
         </button>
-      </div>
-
-      <textarea
-        className="todo-assistant-input"
-        value={prompt}
-        onChange={(e) => {
-          setPrompt(e.target.value);
-          setParsed(null);
-        }}
-        placeholder='Try: "Pay electricity bill next Friday" or "Call mom tomorrow"'
-        rows={3}
-      />
-
-      <div className="todo-assistant-actions">
-        <button
-          type="button"
-          className="todo-assistant-primary todo-assistant-full"
-          onClick={handleVerifyAndAdd}
-        >
-          Verify & Add
-        </button>
-      </div>
-
-      <div className="todo-assistant-preview">
-        <div className="todo-assistant-preview-label">Parsed result</div>
-        <div className="todo-assistant-preview-grid">
-          <div>
-            <span>Todo</span>
-            <strong>{parsed?.text || "Waiting for input"}</strong>
-          </div>
-          <div>
-            <span>Deadline</span>
-            <strong>{parsed?.deadline || "No deadline detected"}</strong>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -9,26 +9,30 @@ const connectDB = require("./config/db");
 // Load environment config
 // For local development, use .env.development if it exists
 // For production (Vercel), use environment variables from Vercel dashboard
-const devEnvPath = path.join(__dirname, '.env.development');
-const defaultEnvPath = path.join(__dirname, '.env');
+const devEnvPath = path.join(__dirname, ".env.development");
+const defaultEnvPath = path.join(__dirname, ".env");
 
 if (fs.existsSync(devEnvPath)) {
   dotenv.config({ path: devEnvPath });
-  console.log('📦 Loaded: .env.development');
+  console.log("📦 Loaded: .env.development");
 } else if (fs.existsSync(defaultEnvPath)) {
   dotenv.config({ path: defaultEnvPath });
-  console.log('📦 Loaded: .env');
+  console.log("📦 Loaded: .env");
 } else {
-  console.log('📦 Using Vercel environment variables');
+  console.log("📦 Using Vercel environment variables");
 }
 
-console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-console.log(`🗄️ Database: ${process.env.MONGODB_URI?.includes('localhost') ? 'Local MongoDB' : 'MongoDB Atlas'}`);
+console.log(`🔧 Environment: ${process.env.NODE_ENV || "development"}`);
+console.log(
+  `🗄️ Database: ${process.env.MONGODB_URI?.includes("localhost") ? "Local MongoDB" : "MongoDB Atlas"}`,
+);
 
 // Connect to database asynchronously (don't block server startup)
-connectDB().catch(err => {
-  console.error('❌ Initial DB connection failed:', err.message);
-  console.log('⚠️ Server will start anyway, DB reconnection will be attempted on requests');
+connectDB().catch((err) => {
+  console.error("❌ Initial DB connection failed:", err.message);
+  console.log(
+    "⚠️ Server will start anyway, DB reconnection will be attempted on requests",
+  );
 });
 
 const app = express();
@@ -36,15 +40,16 @@ const app = express();
 // ✅ Slow request logging middleware should go HERE
 app.use((req, res, next) => {
   const start = Date.now();
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - start;
     if (duration > 2000) {
-      console.warn(`[SLOW REQUEST] ${req.method} ${req.originalUrl} took ${duration}ms`);
+      console.warn(
+        `[SLOW REQUEST] ${req.method} ${req.originalUrl} took ${duration}ms`,
+      );
     }
   });
   next();
 });
-
 
 // CORS configuration
 const corsOptions = {
@@ -70,7 +75,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Timezone", "x-keep-alive", "Cache-Control"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Timezone",
+    "x-keep-alive",
+    "Cache-Control",
+  ],
   optionsSuccessStatus: 200,
 };
 
@@ -104,79 +115,80 @@ app.use("/api/templates", require("./routes/templates"));
 app.use("/api/sleep", require("./routes/sleepRoutes"));
 app.use("/api/todos", require("./routes/todos"));
 app.use("/api/calendar", require("./routes/calendar"));
+app.use("/api/assistant", require("./routes/assistant"));
 
 // Health check
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     message: "Task Tracker API is running",
     status: "healthy",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Super lightweight ping - no DB required, optimized for keep-alive
 app.get("/api/ping", (req, res) => {
   // Skip logging for keep-alive requests to reduce noise
-  if (!req.headers['x-keep-alive']) {
-    console.log('📡 Ping request');
+  if (!req.headers["x-keep-alive"]) {
+    console.log("📡 Ping request");
   }
-  
+
   res.set({
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-    'Connection': 'keep-alive',
-    'Keep-Alive': 'timeout=60'
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    Connection: "keep-alive",
+    "Keep-Alive": "timeout=60",
   });
-  
-  res.status(200).json({ 
+
+  res.status(200).json({
     status: "ok",
     timestamp: Date.now(),
     message: "pong",
-    cold: false // Always warm now!
+    cold: false, // Always warm now!
   });
 });
 
 // Quick health check for warming up
 app.get("/api/health", async (req, res) => {
   try {
-    const { getRedis } = require('./config/redis');
+    const { getRedis } = require("./config/redis");
     const redisClient = getRedis();
-    
+
     // Try to reconnect if disconnected
     if (mongoose.connection.readyState !== 1) {
-      console.log('❌ MongoDB disconnected, attempting reconnect...');
+      console.log("❌ MongoDB disconnected, attempting reconnect...");
       try {
         await connectDB();
       } catch (err) {
-        console.error('Reconnect failed:', err.message);
+        console.error("Reconnect failed:", err.message);
       }
     }
-    
+
     // Get connection state details
     const stateMap = {
-      0: 'disconnected',
-      1: 'connected',
-      2: 'connecting',
-      3: 'disconnecting'
+      0: "disconnected",
+      1: "connected",
+      2: "connecting",
+      3: "disconnecting",
     };
-    
+
     const mongoState = mongoose.connection.readyState;
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       status: "ok",
-      mongodb: stateMap[mongoState] || 'unknown',
+      mongodb: stateMap[mongoState] || "unknown",
       mongodbState: mongoState,
-      mongodbHost: mongoose.connection.host || 'none',
+      mongodbHost: mongoose.connection.host || "none",
       mongodbError: mongoose.connection.error?.message || null,
-      redis: redisClient ? 'connected' : 'disabled',
-      timestamp: new Date().toISOString()
+      redis: redisClient ? "connected" : "disabled",
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    res.status(200).json({ 
+    res.status(200).json({
       status: "ok",
-      mongodb: 'error',
+      mongodb: "error",
       error: error.message,
-      redis: 'error',
-      timestamp: new Date().toISOString()
+      redis: "error",
+      timestamp: new Date().toISOString(),
     });
   }
 });

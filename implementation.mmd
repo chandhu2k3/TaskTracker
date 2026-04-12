@@ -1,0 +1,17 @@
+flowchart TD
+  A[Assistant UI] --> B[Recent conversation + voice transcript]
+  B --> C[Assistant API + retrieval layer]
+  C --> D{Prompt intent?}
+  C --> R[Prefilter and rerank relevant tasks, todos, templates, categories]
+  R --> C
+  D -->|Task / todo / template / insight| E[Fast local action handler]
+  D -->|General chat| F[LLM conversational reply grounded in persistent semantic context]
+  E --> G[Update app state + refresh dashboard]
+  F --> H[Return natural response]
+  G --> I[User sees immediate result]
+  H --> I
+
+  style E fill:#e9b84a,stroke:#d97706,color:#111827
+  style F fill:#dbeafe,stroke:#2563eb,color:#111827
+  style R fill:#fef3c7,stroke:#f59e0b,color:#111827
+  style I fill:#dcfce7,stroke:#16a34a,color:#111827

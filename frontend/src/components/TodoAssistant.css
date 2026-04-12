@@ -11,6 +11,18 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
 }
 
+.todo-assistant-launcher {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #111827, #1f2937);
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.18);
+}
+
 .todo-assistant-header {
   display: flex;
   align-items: center;
@@ -158,6 +170,11 @@ body[data-theme="dark"] .todo-assistant-input {
 
 body[data-theme="dark"] .todo-assistant-secondary {
   background: rgba(255, 255, 255, 0.08);
+}
+
+body[data-theme="dark"] .todo-assistant-launcher {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {

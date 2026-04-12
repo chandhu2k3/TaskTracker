@@ -17,6 +17,7 @@ import calendarService from "../services/calendarService";
 import keepAliveService from "../services/keepAliveService";
 import Onboarding from "../components/Onboarding";
 import Seo from "../components/Seo";
+import AssistantPanel from "../components/AssistantPanel";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -391,6 +392,16 @@ const Dashboard = () => {
         "Failed to load analytics: " +
           (error.response?.data?.message || error.message),
       );
+    }
+  };
+
+  const handleAssistantRefresh = async () => {
+    await loadTasks();
+    await loadTodos();
+    await loadTemplates();
+
+    if (activeTab === "analytics") {
+      await loadAnalytics();
     }
   };
 
@@ -1819,6 +1830,14 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      <AssistantPanel
+        selectedDate={selectedDate}
+        selectedDayDate={selectedDayDate}
+        activeTab={activeTab}
+        viewMode={viewMode}
+        onRefresh={handleAssistantRefresh}
+      />
 
       {/* Template Modal - rendered via Portal to appear above all content */}
       {showTemplateModal &&
