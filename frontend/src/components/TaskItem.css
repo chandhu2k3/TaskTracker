@@ -596,16 +596,44 @@ body[data-theme="dark"] .task-item.completed {
     font-size: 1.3rem;
   }
 
+  .task-controls {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .calendar-btn-wrapper {
+    display: flex;
+  }
+
+  .task-info {
+    gap: 8px;
+  }
+
   .progress-section {
     flex-direction: column;
     gap: 8px;
     align-items: stretch;
   }
 
+  .task-progress-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .progress-bar-wrapper {
+    width: 100%;
+  }
+
   .progress-bar {
     width: 100%;
     background: #10b981;
     gap: 6px;
+  }
+
+  .planned-time-label {
+    align-self: flex-end;
   }
 
   .automated-badge,
@@ -623,8 +651,18 @@ body[data-theme="dark"] .task-item.completed {
     padding: 10px;
   }
 
+  .task-header {
+    gap: 6px;
+  }
+
   .task-name {
     font-size: 0.85rem;
+  }
+
+  .task-name,
+  .task-controls,
+  .task-progress-container {
+    width: 100%;
   }
 
   .drag-handle {
@@ -633,6 +671,11 @@ body[data-theme="dark"] .task-item.completed {
 
   .progress-text {
     font-size: 0.7rem;
+  }
+
+  .btn-manual-finish {
+    width: 100%;
+    justify-content: center;
   }
 }
 

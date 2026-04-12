@@ -692,6 +692,39 @@ body[data-theme="dark"] .calendar-picker-actions .btn-add {
     padding: 12px 14px;
   }
 
+  .todo-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .todo-text {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .todo-actions {
+    opacity: 1;
+    transform: none;
+    margin-left: auto;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .todo-item:hover .todo-actions {
+    transform: none;
+  }
+
+  .todo-deadline-badge {
+    margin-left: 0;
+    margin-top: 6px;
+  }
+
+  .todo-calendar-btn,
+  .todo-delete-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
   .todo-stats {
     margin: 0 -18px -18px -18px;
     padding: 14px;
