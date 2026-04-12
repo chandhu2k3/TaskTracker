@@ -18,6 +18,7 @@ const TemplateSetup = ({
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [templateName, setTemplateName] = useState("");
   const [templateTasks, setTemplateTasks] = useState([]);
+  const [templateTodos, setTemplateTodos] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [draggedTaskIndex, setDraggedTaskIndex] = useState(null);
   const [selectedEditDay, setSelectedEditDay] = useState("monday"); // Track which day is being edited
@@ -45,18 +46,19 @@ const TemplateSetup = ({
     setEditingTemplate(null);
     setTemplateName("");
     setTemplateTasks([]);
+    setTemplateTodos([]);
     setImportTemplateId("");
     setShowModal(true);
   };
 
   const handleImportTasks = () => {
     if (!importTemplateId) return;
-    
-    const templateToImport = templates.find(t => t._id === importTemplateId);
+
+    const templateToImport = templates.find((t) => t._id === importTemplateId);
     if (!templateToImport) return;
 
     // Import all tasks from the selected template with defaults
-    const importedTasks = templateToImport.tasks.map(task => ({
+    const importedTasks = (templateToImport.tasks || []).map((task) => ({
       ...task,
       isAutomated: task.isAutomated || false,
       completionCount: task.completionCount || 0,
@@ -64,8 +66,14 @@ const TemplateSetup = ({
       reminderMinutes: task.reminderMinutes || 0,
     }));
 
+    const importedTodos = (templateToImport.quickTodos || []).map((todo) => ({
+      ...todo,
+      deadlineOffsetDays: todo.deadlineOffsetDays || 0,
+    }));
+
     // Add imported tasks to existing tasks
     setTemplateTasks([...templateTasks, ...importedTasks]);
+    setTemplateTodos([...templateTodos, ...importedTodos]);
     setImportTemplateId(""); // Reset selection
   };
 
@@ -81,6 +89,12 @@ const TemplateSetup = ({
       reminderMinutes: task.reminderMinutes || 0,
     }));
     setTemplateTasks(tasksWithDefaults);
+    setTemplateTodos(
+      (template.quickTodos || []).map((todo) => ({
+        ...todo,
+        deadlineOffsetDays: todo.deadlineOffsetDays || 0,
+      })),
+    );
     setShowModal(true);
   };
 
@@ -105,6 +119,17 @@ const TemplateSetup = ({
     ]);
   };
 
+  const addTodo = () => {
+    setTemplateTodos([
+      ...templateTodos,
+      {
+        text: "",
+        day: selectedEditDay,
+        deadlineOffsetDays: 0,
+      },
+    ]);
+  };
+
   const updateTask = (index, field, value) => {
     console.log("Frontend - updateTask called:", {
       index,
@@ -123,6 +148,16 @@ const TemplateSetup = ({
 
   const removeTask = (index) => {
     setTemplateTasks(templateTasks.filter((_, i) => i !== index));
+  };
+
+  const updateTodo = (index, field, value) => {
+    const updated = [...templateTodos];
+    updated[index][field] = value;
+    setTemplateTodos(updated);
+  };
+
+  const removeTodo = (index) => {
+    setTemplateTodos(templateTodos.filter((_, i) => i !== index));
   };
 
   const handleDragStart = (e, index) => {
@@ -157,24 +192,29 @@ const TemplateSetup = ({
       return;
     }
 
-    if (templateTasks.length === 0) {
-      alert("Please add at least one task to your template!");
+    if (templateTasks.length === 0 && templateTodos.length === 0) {
+      alert("Please add at least one task or quick todo to your template!");
       return;
     }
 
     const validTasks = templateTasks.filter((t) => t.name.trim());
-    if (validTasks.length === 0) {
-      alert("Please provide names for your tasks!");
+    const validTodos = templateTodos.filter((t) => t.text.trim());
+    if (validTasks.length === 0 && validTodos.length === 0) {
+      alert("Please provide names for your tasks or quick todos!");
       return;
     }
 
     console.log("Frontend - Saving template with tasks:", validTasks);
     console.log(
       "Frontend - isAutomated values:",
-      validTasks.map((t) => ({ name: t.name, isAutomated: t.isAutomated }))
+      validTasks.map((t) => ({ name: t.name, isAutomated: t.isAutomated })),
     );
 
-    const templateData = { name: templateName, tasks: validTasks };
+    const templateData = {
+      name: templateName,
+      tasks: validTasks,
+      quickTodos: validTodos,
+    };
 
     if (editingTemplate) {
       onUpdateTemplate(editingTemplate._id, templateData);
@@ -208,6 +248,9 @@ const TemplateSetup = ({
     ? days.map((day) => ({
         day,
         tasks: selectedTemplate.tasks.filter((t) => t.day === day),
+        quickTodos: (selectedTemplate.quickTodos || []).filter(
+          (t) => t.day === day,
+        ),
       }))
     : [];
 
@@ -237,7 +280,8 @@ const TemplateSetup = ({
               >
                 {templates.map((template) => (
                   <option key={template._id} value={template._id}>
-                    {template.name} ({template.tasks.length} tasks)
+                    {template.name} ({(template.tasks || []).length} tasks,{" "}
+                    {(template.quickTodos || []).length} todos)
                   </option>
                 ))}
               </select>
@@ -273,8 +317,8 @@ const TemplateSetup = ({
           {selectedTemplate && (
             <div className="template-preview">
               {groupedTasks.map(
-                ({ day, tasks }) =>
-                  tasks.length > 0 && (
+                ({ day, tasks, quickTodos }) =>
+                  (tasks.length > 0 || quickTodos.length > 0) && (
                     <div key={day} className="template-day">
                       <strong>
                         {day.charAt(0).toUpperCase() + day.slice(1)}:
@@ -291,9 +335,17 @@ const TemplateSetup = ({
                             {getCategoryIcon(task.category)} {task.name}
                           </span>
                         ))}
+                        {quickTodos.map((todo, idx) => (
+                          <span
+                            key={`todo-${idx}`}
+                            className="template-todo-badge"
+                          >
+                            ✓ {todo.text}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                  )
+                  ),
               )}
             </div>
           )}
@@ -335,14 +387,18 @@ const TemplateSetup = ({
                 {/* Import from existing template - only show when creating new */}
                 {!editingTemplate && templates.length > 0 && (
                   <div className="form-group import-section">
-                    <label>📋 Import Tasks from Existing Template (Optional)</label>
+                    <label>
+                      📋 Import Tasks from Existing Template (Optional)
+                    </label>
                     <div className="import-row">
                       <select
                         value={importTemplateId}
                         onChange={(e) => setImportTemplateId(e.target.value)}
                         className="import-template-select"
                       >
-                        <option value="">-- Select a template to import --</option>
+                        <option value="">
+                          -- Select a template to import --
+                        </option>
                         {templates.map((template) => (
                           <option key={template._id} value={template._id}>
                             {template.name} ({template.tasks.length} tasks)
@@ -358,7 +414,10 @@ const TemplateSetup = ({
                         Import Tasks
                       </button>
                     </div>
-                    <p className="import-hint">💡 Import tasks from another template to reuse common tasks</p>
+                    <p className="import-hint">
+                      💡 Import tasks from another template to reuse common
+                      tasks
+                    </p>
                   </div>
                 )}
               </div>
@@ -374,7 +433,7 @@ const TemplateSetup = ({
                     >
                       {day.charAt(0).toUpperCase() + day.slice(1)}
                       <span className="day-task-count">
-                        ({templateTasks.filter(t => t.day === day).length})
+                        ({templateTasks.filter((t) => t.day === day).length})
                       </span>
                     </button>
                   ))}
@@ -382,138 +441,229 @@ const TemplateSetup = ({
 
                 <div className="template-tasks-list">
                   <div className="tasks-header">
-                    <h4>{selectedEditDay.charAt(0).toUpperCase() + selectedEditDay.slice(1)} Tasks</h4>
+                    <h4>
+                      {selectedEditDay.charAt(0).toUpperCase() +
+                        selectedEditDay.slice(1)}{" "}
+                      Tasks
+                    </h4>
                     <button onClick={addTask} className="btn-add-task">
                       + Add Task
                     </button>
                   </div>
 
-                  {templateTasks.filter(t => t.day === selectedEditDay).length === 0 ? (
+                  {templateTasks.filter((t) => t.day === selectedEditDay)
+                    .length === 0 ? (
                     <p className="no-tasks">
                       No tasks for {selectedEditDay}. Add your first task!
                     </p>
                   ) : (
-                    templateTasks.map((task, index) => 
+                    templateTasks.map((task, index) =>
                       task.day === selectedEditDay ? (
-                      <div
-                        key={index}
-                        className={`template-task-row ${
-                          draggedTaskIndex === index ? "dragging" : ""
-                        }`}
-                        draggable="true"
-                        onDragStart={(e) => handleDragStart(e, index)}
-                        onDragOver={handleDragOver}
-                        onDragEnter={() => handleDragEnter(index)}
-                        onDrop={handleDrop}
-                      >
-                        <span
-                          className="drag-handle-template"
-                          title="Drag to reorder"
+                        <div
+                          key={index}
+                          className={`template-task-row ${
+                            draggedTaskIndex === index ? "dragging" : ""
+                          }`}
+                          draggable="true"
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={handleDragOver}
+                          onDragEnter={() => handleDragEnter(index)}
+                          onDrop={handleDrop}
                         >
-                          ⋮⋮
-                        </span>
-                        <input
-                          type="text"
-                          value={task.name}
-                          onChange={(e) =>
-                            updateTask(index, "name", e.target.value)
-                          }
-                          placeholder="Task name"
-                          className="task-name-input"
-                        />
-                        <select
-                          value={task.category}
-                          onChange={(e) =>
-                            updateTask(index, "category", e.target.value)
-                          }
-                          className="task-category-select"
-                        >
-                          {categories.map((cat) => (
-                            <option key={cat._id} value={cat.name}>
-                              {cat.icon} {cat.name}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          type="number"
-                          value={
-                            task.plannedTime ? task.plannedTime / 60000 : ""
-                          }
-                          onChange={(e) =>
-                            updateTask(
-                              index,
-                              "plannedTime",
-                              (parseInt(e.target.value) || 0) * 60000
-                            )
-                          }
-                          placeholder="Min"
-                          className="task-time-input"
-                          min="0"
-                        />
-                        <label className="automated-checkbox-template">
-                          <input
-                            type="checkbox"
-                            checked={task.isAutomated || false}
-                            onChange={(e) =>
-                              updateTask(index, "isAutomated", e.target.checked)
-                            }
-                          />
-                          <span>🔄 Auto</span>
-                        </label>
-                        <label className="automated-checkbox-template calendar-toggle">
-                          <input
-                            type="checkbox"
-                            checked={task.addToCalendar || false}
-                            onChange={(e) =>
-                              updateTask(index, "addToCalendar", e.target.checked)
-                            }
-                          />
-                          <span>📅 Cal</span>
-                        </label>
-                        {task.addToCalendar && (
-                          <select
-                            value={task.reminderMinutes || 0}
-                            onChange={(e) =>
-                              updateTask(index, "reminderMinutes", parseInt(e.target.value))
-                            }
-                            className="task-reminder-select"
-                            title="Reminder before task"
+                          <span
+                            className="drag-handle-template"
+                            title="Drag to reorder"
                           >
-                            <option value={0}>No reminder</option>
-                            <option value={5}>5 min</option>
-                            <option value={10}>10 min</option>
-                            <option value={15}>15 min</option>
-                            <option value={30}>30 min</option>
-                            <option value={60}>1 hour</option>
+                            ⋮⋮
+                          </span>
+                          <input
+                            type="text"
+                            value={task.name}
+                            onChange={(e) =>
+                              updateTask(index, "name", e.target.value)
+                            }
+                            placeholder="Task name"
+                            className="task-name-input"
+                          />
+                          <select
+                            value={task.category}
+                            onChange={(e) =>
+                              updateTask(index, "category", e.target.value)
+                            }
+                            className="task-category-select"
+                          >
+                            {categories.map((cat) => (
+                              <option key={cat._id} value={cat.name}>
+                                {cat.icon} {cat.name}
+                              </option>
+                            ))}
                           </select>
-                        )}
-                        <input
-                          type="time"
-                          value={task.scheduledStartTime || ""}
-                          onChange={(e) =>
-                            updateTask(index, "scheduledStartTime", e.target.value)
-                          }
-                          className="task-time-slot-input"
-                          title="Start time (optional)"
-                        />
-                        <span className="time-slot-separator-template">→</span>
-                        <input
-                          type="time"
-                          value={task.scheduledEndTime || ""}
-                          onChange={(e) =>
-                            updateTask(index, "scheduledEndTime", e.target.value)
-                          }
-                          className="task-time-slot-input"
-                          title="End time (optional)"
-                        />
-                        <button
-                          onClick={() => removeTask(index)}
-                          className="btn-remove-task"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : null
+                          <input
+                            type="number"
+                            value={
+                              task.plannedTime ? task.plannedTime / 60000 : ""
+                            }
+                            onChange={(e) =>
+                              updateTask(
+                                index,
+                                "plannedTime",
+                                (parseInt(e.target.value) || 0) * 60000,
+                              )
+                            }
+                            placeholder="Min"
+                            className="task-time-input"
+                            min="0"
+                          />
+                          <label className="automated-checkbox-template">
+                            <input
+                              type="checkbox"
+                              checked={task.isAutomated || false}
+                              onChange={(e) =>
+                                updateTask(
+                                  index,
+                                  "isAutomated",
+                                  e.target.checked,
+                                )
+                              }
+                            />
+                            <span>🔄 Auto</span>
+                          </label>
+                          <label className="automated-checkbox-template calendar-toggle">
+                            <input
+                              type="checkbox"
+                              checked={task.addToCalendar || false}
+                              onChange={(e) =>
+                                updateTask(
+                                  index,
+                                  "addToCalendar",
+                                  e.target.checked,
+                                )
+                              }
+                            />
+                            <span>📅 Cal</span>
+                          </label>
+                          {task.addToCalendar && (
+                            <select
+                              value={task.reminderMinutes || 0}
+                              onChange={(e) =>
+                                updateTask(
+                                  index,
+                                  "reminderMinutes",
+                                  parseInt(e.target.value),
+                                )
+                              }
+                              className="task-reminder-select"
+                              title="Reminder before task"
+                            >
+                              <option value={0}>No reminder</option>
+                              <option value={5}>5 min</option>
+                              <option value={10}>10 min</option>
+                              <option value={15}>15 min</option>
+                              <option value={30}>30 min</option>
+                              <option value={60}>1 hour</option>
+                            </select>
+                          )}
+                          <input
+                            type="time"
+                            value={task.scheduledStartTime || ""}
+                            onChange={(e) =>
+                              updateTask(
+                                index,
+                                "scheduledStartTime",
+                                e.target.value,
+                              )
+                            }
+                            className="task-time-slot-input"
+                            title="Start time (optional)"
+                          />
+                          <span className="time-slot-separator-template">
+                            →
+                          </span>
+                          <input
+                            type="time"
+                            value={task.scheduledEndTime || ""}
+                            onChange={(e) =>
+                              updateTask(
+                                index,
+                                "scheduledEndTime",
+                                e.target.value,
+                              )
+                            }
+                            className="task-time-slot-input"
+                            title="End time (optional)"
+                          />
+                          <button
+                            onClick={() => removeTask(index)}
+                            className="btn-remove-task"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : null,
+                    )
+                  )}
+                </div>
+
+                <div className="template-todos-list">
+                  <div className="tasks-header todo-header-row">
+                    <h4>
+                      {selectedEditDay.charAt(0).toUpperCase() +
+                        selectedEditDay.slice(1)}{" "}
+                      Quick Todos
+                    </h4>
+                    <button
+                      onClick={addTodo}
+                      className="btn-add-task btn-add-todo"
+                      type="button"
+                    >
+                      + Add Todo
+                    </button>
+                  </div>
+
+                  {templateTodos.filter((todo) => todo.day === selectedEditDay)
+                    .length === 0 ? (
+                    <p className="no-tasks">
+                      No quick todos for {selectedEditDay}. Add one for this
+                      day!
+                    </p>
+                  ) : (
+                    templateTodos.map((todo, index) =>
+                      todo.day === selectedEditDay ? (
+                        <div key={index} className="template-todo-row">
+                          <input
+                            type="text"
+                            value={todo.text}
+                            onChange={(e) =>
+                              updateTodo(index, "text", e.target.value)
+                            }
+                            placeholder="Quick todo text"
+                            className="todo-text-input"
+                          />
+                          <label className="todo-deadline-label">
+                            Deadline + days
+                            <input
+                              type="number"
+                              min="0"
+                              value={todo.deadlineOffsetDays ?? 0}
+                              onChange={(e) =>
+                                updateTodo(
+                                  index,
+                                  "deadlineOffsetDays",
+                                  parseInt(e.target.value, 10) || 0,
+                                )
+                              }
+                              className="todo-deadline-offset-input"
+                            />
+                          </label>
+                          <button
+                            onClick={() => removeTodo(index)}
+                            className="btn-remove-task"
+                            type="button"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : null,
                     )
                   )}
                 </div>
@@ -526,13 +676,26 @@ const TemplateSetup = ({
                 >
                   Cancel
                 </button>
-                <button onClick={handleSave} className="btn-save" disabled={isCreatingTemplate || (editingTemplate && updatingTemplate[editingTemplate._id])}>
-                  {editingTemplate ? (updatingTemplate[editingTemplate._id] ? "Updating..." : "Update Template") : (isCreatingTemplate ? "Creating..." : "Create Template")}
+                <button
+                  onClick={handleSave}
+                  className="btn-save"
+                  disabled={
+                    isCreatingTemplate ||
+                    (editingTemplate && updatingTemplate[editingTemplate._id])
+                  }
+                >
+                  {editingTemplate
+                    ? updatingTemplate[editingTemplate._id]
+                      ? "Updating..."
+                      : "Update Template"
+                    : isCreatingTemplate
+                      ? "Creating..."
+                      : "Create Template"}
                 </button>
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

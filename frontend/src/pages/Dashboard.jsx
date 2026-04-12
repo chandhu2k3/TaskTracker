@@ -779,6 +779,7 @@ const Dashboard = () => {
       setShowTemplateModal(false);
       setSelectedTemplateForApply("");
       await loadTasks();
+      await loadTodos();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to apply template");
     } finally {

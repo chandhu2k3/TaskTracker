@@ -1,13 +1,22 @@
 const TaskTemplate = require("../models/TaskTemplate");
 const Task = require("../models/Task");
-const { google } = require('googleapis');
-const User = require('../models/User');
-const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
+const Todo = require("../models/Todo");
+const { google } = require("googleapis");
+const User = require("../models/User");
+const {
+  cacheKey,
+  getCache,
+  setCache,
+  invalidateCache,
+  TTL,
+} = require("../config/redis");
 
 // Helper: get authenticated Google Calendar client
 const getCalendarClient = async (userId) => {
-  const user = await User.findById(userId).select('+googleCalendar.accessToken +googleCalendar.refreshToken +googleCalendar.tokenExpiry');
-  
+  const user = await User.findById(userId).select(
+    "+googleCalendar.accessToken +googleCalendar.refreshToken +googleCalendar.tokenExpiry",
+  );
+
   if (!user.googleCalendar?.connected || !user.googleCalendar?.accessToken) {
     return null; // Not connected — skip calendar silently
   }
@@ -15,7 +24,8 @@ const getCalendarClient = async (userId) => {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || `${process.env.FRONTEND_URL}/calendar/callback`
+    process.env.GOOGLE_REDIRECT_URI ||
+      `${process.env.FRONTEND_URL}/calendar/callback`,
   );
   oauth2Client.setCredentials({
     access_token: user.googleCalendar.accessToken,
@@ -23,16 +33,16 @@ const getCalendarClient = async (userId) => {
     expiry_date: user.googleCalendar.tokenExpiry?.getTime(),
   });
 
-  oauth2Client.on('tokens', async (tokens) => {
+  oauth2Client.on("tokens", async (tokens) => {
     if (tokens.access_token) {
       await User.findByIdAndUpdate(userId, {
-        'googleCalendar.accessToken': tokens.access_token,
-        'googleCalendar.tokenExpiry': new Date(tokens.expiry_date),
+        "googleCalendar.accessToken": tokens.access_token,
+        "googleCalendar.tokenExpiry": new Date(tokens.expiry_date),
       });
     }
   });
 
-  return google.calendar({ version: 'v3', auth: oauth2Client });
+  return google.calendar({ version: "v3", auth: oauth2Client });
 };
 
 // Helper function to get day name from date
@@ -49,6 +59,29 @@ const getDayName = (date) => {
   return days[new Date(date).getDay()];
 };
 
+const dayToWeekday = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const addDays = (date, days) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
 // @desc    Get all user's templates
 // @route   GET /api/templates
 // @access  Private
@@ -58,9 +91,11 @@ const getTemplates = async (req, res) => {
     const cached = await getCache(key);
     if (cached) return res.json(cached);
 
-    const templates = await TaskTemplate.find({ user: req.user._id }).sort({
-      createdAt: -1,
-    }).lean();
+    const templates = await TaskTemplate.find({ user: req.user._id })
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
     await setCache(key, templates, TTL.TEMPLATES);
     res.json(templates);
   } catch (error) {
@@ -98,16 +133,19 @@ const getTemplate = async (req, res) => {
 // @access  Private
 const createTemplate = async (req, res) => {
   try {
-    const { name, tasks } = req.body;
+    const { name, tasks = [], quickTodos = [] } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: "Please provide template name" });
     }
 
-    if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+    if (
+      (!tasks || !Array.isArray(tasks) || tasks.length === 0) &&
+      (!quickTodos || !Array.isArray(quickTodos) || quickTodos.length === 0)
+    ) {
       return res
         .status(400)
-        .json({ message: "Please provide at least one task" });
+        .json({ message: "Please provide at least one task or quick todo" });
     }
 
     // Validate tasks
@@ -115,6 +153,14 @@ const createTemplate = async (req, res) => {
       if (!task.name || !task.category || !task.day) {
         return res.status(400).json({
           message: "Each task must have name, category, and day",
+        });
+      }
+    }
+
+    for (const todo of quickTodos) {
+      if (!todo.text || !todo.day) {
+        return res.status(400).json({
+          message: "Each quick todo must have text and day",
         });
       }
     }
@@ -135,6 +181,7 @@ const createTemplate = async (req, res) => {
       user: req.user._id,
       name,
       tasks,
+      quickTodos,
     });
 
     await invalidateCache(`user:${req.user._id}:templates*`);
@@ -149,11 +196,11 @@ const createTemplate = async (req, res) => {
 // @access  Private
 const updateTemplate = async (req, res) => {
   try {
-    const { name, tasks } = req.body;
+    const { name, tasks, quickTodos } = req.body;
 
     console.log(
       "Updating template with tasks:",
-      JSON.stringify(tasks, null, 2)
+      JSON.stringify(tasks, null, 2),
     );
 
     const template = await TaskTemplate.findOne({
@@ -166,7 +213,8 @@ const updateTemplate = async (req, res) => {
     }
 
     if (name) template.name = name;
-    if (tasks) template.tasks = tasks;
+    if (Array.isArray(tasks)) template.tasks = tasks;
+    if (Array.isArray(quickTodos)) template.quickTodos = quickTodos;
     template.updatedAt = Date.now();
 
     await template.save();
@@ -175,7 +223,7 @@ const updateTemplate = async (req, res) => {
     const savedTemplate = await TaskTemplate.findById(req.params.id);
     console.log(
       "Template after save (re-fetched):",
-      JSON.stringify(savedTemplate.tasks, null, 2)
+      JSON.stringify(savedTemplate.tasks, null, 2),
     );
 
     await invalidateCache(`user:${req.user._id}:templates*`);
@@ -220,10 +268,14 @@ const applyTemplate = async (req, res) => {
       user: req.user._id,
     });
 
-    if (!template || template.tasks.length === 0) {
+    if (
+      !template ||
+      ((template.tasks || []).length === 0 &&
+        (template.quickTodos || []).length === 0)
+    ) {
       return res
         .status(404)
-        .json({ message: "Template not found or has no tasks" });
+        .json({ message: "Template not found or has no tasks/quick todos" });
     }
 
     // Calculate week dates (Week 1: 1-7, Week 2: 8-14, Week 3: 15-21, Week 4: 22-end)
@@ -235,34 +287,27 @@ const applyTemplate = async (req, res) => {
     const startDayOfWeek = startDate.getDay();
 
     // Map template days to actual day of week indices (0 = Sunday, 6 = Saturday)
-    const templateDayToWeekday = {
-      sunday: 0,
-      monday: 1,
-      tuesday: 2,
-      wednesday: 3,
-      thursday: 4,
-      friday: 5,
-      saturday: 6,
-    };
-
     // Get calendar client once if any task needs calendar
-    const hasCalendarTasks = template.tasks.some(t => t.addToCalendar);
+    const hasCalendarTasks = (template.tasks || []).some(
+      (t) => t.addToCalendar,
+    );
     let calendarClient = null;
     if (hasCalendarTasks) {
       calendarClient = await getCalendarClient(req.user._id);
     }
 
     const createdTasks = [];
+    const createdTodos = [];
     let calendarEventsCreated = 0;
 
-    for (const templateTask of template.tasks) {
+    for (const templateTask of template.tasks || []) {
       console.log("Processing template task:", {
         name: templateTask.name,
         isAutomated: templateTask.isAutomated,
         plannedTime: templateTask.plannedTime,
       });
 
-      const targetWeekday = templateDayToWeekday[templateTask.day];
+      const targetWeekday = dayToWeekday[templateTask.day];
 
       // Calculate offset from start date to target weekday
       let dayOffset = targetWeekday - startDayOfWeek;
@@ -280,7 +325,7 @@ const applyTemplate = async (req, res) => {
         12,
         0,
         0,
-        0
+        0,
       );
 
       // Check if date is valid and in the same month
@@ -289,10 +334,16 @@ const applyTemplate = async (req, res) => {
       }
 
       // Format date as YYYY-MM-DD for database
-      const dateStr = `${year}-${String(parseInt(month) + 1).padStart(
-        2,
-        "0"
-      )}-${String(dayOfMonth).padStart(2, "0")}`;
+      const dateObj = new Date(
+        parseInt(year),
+        parseInt(month),
+        dayOfMonth,
+        12,
+        0,
+        0,
+        0,
+      );
+      const dateStr = formatDate(dateObj);
 
       // Check if task already exists for this date
       const existing = await Task.findOne({
@@ -317,11 +368,11 @@ const applyTemplate = async (req, res) => {
         existing.isAutomated = templateTask.isAutomated || false;
         existing.scheduledStartTime = templateTask.scheduledStartTime || null;
         existing.scheduledEndTime = templateTask.scheduledEndTime || null;
-        
+
         // Only reset completion if the task hasn't been worked on yet
         if (existing.totalTime === 0 && existing.sessions.length === 0) {
           existing.completionCount = 0;
-          
+
           // Auto-complete if automated task is for today or past
           if (existing.isAutomated && existing.plannedTime > 0) {
             const today = new Date();
@@ -332,51 +383,81 @@ const applyTemplate = async (req, res) => {
             if (taskDateObj <= today) {
               console.log("Auto-completing updated automated task...");
               const completionTime = existing.plannedTime;
-              existing.sessions = [{
-                startTime: new Date(taskDateObj.getTime() + 9 * 60 * 60 * 1000),
-                endTime: new Date(taskDateObj.getTime() + 9 * 60 * 60 * 1000 + completionTime),
-                duration: completionTime,
-              }];
+              existing.sessions = [
+                {
+                  startTime: new Date(
+                    taskDateObj.getTime() + 9 * 60 * 60 * 1000,
+                  ),
+                  endTime: new Date(
+                    taskDateObj.getTime() + 9 * 60 * 60 * 1000 + completionTime,
+                  ),
+                  duration: completionTime,
+                },
+              ];
               existing.totalTime = completionTime;
               existing.completionCount = 1;
             }
           }
         }
-        
+
         await existing.save();
         createdTasks.push(existing);
         console.log("Task updated from template");
 
         // Auto-add to Google Calendar if enabled (skip if already has event)
-        if (templateTask.addToCalendar && calendarClient && existing.scheduledStartTime && !existing.calendarEventId) {
+        if (
+          templateTask.addToCalendar &&
+          calendarClient &&
+          existing.scheduledStartTime &&
+          !existing.calendarEventId
+        ) {
           try {
-            const taskDateObj = new Date(dateStr);
-            const [sh, sm] = existing.scheduledStartTime.split(':').map(Number);
-            const startDt = new Date(taskDateObj); startDt.setHours(sh, sm, 0, 0);
+            const taskDateObj = new Date(dateStr + "T12:00:00");
+            const [sh, sm] = existing.scheduledStartTime.split(":").map(Number);
+            const startDt = new Date(taskDateObj);
+            startDt.setHours(sh, sm, 0, 0);
             let endDt;
             if (existing.scheduledEndTime) {
-              const [eh, em] = existing.scheduledEndTime.split(':').map(Number);
-              endDt = new Date(taskDateObj); endDt.setHours(eh, em, 0, 0);
+              const [eh, em] = existing.scheduledEndTime.split(":").map(Number);
+              endDt = new Date(taskDateObj);
+              endDt.setHours(eh, em, 0, 0);
             } else {
-              endDt = new Date(startDt.getTime() + (existing.plannedTime || 30 * 60000));
+              endDt = new Date(
+                startDt.getTime() + (existing.plannedTime || 30 * 60000),
+              );
             }
             const reminderMins = templateTask.reminderMinutes || 0;
             const calResponse = await calendarClient.events.insert({
-              calendarId: 'primary',
+              calendarId: "primary",
               resource: {
                 summary: `📋 ${existing.name}`,
                 description: `Task from Task Tracker Pro template: ${template.name}`,
-                start: { dateTime: startDt.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-                end: { dateTime: endDt.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-                reminders: reminderMins > 0
-                  ? { useDefault: false, overrides: [{ method: 'popup', minutes: reminderMins }] }
-                  : { useDefault: true },
+                start: {
+                  dateTime: startDt.toISOString(),
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
+                end: {
+                  dateTime: endDt.toISOString(),
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
+                reminders:
+                  reminderMins > 0
+                    ? {
+                        useDefault: false,
+                        overrides: [{ method: "popup", minutes: reminderMins }],
+                      }
+                    : { useDefault: true },
               },
             });
             existing.calendarEventId = calResponse.data.id;
             await existing.save();
             calendarEventsCreated++;
-          } catch (calErr) { console.error('Calendar event create failed for updated task:', calErr.message); }
+          } catch (calErr) {
+            console.error(
+              "Calendar event create failed for updated task:",
+              calErr.message,
+            );
+          }
         }
       } else {
         console.log("Creating task from template:", {
@@ -406,7 +487,9 @@ const applyTemplate = async (req, res) => {
         } catch (err) {
           // If duplicate key error (code 11000), task was created by concurrent request
           if (err.code === 11000) {
-            console.log("Task already exists (concurrent request), fetching existing...");
+            console.log(
+              "Task already exists (concurrent request), fetching existing...",
+            );
             newTask = await Task.findOne({
               user: req.user._id,
               name: templateTask.name,
@@ -432,11 +515,11 @@ const applyTemplate = async (req, res) => {
         // Auto-complete if automated task is for today or past
         if (newTask.isAutomated && newTask.plannedTime > 0) {
           console.log(
-            "Task is automated with plannedTime, checking if should auto-complete..."
+            "Task is automated with plannedTime, checking if should auto-complete...",
           );
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          const taskDateObj = new Date(dateStr);
+          const taskDateObj = new Date(dateStr + "T12:00:00");
           taskDateObj.setHours(0, 0, 0, 0);
 
           console.log("Date comparison:", {
@@ -451,7 +534,7 @@ const applyTemplate = async (req, res) => {
             newTask.sessions.push({
               startTime: new Date(taskDateObj.getTime() + 9 * 60 * 60 * 1000), // 9 AM
               endTime: new Date(
-                taskDateObj.getTime() + 9 * 60 * 60 * 1000 + completionTime
+                taskDateObj.getTime() + 9 * 60 * 60 * 1000 + completionTime,
               ),
               duration: completionTime,
             });
@@ -469,45 +552,133 @@ const applyTemplate = async (req, res) => {
         createdTasks.push(newTask);
 
         // Auto-add to Google Calendar if enabled (skip if already has event)
-        if (templateTask.addToCalendar && calendarClient && newTask.scheduledStartTime && !newTask.calendarEventId) {
+        if (
+          templateTask.addToCalendar &&
+          calendarClient &&
+          newTask.scheduledStartTime &&
+          !newTask.calendarEventId
+        ) {
           try {
-            const taskDateObj2 = new Date(dateStr);
-            const [sh2, sm2] = newTask.scheduledStartTime.split(':').map(Number);
-            const startDt2 = new Date(taskDateObj2); startDt2.setHours(sh2, sm2, 0, 0);
+            const taskDateObj2 = new Date(dateStr + "T12:00:00");
+            const [sh2, sm2] = newTask.scheduledStartTime
+              .split(":")
+              .map(Number);
+            const startDt2 = new Date(taskDateObj2);
+            startDt2.setHours(sh2, sm2, 0, 0);
             let endDt2;
             if (newTask.scheduledEndTime) {
-              const [eh2, em2] = newTask.scheduledEndTime.split(':').map(Number);
-              endDt2 = new Date(taskDateObj2); endDt2.setHours(eh2, em2, 0, 0);
+              const [eh2, em2] = newTask.scheduledEndTime
+                .split(":")
+                .map(Number);
+              endDt2 = new Date(taskDateObj2);
+              endDt2.setHours(eh2, em2, 0, 0);
             } else {
-              endDt2 = new Date(startDt2.getTime() + (newTask.plannedTime || 30 * 60000));
+              endDt2 = new Date(
+                startDt2.getTime() + (newTask.plannedTime || 30 * 60000),
+              );
             }
             const reminderMins2 = templateTask.reminderMinutes || 0;
             const calResponse2 = await calendarClient.events.insert({
-              calendarId: 'primary',
+              calendarId: "primary",
               resource: {
                 summary: `📋 ${newTask.name}`,
                 description: `Task from Task Tracker Pro template: ${template.name}`,
-                start: { dateTime: startDt2.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-                end: { dateTime: endDt2.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-                reminders: reminderMins2 > 0
-                  ? { useDefault: false, overrides: [{ method: 'popup', minutes: reminderMins2 }] }
-                  : { useDefault: true },
+                start: {
+                  dateTime: startDt2.toISOString(),
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
+                end: {
+                  dateTime: endDt2.toISOString(),
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
+                reminders:
+                  reminderMins2 > 0
+                    ? {
+                        useDefault: false,
+                        overrides: [
+                          { method: "popup", minutes: reminderMins2 },
+                        ],
+                      }
+                    : { useDefault: true },
               },
             });
             newTask.calendarEventId = calResponse2.data.id;
             await newTask.save();
             calendarEventsCreated++;
-          } catch (calErr) { console.error('Calendar event create failed for new task:', calErr.message); }
+          } catch (calErr) {
+            console.error(
+              "Calendar event create failed for new task:",
+              calErr.message,
+            );
+          }
         }
       }
     }
 
+    for (const templateTodo of template.quickTodos || []) {
+      const targetWeekday = dayToWeekday[templateTodo.day];
+      if (targetWeekday === undefined) continue;
+
+      let dayOffset = targetWeekday - startDayOfWeek;
+      if (dayOffset < 0) {
+        dayOffset += 7;
+      }
+
+      const dayOfMonth = startDay + dayOffset;
+      const todoDateObj = new Date(
+        parseInt(year),
+        parseInt(month),
+        dayOfMonth,
+        12,
+        0,
+        0,
+        0,
+      );
+      if (todoDateObj.getMonth() !== parseInt(month)) {
+        continue;
+      }
+
+      const todoDateStr = formatDate(todoDateObj);
+      const deadlineOffsetDays = Number(templateTodo.deadlineOffsetDays || 0);
+      const deadlineDateStr = formatDate(
+        addDays(todoDateObj, deadlineOffsetDays),
+      );
+
+      const existingTodo = await Todo.findOne({
+        user: req.user._id,
+        text: templateTodo.text,
+        date: todoDateStr,
+      });
+
+      if (existingTodo) {
+        existingTodo.deadline = deadlineDateStr;
+        existingTodo.deleted = false;
+        existingTodo.deletedAt = null;
+        await existingTodo.save();
+        createdTodos.push(existingTodo);
+        continue;
+      }
+
+      const newTodo = await Todo.create({
+        user: req.user._id,
+        text: templateTodo.text,
+        completed: false,
+        date: todoDateStr,
+        deadline: deadlineDateStr,
+        isOverdue: false,
+      });
+
+      createdTodos.push(newTodo);
+    }
+
     await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:todos*`);
     await invalidateCache(`user:${req.user._id}:analytics*`);
 
     res.json({
-      message: `Applied template with ${createdTasks.length} tasks${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ''}`,
+      message: `Applied template with ${createdTasks.length} tasks and ${createdTodos.length} quick todos${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ""}`,
       tasks: createdTasks,
+      todos: createdTodos,
       calendarEventsCreated,
     });
   } catch (error) {

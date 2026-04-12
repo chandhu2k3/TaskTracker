@@ -55,6 +55,32 @@ const templateTaskSchema = new mongoose.Schema({
   },
 });
 
+const templateTodoSchema = new mongoose.Schema({
+  text: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  day: {
+    type: String,
+    required: true,
+    enum: [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ],
+    lowercase: true,
+  },
+  deadlineOffsetDays: {
+    type: Number,
+    default: 0,
+  },
+});
+
 const taskTemplateSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -67,6 +93,7 @@ const taskTemplateSchema = new mongoose.Schema({
     trim: true,
   },
   tasks: [templateTaskSchema],
+  quickTodos: [templateTodoSchema],
   createdAt: {
     type: Date,
     default: Date.now,
