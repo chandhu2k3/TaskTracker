@@ -3,12 +3,62 @@ import { toast } from "react-toastify";
 import assistantService from "../services/assistantService";
 import "./AssistantPanel.css";
 
+const ASSISTANT_HISTORY_LIMIT = 20;
+
 const starterPrompts = [
-  "Analyze my week",
+  "How's my week going?",
+  "Analyze my progress",
+  "What should I focus on?",
+  "Any overdue items?",
   "Add gym on Monday at 6 pm",
-  "Add pay electricity bill tomorrow",
-  "Add meeting prep to template work week on Friday",
 ];
+
+const defaultAssistantMessages = [
+  {
+    role: "assistant",
+    text: "Hey! I'm your productivity coach 🎯 I can analyze your progress, spot patterns, suggest improvements, and help manage tasks. Try asking 'How am I doing?' or 'Analyze my week'!",
+  },
+];
+
+const getAssistantHistoryKey = () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      return "assistant-chat-history:anonymous";
+    }
+
+    const parsedUser = JSON.parse(storedUser);
+    return `assistant-chat-history:${parsedUser?._id || parsedUser?.email || "anonymous"}`;
+  } catch (error) {
+    return "assistant-chat-history:anonymous";
+  }
+};
+
+const getStoredAssistantMessages = () => {
+  try {
+    const storedMessages = localStorage.getItem(getAssistantHistoryKey());
+    if (!storedMessages) {
+      return defaultAssistantMessages;
+    }
+
+    const parsedMessages = JSON.parse(storedMessages);
+    if (!Array.isArray(parsedMessages) || parsedMessages.length === 0) {
+      return defaultAssistantMessages;
+    }
+
+    return parsedMessages
+      .filter(
+        (message) =>
+          message &&
+          typeof message.role === "string" &&
+          typeof message.text === "string" &&
+          message.text.trim().length > 0,
+      )
+      .slice(-ASSISTANT_HISTORY_LIMIT);
+  } catch (error) {
+    return defaultAssistantMessages;
+  }
+};
 
 const AssistantPanel = ({
   selectedDate,
@@ -18,18 +68,15 @@ const AssistantPanel = ({
   onRefresh,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text: "I can chat naturally, analyze your week, create tasks, add quick todos, or edit templates.",
-    },
-  ]);
+  const [messages, setMessages] = useState(() => getStoredAssistantMessages());
   const [prompt, setPrompt] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
+  const [assistantStatus, setAssistantStatus] = useState(null);
   const recognitionRef = useRef(null);
   const transcriptRef = useRef("");
+  const storageKeyRef = useRef(getAssistantHistoryKey());
 
   const context = useMemo(
     () => ({
@@ -118,12 +165,91 @@ const AssistantPanel = ({
     };
   }, []);
 
-  const appendMessage = (role, text) => {
-    setMessages((prev) => [...prev, { role, text }]);
+  useEffect(() => {
+    let isMounted = true;
+
+    const hydrateAssistantHistory = async () => {
+      try {
+        const data = await assistantService.getHistory();
+        const serverMessages = Array.isArray(data?.messages)
+          ? data.messages
+              .filter(
+                (message) =>
+                  message &&
+                  typeof message.role === "string" &&
+                  typeof message.text === "string" &&
+                  message.text.trim().length > 0,
+              )
+              .slice(-ASSISTANT_HISTORY_LIMIT)
+          : [];
+
+        if (isMounted && serverMessages.length > 0) {
+          setMessages(serverMessages);
+        }
+      } catch (error) {
+        // Keep local storage / default messages when server history is unavailable.
+      }
+    };
+
+    hydrateAssistantHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAssistantStatus = async () => {
+      try {
+        const status = await assistantService.getStatus();
+        if (isMounted) {
+          setAssistantStatus(status);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setAssistantStatus({ configured: false });
+        }
+      }
+    };
+
+    loadAssistantStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    storageKeyRef.current = getAssistantHistoryKey();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const trimmedMessages = messages.slice(-ASSISTANT_HISTORY_LIMIT);
+      localStorage.setItem(
+        storageKeyRef.current,
+        JSON.stringify(trimmedMessages),
+      );
+    } catch (error) {
+      // Ignore storage failures so the assistant still works normally.
+    }
+  }, [messages]);
+
+  const updateMessageAtIndex = (index, text) => {
+    setMessages((prev) =>
+      prev.map((message, currentIndex) =>
+        currentIndex === index ? { ...message, text } : message,
+      ),
+    );
   };
 
+  const trimConversation = (conversation) =>
+    conversation.slice(-ASSISTANT_HISTORY_LIMIT);
+
   const buildConversation = (nextUserMessage) =>
-    [...messages, { role: "user", text: nextUserMessage }].slice(-8);
+    trimConversation([...messages, { role: "user", text: nextUserMessage }]);
 
   const toggleVoiceInput = () => {
     if (!voiceSupported || !recognitionRef.current) {
@@ -153,7 +279,13 @@ const AssistantPanel = ({
     }
 
     const conversation = buildConversation(message);
-    appendMessage("user", message);
+    const assistantIndex = messages.length + 1;
+
+    setMessages((prev) => [
+      ...trimConversation(prev),
+      { role: "user", text: message },
+      { role: "assistant", text: "Thinking..." },
+    ]);
     setIsSending(true);
 
     try {
@@ -161,8 +293,14 @@ const AssistantPanel = ({
         message,
         context,
         conversation,
+        {
+          stream: true,
+          onChunk: (replyText) => {
+            updateMessageAtIndex(assistantIndex, replyText || "Thinking...");
+          },
+        },
       );
-      appendMessage("assistant", result.reply || "Done.");
+      updateMessageAtIndex(assistantIndex, result.reply || "Done.");
       setPrompt("");
 
       if (result.refresh && typeof onRefresh === "function") {
@@ -171,7 +309,7 @@ const AssistantPanel = ({
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || "Assistant request failed";
-      appendMessage("assistant", errorMessage);
+      updateMessageAtIndex(assistantIndex, errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsSending(false);
@@ -194,7 +332,7 @@ const AssistantPanel = ({
         aria-label={isOpen ? "Close assistant" : "Open assistant"}
         title={isOpen ? "Close assistant" : "Open assistant"}
       >
-        {isOpen ? "✕" : "🤖"}
+        {isOpen ? "✕" : "📊"}
       </button>
 
       {isOpen && (
@@ -203,17 +341,30 @@ const AssistantPanel = ({
           role="dialog"
           aria-label="AI assistant"
         >
+          {assistantStatus && !assistantStatus.configured && (
+            <div className="assistant-config-banner">
+              Live API responses are not configured yet. Set ASSISTANT_API_KEY
+              in the backend env to enable model replies.
+            </div>
+          )}
+
           <div className="assistant-panel-header">
             <div>
-              <p className="assistant-kicker">AI Assistant</p>
-              <h3>Chat with your workspace</h3>
+              <p className="assistant-kicker">Productivity Coach</p>
+              <h3>Analyze & Improve</h3>
             </div>
             <div className="assistant-header-actions">
               <div className="assistant-status">
                 <span
                   className={`assistant-dot ${isSending ? "busy" : isListening ? "listening" : "ready"}`}
                 />
-                {isSending ? "Working" : isListening ? "Listening" : "Ready"}
+                {assistantStatus && !assistantStatus.configured
+                  ? "Setup needed"
+                  : isSending
+                    ? "Working"
+                    : isListening
+                      ? "Listening"
+                      : "Ready"}
               </div>
               <button
                 type="button"
@@ -246,7 +397,21 @@ const AssistantPanel = ({
                 key={`${message.role}-${index}`}
                 className={`assistant-bubble ${message.role}`}
               >
-                {message.text}
+                {message.role === "assistant" ? (
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: message.text
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                        .replace(/^• /gm, "‣ ")
+                        .replace(/\n/g, "<br/>"),
+                    }}
+                  />
+                ) : (
+                  message.text
+                )}
               </div>
             ))}
           </div>
@@ -254,7 +419,7 @@ const AssistantPanel = ({
           <div className="assistant-composer">
             <textarea
               className="assistant-input"
-              placeholder='Try: "How is my week going?" or "Add gym on Monday at 6 pm"'
+              placeholder='Try: "How am I doing this week?" or "Where am I spending most time?"'
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}

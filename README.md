@@ -161,6 +161,12 @@ Create a weekly template once, apply to any week:
 - `POST /api/calendar/events` - Create calendar event
 - `DELETE /api/calendar/events/:eventId` - Delete calendar event
 
+### Assistant
+
+- `POST /api/assistant/message` - Send a chat prompt or action request
+- `GET /api/assistant/history` - Load stored personal chat history
+- `DELETE /api/assistant/history` - Clear the stored assistant memory
+
 ## Environment Variables
 
 ### Backend (.env / Render/Railway)
@@ -184,6 +190,21 @@ GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
 REACT_APP_API_URL=https://your-backend.com
 REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
+
+### Assistant / LLM
+
+```
+ASSISTANT_API_KEY=your_llm_api_key
+ASSISTANT_MODEL=gpt-5.4-mini
+ASSISTANT_BASE_URL=https://api.openai.com/v1
+ASSISTANT_MAX_TURNS=8
+ASSISTANT_MAX_TOKENS=220
+ASSISTANT_TEMPERATURE=0.4
+ASSISTANT_REQUEST_TIMEOUT_MS=12000
+ASSISTANT_MEMORY_LIMIT=20
+```
+
+You can use [backend/.env.example](backend/.env.example) as the backend template for the full assistant configuration.
 
 **Critical:**
 

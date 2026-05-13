@@ -101,6 +101,7 @@ const TodoList = ({
           date: eventDate,
           durationMinutes: 30,
           reminderMinutes,
+          todoId: todo._id,
         },
         () => {
           // Not connected — show in-app toast with Connect button, no redirect
@@ -163,6 +164,22 @@ const TodoList = ({
         () => setCalendarStatuses((prev) => ({ ...prev, [todo._id]: null })),
         2000,
       );
+    }
+  };
+
+  const handleRemoveFromCalendar = async (todo) => {
+    if (!todo.calendarEventId) return;
+    setShowPickerForTodo(null);
+    setCalendarStatuses((prev) => ({ ...prev, [todo._id]: "adding" }));
+    try {
+      await calendarService.deleteEvent(todo.calendarEventId);
+      todo.calendarEventId = null;
+      setCalendarStatuses((prev) => ({ ...prev, [todo._id]: null }));
+      toast.success("🗑 Removed from Google Calendar");
+    } catch (err) {
+      console.error("Calendar delete error:", err);
+      setCalendarStatuses((prev) => ({ ...prev, [todo._id]: null }));
+      toast.error("Failed to remove calendar event");
     }
   };
 
@@ -265,19 +282,21 @@ const TodoList = ({
                     <div className="calendar-btn-wrapper">
                       <button
                         onClick={() => handleCalBtnClick(todo)}
-                        className={`todo-calendar-btn ${calendarStatuses[todo._id] === "added" ? "calendar-added" : ""}`}
+                        className={`todo-calendar-btn ${calendarStatuses[todo._id] === "added" || todo.calendarEventId ? "calendar-added" : ""}`}
                         title={
-                          todoTagDate
-                            ? `Add to calendar on ${new Date(todoTagDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                            : calendarStatuses[todo._id] === "added"
-                              ? "Added to Calendar!"
-                              : "Add to Google Calendar"
+                          todo.calendarEventId
+                            ? "In Google Calendar — click to manage"
+                            : todoTagDate
+                              ? `Add to calendar on ${new Date(todoTagDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                              : calendarStatuses[todo._id] === "added"
+                                ? "Added to Calendar!"
+                                : "Add to Google Calendar"
                         }
                         disabled={calendarStatuses[todo._id] === "adding"}
                       >
                         {calendarStatuses[todo._id] === "adding"
                           ? "⏳"
-                          : calendarStatuses[todo._id] === "added"
+                          : calendarStatuses[todo._id] === "added" || todo.calendarEventId
                             ? "✅"
                             : "📅"}
                       </button>
@@ -311,6 +330,29 @@ const TodoList = ({
                                   })}
                                 </div>
                               </div>
+                              {todo.calendarEventId ? (
+                                <>
+                                  <div className="calendar-event-status">✅ In Google Calendar</div>
+                                  <div className="calendar-picker-actions">
+                                    <button
+                                      className="btn-cancel"
+                                      onClick={() => setShowPickerForTodo(null)}
+                                      type="button"
+                                    >
+                                      Close
+                                    </button>
+                                    <button
+                                      className="btn-add btn-remove-calendar"
+                                      onClick={() => handleRemoveFromCalendar(todo)}
+                                      type="button"
+                                      style={{ background: 'var(--danger, #ba1a1a)' }}
+                                    >
+                                      🗑 Remove
+                                    </button>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
                               <div className="calendar-picker-grid">
                                 <label className="calendar-picker-field">
                                   <span>Date</span>
@@ -379,6 +421,8 @@ const TodoList = ({
                                   Add
                                 </button>
                               </div>
+                                </>
+                              )}
                             </div>
                           </div>,
                           document.body,

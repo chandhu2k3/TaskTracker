@@ -1,7 +1,9 @@
 const Category = require("../models/Category");
+const Task = require("../models/Task");
+const mongoose = require("mongoose");
 const { cacheKey, getCache, setCache, invalidateCache, TTL } = require("../config/redis");
 
-// @desc    Get all categories for user
+// @desc    Get all categories for user (with task counts)
 // @route   GET /api/categories
 // @access  Private
 const getCategories = async (req, res) => {
@@ -16,8 +18,23 @@ const getCategories = async (req, res) => {
       createdAt: 1,
     }).lean();
 
-    await setCache(key, categories, TTL.CATEGORIES);
-    res.json(categories);
+    // Aggregate task counts per category name
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+    const taskCounts = await Task.aggregate([
+      { $match: { user: userId, deleted: { $ne: true } } },
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+    ]);
+
+    const countMap = {};
+    taskCounts.forEach((tc) => { countMap[tc._id] = tc.count; });
+
+    const categoriesWithCounts = categories.map((cat) => ({
+      ...cat,
+      taskCount: countMap[cat.name] || 0,
+    }));
+
+    await setCache(key, categoriesWithCounts, TTL.CATEGORIES);
+    res.json(categoriesWithCounts);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

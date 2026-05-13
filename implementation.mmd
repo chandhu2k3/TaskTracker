@@ -6,12 +6,22 @@ flowchart TD
   R --> C
   D -->|Task / todo / template / insight| E[Fast local action handler]
   D -->|General chat| F[LLM conversational reply grounded in persistent semantic context]
+  F --> S[Stream partial tokens to the popup]
+  A --> P[Persist recent chat history per user]
+  P --> B
+  C --> M[Load and store assistant memory in MongoDB]
+  M --> C
   E --> G[Update app state + refresh dashboard]
   F --> H[Return natural response]
+  S --> H
   G --> I[User sees immediate result]
   H --> I
 
   style E fill:#e9b84a,stroke:#d97706,color:#111827
   style F fill:#dbeafe,stroke:#2563eb,color:#111827
+  style S fill:#e0f2fe,stroke:#0284c7,color:#111827
+  style P fill:#ede9fe,stroke:#7c3aed,color:#111827
+  style M fill:#ede9fe,stroke:#7c3aed,color:#111827
+  style H fill:#ede9fe,stroke:#7c3aed,color:#111827
   style R fill:#fef3c7,stroke:#f59e0b,color:#111827
   style I fill:#dcfce7,stroke:#16a34a,color:#111827

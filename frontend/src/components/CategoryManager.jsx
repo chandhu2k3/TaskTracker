@@ -171,13 +171,16 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
   return (
     <div className="category-manager">
       <div className="category-header">
-        <h3>📂 Categories</h3>
+        <div>
+          <h2 className="category-title">Categories</h2>
+          <p className="category-subtitle">Manage your task classifications. Keep your workflow organized by grouping related items.</p>
+        </div>
         <button onClick={() => setShowModal(true)} className="btn-add-category">
-          + Add Category
+          + Add New Category
         </button>
       </div>
 
-      <div className="categories-list">
+      <div className="categories-grid">
         {categories.length === 0 ? (
           <p className="no-categories">
             No categories yet. Create your first one!
@@ -186,33 +189,42 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isAdding = fal
           categories.map((category) => (
             <div
               key={category._id}
-              className="category-chip"
-              style={{ borderColor: category.color }}
+              className="category-card"
             >
-              <span className="category-icon">{category.icon}</span>
-              <span className="category-name">{category.name}</span>
-              <div className="category-actions">
-                <button
-                  onClick={() => handleEdit(category)}
-                  className="btn-edit"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Are you sure you want to delete the category "${category.name}"? This may affect tasks using this category.`
-                      )
-                    ) {
-                      onDelete(category._id);
-                    }
-                  }}
-                  className="btn-delete-cat"
-                  disabled={deletingCategory[category._id]}
-                >
-                  {deletingCategory[category._id] ? "..." : "�"}
-                </button>
+              <div className="category-card-icon" style={{ backgroundColor: category.color + '18', color: category.color }}>
+                {category.icon}
+              </div>
+              <h4 className="category-card-name">{category.name}</h4>
+              <div className="category-card-footer">
+                <div className="category-card-meta">
+                  <span className="category-card-dot" style={{ backgroundColor: category.color }}></span>
+                  <span className="category-card-count">{category.taskCount || 0} Tasks</span>
+                </div>
+                <div className="category-actions">
+                  <button
+                    onClick={() => handleEdit(category)}
+                    className="btn-edit"
+                    title="Edit category"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Are you sure you want to delete the category "${category.name}"? This may affect tasks using this category.`
+                        )
+                      ) {
+                        onDelete(category._id);
+                      }
+                    }}
+                    className="btn-delete-cat"
+                    disabled={deletingCategory[category._id]}
+                    title="Delete category"
+                  >
+                    {deletingCategory[category._id] ? "..." : "🗑"}
+                  </button>
+                </div>
               </div>
             </div>
           ))

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Task Tracker - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"inverse-on-surface": "#f0f1f2", secondary: "#5d5f5f", surface: "#f8f9fa", "secondary-fixed-dim": "#c6c6c7", "on-background": "#191c1d", "surface-container": "#edeeef", "on-secondary-fixed": "#1a1c1c", "on-primary-container": "#8f8177", "surface-bright": "#f8f9fa", "primary-container": "#221a13", "on-surface": "#191c1d", "surface-dim": "#d9dadb", "inverse-surface": "#2e3132", "surface-variant": "#e1e3e4", "on-tertiary-fixed": "#0b1c30", "on-surface-variant": "#4d453f", "on-primary-fixed": "#221a13", "on-tertiary-container": "#75859d", "on-tertiary-fixed-variant": "#38485d", "secondary-container": "#dfe0e0", "tertiary-fixed-dim": "#b7c8e1", "on-secondary-fixed-variant": "#454747", "surface-tint": "#685c53", "on-secondary-container": "#616363", "surface-container-high": "#e7e8e9", "tertiary-fixed": "#d3e4fe", tertiary: "#000000", "primary-fixed": "#f1dfd3", "on-error-container": "#93000a", "tertiary-container": "#0b1c30", "surface-container-lowest": "#ffffff", error: "#ba1a1a", "on-primary": "#ffffff", "on-tertiary": "#ffffff", "error-container": "#ffdad6", "surface-container-low": "#f3f4f5", background: "#f8f9fa", "inverse-primary": "#d4c3b8", "surface-container-highest": "#e1e3e4", "secondary-fixed": "#e2e2e2", primary: "#000000", "primary-fixed-dim": "#d4c3b8", "on-secondary": "#ffffff", "on-error": "#ffffff", "on-primary-fixed-variant": "#50453c", outline: "#7f756e", "outline-variant": "#d0c4bc"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"margin-desktop": "40px", unit: "8px", gutter: "24px", "container-max": "1200px", "margin-mobile": "16px"}, fontFamily: {"headline-lg": ["Inter"], "headline-md": ["Inter"], "body-lg": ["Inter"], "label-caps": ["Inter"], "body-sm": ["Inter"], "headline-lg-mobile": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"headline-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "600"}], "headline-md": ["20px", {lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "500"}], "body-lg": ["16px", {lineHeight: "24px", letterSpacing: "0.01em", fontWeight: "400"}], "label-caps": ["12px", {lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600"}], "body-sm": ["14px", {lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "400"}], "headline-lg-mobile": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600"}]}}}};</script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row antialiased">
+<!-- SideNavBar (Hidden on Mobile, Visible on Web) -->
+<nav class="bg-surface-container-low border-r border-outline-variant h-full w-64 hidden md:flex flex-col py-8 px-4 flex-shrink-0 z-20">
+<div class="mb-8 px-4">
+<h1 class="text-headline-md font-headline-md font-black text-primary">Task Tracker</h1>
+<p class="text-body-sm text-on-surface-variant mt-1">Productivity Pro</p>
+</div>
+<button class="mb-8 w-full bg-primary text-on-primary py-3 rounded-lg text-body-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+            New Task
+        </button>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-lg text-label-caps font-label-caps transition-transform scale-95" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg text-label-caps font-label-caps" href="#">
+<span class="material-symbols-outlined">calendar_view_week</span>
+                    Templates
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg text-label-caps font-label-caps" href="#">
+<span class="material-symbols-outlined">insights</span>
+                    Analytics
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg text-label-caps font-label-caps" href="#">
+<span class="material-symbols-outlined">settings</span>
+                    Settings
+                </a>
+</li>
+</ul>
+<div class="mt-auto border-t border-outline-variant pt-4 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg text-label-caps font-label-caps" href="#">
+<span class="material-symbols-outlined">help</span>
+                Help
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg text-label-caps font-label-caps" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Logout
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar (Web only for nav links, Mobile for brand) -->
+<header class="bg-surface border-b border-outline-variant flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 w-full flex-shrink-0 z-10">
+<div class="flex items-center gap-4 md:hidden">
+<h1 class="text-body-lg font-headline-lg font-bold text-on-surface">Task Tracker</h1>
+</div>
+<nav class="hidden md:flex gap-8 flex-1 justify-center">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 text-body-sm font-body-sm hover:text-primary transition-colors opacity-70 transition-opacity duration-150" href="#">Home</a>
+<a class="text-on-surface-variant text-body-sm font-body-sm hover:text-primary transition-colors" href="#">Categories</a>
+<a class="text-on-surface-variant text-body-sm font-body-sm hover:text-primary transition-colors" href="#">Template</a>
+<a class="text-on-surface-variant text-body-sm font-body-sm hover:text-primary transition-colors" href="#">Analytics</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-variant">
+<span class="material-symbols-outlined">bedtime</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hidden md:flex items-center gap-2 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-full text-body-sm font-medium hover:opacity-90">
+<span class="material-symbols-outlined text-[18px]">bedtime</span>
+                    Sleep
+                </button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+<!-- Profile Placeholder -->
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto p-margin-mobile md:p-gutter bg-surface-container-lowest">
+<div class="max-w-container-max mx-auto flex flex-col xl:flex-row gap-gutter h-full">
+<!-- Left Column: Tasks -->
+<div class="flex-1 flex flex-col gap-6">
+<!-- Controls Row -->
+<div class="flex flex-wrap items-center justify-between gap-4 bg-surface-container-low p-4 rounded-xl border border-outline-variant">
+<div class="flex gap-2 bg-surface p-1 rounded-lg border border-outline-variant">
+<button class="bg-primary text-on-primary px-4 py-1.5 rounded-md text-label-caps font-medium shadow-sm">Day</button>
+<button class="text-on-surface-variant hover:text-primary px-4 py-1.5 rounded-md text-label-caps font-medium transition-colors">Week</button>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">arrow_left</span>
+</button>
+<div class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg bg-surface text-body-sm">
+<span>12-05-2026</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">calendar_today</span>
+</div>
+<button class="p-2 border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">arrow_right</span>
+</button>
+</div>
+<div class="flex gap-3 hidden sm:flex">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg bg-surface text-body-sm hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[16px] text-secondary">magic_button</span>
+                                Apply Template
+                            </button>
+<button class="flex items-center gap-2 px-4 py-2 border border-error-container text-error rounded-lg bg-error-container/20 hover:bg-error-container/40 transition-colors text-body-sm">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+                                Reset Week
+                            </button>
+</div>
+</div>
+<!-- Daily Header -->
+<div class="bg-surface-container-high rounded-xl p-6 border border-outline-variant flex flex-col gap-4">
+<div class="flex justify-between items-end">
+<h2 class="text-headline-md font-headline-md font-bold text-on-surface">Tuesday (12/5)</h2>
+<span class="text-body-sm text-on-surface-variant">6 tasks • 1h 35m</span>
+</div>
+<button class="w-full border border-dashed border-outline-variant bg-surface-container-low hover:bg-surface-variant transition-colors text-on-surface-variant py-4 rounded-lg flex justify-center items-center gap-2 text-body-sm font-medium">
+<span class="material-symbols-outlined">add</span>
+                            Add New Task
+                        </button>
+</div>
+<!-- Task List -->
+<div class="space-y-3">
+<!-- Task 1 -->
+<div class="bg-surface border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:border-outline transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] cursor-move">drag_indicator</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">assignment</span>
+<span class="font-medium text-body-sm">BACK</span>
+<span class="text-label-caps text-on-surface-variant bg-surface-variant px-2 py-1 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                        07:30-09:00
+                                    </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-label-caps text-on-surface bg-surface-variant hover:bg-surface-container-high px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]">check</span>
+                                        Finish
+                                    </button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">calendar_month</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">notifications_off</span></button>
+<button class="p-1.5 text-error hover:bg-error-container rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+</div>
+</div>
+<!-- Task 2 -->
+<div class="bg-surface border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:border-outline transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] cursor-move">drag_indicator</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">assignment</span>
+<span class="font-medium text-body-sm">strivers videos</span>
+<span class="text-label-caps text-on-surface-variant bg-surface-variant px-2 py-1 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                        10:30-12:30
+                                    </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-label-caps text-on-surface bg-surface-variant hover:bg-surface-container-high px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]">check</span>
+                                        Finish
+                                    </button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">calendar_month</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">notifications_off</span></button>
+<button class="p-1.5 text-error hover:bg-error-container rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+</div>
+</div>
+<!-- Task 3 (Active) -->
+<div class="bg-surface border-2 border-primary-fixed-dim rounded-xl p-4 flex flex-col gap-4 shadow-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3 flex-wrap">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] cursor-move">drag_indicator</span>
+<span class="material-symbols-outlined text-primary text-[20px]">assignment</span>
+<span class="font-medium text-body-sm text-primary">SE</span>
+<span class="text-label-caps text-on-tertiary-container bg-tertiary-fixed px-2 py-1 rounded-md flex items-center gap-1 border border-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-[14px]">repeat</span>
+                                        1 session
+                                    </span>
+<span class="text-label-caps text-on-surface-variant bg-surface-variant px-2 py-1 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                        17:10-18:40
+                                    </span>
+<span class="text-label-caps text-on-secondary-container bg-secondary-fixed px-2 py-1 rounded-md flex items-center gap-1 border border-secondary-fixed-dim">
+                                        Auto
+                                    </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">calendar_month</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">notifications_off</span></button>
+<button class="p-1.5 text-error hover:bg-error-container rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-secondary-container text-on-secondary-container text-label-caps px-3 py-1 rounded-full font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check</span>
+                                    1h 35m 0s
+                                </div>
+<div class="flex-1 bg-surface-variant h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-full"></div>
+</div>
+<div class="text-label-caps text-on-surface-variant font-medium">1h 35m 0s</div>
+</div>
+</div>
+<!-- Task 4 -->
+<div class="bg-surface border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:border-outline transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] cursor-move">drag_indicator</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">assignment</span>
+<span class="font-medium text-body-sm">dsa problems</span>
+<span class="text-label-caps text-on-surface-variant bg-surface-variant px-2 py-1 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                        02:00-03:20
+                                    </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-label-caps text-on-surface bg-surface-variant hover:bg-surface-container-high px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]">check</span>
+                                        Finish
+                                    </button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">calendar_month</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">notifications_off</span></button>
+<button class="p-1.5 text-error hover:bg-error-container rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+</div>
+</div>
+<!-- Task 5 -->
+<div class="bg-surface border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:border-outline transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] cursor-move">drag_indicator</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">assignment</span>
+<span class="font-medium text-body-sm">ISRO</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-label-caps text-on-surface bg-surface-variant hover:bg-surface-container-high px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]">check</span>
+                                        Finish
+                                    </button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">calendar_month</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">notifications_off</span></button>
+<button class="p-1.5 text-error hover:bg-error-container rounded-md transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Quick Todos -->
+<div class="w-full xl:w-80 flex flex-col gap-6 bg-surface p-6 rounded-2xl border border-outline-variant shrink-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">check_circle</span>
+<h3 class="text-headline-md font-headline-md font-bold">Quick Todos</h3>
+</div>
+<p class="text-body-sm text-on-surface-variant -mt-4">Simple checklist for daily tasks</p>
+<button class="w-full bg-inverse-surface text-inverse-on-surface py-3 rounded-xl flex items-center justify-center gap-2 text-body-sm font-medium hover:opacity-90 transition-opacity shadow-sm">
+<span class="material-symbols-outlined text-[18px]">mic</span>
+                        Open quick assistant
+                    </button>
+<div class="flex flex-col gap-3">
+<div class="flex gap-2">
+<input class="flex-1 bg-surface-container-lowest border-outline-variant border rounded-lg px-3 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none" placeholder="Add a quick todo..." type="text"/>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg text-body-sm font-medium hover:opacity-90">Add</button>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-outline-variant border rounded-lg px-3 py-2 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none text-on-surface-variant" type="date"/>
+</div>
+</div>
+<div class="space-y-3 flex-1 overflow-y-auto pr-2">
+<!-- Todo 1 -->
+<div class="flex items-center gap-3 p-3 bg-surface border-l-4 border-l-error border-y border-r border-outline-variant rounded-r-lg hover:bg-surface-variant transition-colors group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-label-caps bg-error-container text-on-error-container px-1.5 py-0.5 rounded font-bold">OVERDUE</span>
+<span class="text-body-sm text-on-surface font-medium">leetcode contest</span>
+</div>
+<span class="text-label-caps text-error bg-error-container/30 px-2 py-0.5 rounded-full self-start">Sat • May 9</span>
+</div>
+</div>
+<!-- Todo 2 -->
+<div class="flex items-center gap-3 p-3 bg-surface border-l-4 border-l-error border-y border-r border-outline-variant rounded-r-lg hover:bg-surface-variant transition-colors group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-label-caps bg-error-container text-on-error-container px-1.5 py-0.5 rounded font-bold">OVERDUE</span>
+<span class="text-body-sm text-on-surface font-medium">tuf</span>
+</div>
+<span class="text-label-caps text-error bg-error-container/30 px-2 py-0.5 rounded-full self-start">Sun • May 10</span>
+</div>
+</div>
+<!-- Todo 3 -->
+<div class="flex items-center gap-3 p-3 bg-surface border-l-4 border-l-error border-y border-r border-outline-variant rounded-r-lg hover:bg-surface-variant transition-colors group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-label-caps bg-error-container text-on-error-container px-1.5 py-0.5 rounded font-bold">OVERDUE</span>
+<span class="text-body-sm text-on-surface font-medium">tuf 1 prblm</span>
+</div>
+<span class="text-label-caps text-error bg-error-container/30 px-2 py-0.5 rounded-full self-start">Sat • May 9</span>
+</div>
+</div>
+<!-- Todo 4 -->
+<div class="flex items-center gap-3 p-3 bg-surface border-l-4 border-l-error border-y border-r border-outline-variant rounded-r-lg hover:bg-surface-variant transition-colors group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-label-caps bg-error-container text-on-error-container px-1.5 py-0.5 rounded font-bold">OVERDUE</span>
+<span class="text-body-sm text-on-surface font-medium">tuf 1 prblm</span>
+</div>
+<span class="text-label-caps text-error bg-error-container/30 px-2 py-0.5 rounded-full self-start">Fri • May 8</span>
+</div>
+</div>
+<!-- Todo 5 -->
+<div class="flex items-center gap-3 p-3 bg-surface border-l-4 border-l-error border-y border-r border-outline-variant rounded-r-lg hover:bg-surface-variant transition-colors group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-label-caps bg-error-container text-on-error-container px-1.5 py-0.5 rounded font-bold">OVERDUE</span>
+<span class="text-body-sm text-on-surface font-medium">tuf-one problm</span>
+</div>
+<span class="text-label-caps text-error bg-error-container/30 px-2 py-0.5 rounded-full self-start">Mon • May 11</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

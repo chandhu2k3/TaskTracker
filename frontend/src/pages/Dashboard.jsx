@@ -1135,7 +1135,7 @@ const Dashboard = () => {
       {sleepMode && (
         <div className="sleep-mode-overlay">
           <div className="sleep-mode-indicator">
-            <span className="sleep-icon">😴</span>
+            <span className="sleep-icon"><span className="material-symbols-outlined" style={{fontSize:'1.2rem'}}>dark_mode</span></span>
             <span className="sleep-text">Sleep Mode Active</span>
             <span className="sleep-duration">{sleepDuration} min</span>
           </div>
@@ -1153,7 +1153,7 @@ const Dashboard = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? "✕" : "☰"}
+            {mobileMenuOpen ? <span className="material-symbols-outlined">close</span> : <span className="material-symbols-outlined">menu</span>}
           </button>
           <div
             className="logo-container"
@@ -1178,7 +1178,7 @@ const Dashboard = () => {
               sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"
             }
           >
-            {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
+            <span className="material-symbols-outlined" style={{fontSize:'1rem'}}>dark_mode</span> {sleepMode ? `${sleepDuration}m` : "Sleep"}
           </button>
           <button
             className="btn-theme-toggle"
@@ -1187,7 +1187,7 @@ const Dashboard = () => {
               theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"
             }
           >
-            {theme === "light" ? "🌙" : "☀️"}
+            <span className="material-symbols-outlined" style={{fontSize:'1rem'}}>{theme === "light" ? "dark_mode" : "light_mode"}</span>
           </button>
         </div>
         <div className="header-nav">
@@ -1195,25 +1195,25 @@ const Dashboard = () => {
             className={`nav-btn ${activeTab === "week" ? "active" : ""}`}
             onClick={() => setActiveTab("week")}
           >
-            🏠 Home
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>dashboard</span> Home
           </button>
           <button
             className={`nav-btn ${activeTab === "categories" ? "active" : ""}`}
             onClick={() => setActiveTab("categories")}
           >
-            🏷️ Categories
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>label</span> Categories
           </button>
           <button
             className={`nav-btn ${activeTab === "template" ? "active" : ""}`}
             onClick={() => setActiveTab("template")}
           >
-            📋 Template
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>calendar_view_week</span> Template
           </button>
           <button
             className={`nav-btn ${activeTab === "analytics" ? "active" : ""}`}
             onClick={() => setActiveTab("analytics")}
           >
-            📈 Analytics
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>insights</span> Analytics
           </button>
         </div>
         <div className="desktop-header-actions desktop-only">
@@ -1224,7 +1224,7 @@ const Dashboard = () => {
               sleepMode ? `Sleep: ${sleepDuration} min` : "Start Sleep Mode"
             }
           >
-            {sleepMode ? `😴 ${sleepDuration}m` : "💤 Sleep"}
+            <span className="material-symbols-outlined" style={{fontSize:'1rem'}}>dark_mode</span> {sleepMode ? `${sleepDuration}m` : "Sleep"}
           </button>
           <button
             className="btn-theme-toggle"
@@ -1233,7 +1233,7 @@ const Dashboard = () => {
               theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"
             }
           >
-            {theme === "light" ? "🌙" : "☀️"}
+            <span className="material-symbols-outlined" style={{fontSize:'1rem'}}>{theme === "light" ? "dark_mode" : "light_mode"}</span>
           </button>
           <div className="profile-dropdown-container">
             <button
@@ -1271,7 +1271,7 @@ const Dashboard = () => {
                     toggleTheme();
                   }}
                 >
-                  {theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}
+                  <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>{theme === "light" ? "dark_mode" : "light_mode"}</span> {theme === "light" ? "Dark Mode" : "Light Mode"}
                 </button>
                 <button
                   className="profile-dropdown-item"
@@ -1280,7 +1280,7 @@ const Dashboard = () => {
                     startTour();
                   }}
                 >
-                  🎯 Tour Guide
+                  <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>tour</span> Tour Guide
                 </button>
                 <button
                   className={`profile-dropdown-item ${googleCalendarConnected ? "connected" : ""}`}
@@ -1292,9 +1292,9 @@ const Dashboard = () => {
                     }
                   }}
                 >
-                  {googleCalendarConnected
-                    ? "📅 Disconnect Calendar"
-                    : "📅 Connect Google Calendar"}
+                  <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>calendar_month</span> {googleCalendarConnected
+                    ? "Disconnect Calendar"
+                    : "Connect Google Calendar"}
                 </button>
                 <button
                   className="profile-dropdown-item logout"
@@ -1303,7 +1303,7 @@ const Dashboard = () => {
                     handleLogout();
                   }}
                 >
-                  🚪 Logout
+                  <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>logout</span> Logout
                 </button>
               </div>
             )}
@@ -1323,7 +1323,7 @@ const Dashboard = () => {
               setMobileMenuOpen(false);
             }}
           >
-            🏠 Home
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>dashboard</span> Home
           </button>
           <button
             className={`mobile-menu-item ${
@@ -1334,7 +1334,7 @@ const Dashboard = () => {
               setMobileMenuOpen(false);
             }}
           >
-            🏷️ Categories
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>label</span> Categories
           </button>
           <button
             className={`mobile-menu-item ${
@@ -1345,7 +1345,7 @@ const Dashboard = () => {
               setMobileMenuOpen(false);
             }}
           >
-            📋 Template
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>calendar_view_week</span> Template
           </button>
           <button
             className={`mobile-menu-item ${
@@ -1356,7 +1356,7 @@ const Dashboard = () => {
               setMobileMenuOpen(false);
             }}
           >
-            📈 Analytics
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>insights</span> Analytics
           </button>
           <button
             className="mobile-menu-item tour-item"
@@ -1365,7 +1365,7 @@ const Dashboard = () => {
               startTour();
             }}
           >
-            🎯 Tour Guide
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>tour</span> Tour Guide
           </button>
           <button
             className={`mobile-menu-item ${googleCalendarConnected ? "connected" : ""}`}
@@ -1378,9 +1378,9 @@ const Dashboard = () => {
               }
             }}
           >
-            {googleCalendarConnected
-              ? "📅 Disconnect Calendar"
-              : "📅 Connect Google Calendar"}
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>calendar_month</span> {googleCalendarConnected
+              ? "Disconnect Calendar"
+              : "Connect Google Calendar"}
           </button>
           <button
             className="mobile-menu-item logout-item"
@@ -1389,7 +1389,7 @@ const Dashboard = () => {
               handleLogout();
             }}
           >
-            🚪 Logout
+            <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>logout</span> Logout
           </button>
         </div>
       )}
@@ -1399,25 +1399,25 @@ const Dashboard = () => {
           className={`tab-btn ${activeTab === "week" ? "active" : ""}`}
           onClick={() => setActiveTab("week")}
         >
-          🏠 Home
+          <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>dashboard</span> Home
         </button>
         <button
           className={`tab-btn ${activeTab === "categories" ? "active" : ""}`}
           onClick={() => setActiveTab("categories")}
         >
-          🏷️ Categories
+          <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>label</span> Categories
         </button>
         <button
           className={`tab-btn ${activeTab === "template" ? "active" : ""}`}
           onClick={() => setActiveTab("template")}
         >
-          📋 Template
+          <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>calendar_view_week</span> Template
         </button>
         <button
           className={`tab-btn ${activeTab === "analytics" ? "active" : ""}`}
           onClick={() => setActiveTab("analytics")}
         >
-          📈 Analytics
+          <span className="material-symbols-outlined" style={{fontSize:'1.1rem'}}>insights</span> Analytics
         </button>
       </div>
 
@@ -1441,14 +1441,14 @@ const Dashboard = () => {
                       onClick={() => setViewMode("day")}
                       title="Day View"
                     >
-                      📅 Day
+                      <span className="material-symbols-outlined" style={{fontSize:'1rem'}}>today</span> Day
                     </button>
                     <button
                       className={`view-mode-btn ${viewMode === "week" ? "active" : ""}`}
                       onClick={() => setViewMode("week")}
                       title="Week View"
                     >
-                      📆 Week
+                      <span className="material-symbols-outlined" style={{fontSize:'1rem'}}>date_range</span> Week
                     </button>
                   </div>
                   <div className="week-navigation">
@@ -1652,6 +1652,12 @@ const Dashboard = () => {
 
         {activeTab === "analytics" && (
           <div className="analytics-view">
+            <div className="analytics-view-header">
+              <div>
+                <h2 className="analytics-view-title">Analytics Overview</h2>
+                <p className="analytics-view-subtitle">Track your productivity, analyze time spent across categories, and measure completion rates over time.</p>
+              </div>
+            </div>
             <div className="analytics-controls">
               <div className="analytics-type-selector">
                 <button

@@ -6,6 +6,9 @@
 - Open-ended conversation uses a small chat model only when the prompt is not an action command.
 - Recent message history is trimmed to keep the request small and latency low.
 - A hard timeout keeps slow model calls from stalling the assistant UI.
+- Streaming is enabled for general chat so the assistant can show partial replies as soon as tokens arrive.
+- Chat history is persisted per user in MongoDB and mirrored in localStorage, so the assistant remembers context across devices and refreshes.
+- The assistant prompt includes lightweight personal context from the signed-in user profile.
 - Voice input is browser-native SpeechRecognition, so there is no extra dependency or server cost.
 - The assistant keeps the UI as a floating launcher so the page stays usable while the panel is closed.
 - If the conversational API key is missing, the assistant falls back to a helpful local response instead of failing.

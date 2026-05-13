@@ -23,10 +23,18 @@ const connectDB = async () => {
   }
 
   try {
-    console.log('🔌 Connecting to MongoDB Atlas...');
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    const mongoUri = process.env.MONGODB_URI;
+
+    if (!mongoUri) {
+      throw new Error("MONGODB_URI is not set");
+    }
+
+    const isLocalMongo = /localhost|127\.0\.0\.1|::1/i.test(mongoUri);
+    console.log(
+      `🔌 Connecting to ${isLocalMongo ? "local MongoDB" : "MongoDB Atlas"}...`,
+    );
+
+    const conn = await mongoose.connect(mongoUri, {
       // INCREASED timeouts for slow college WiFi + serverless cold starts
       serverSelectionTimeoutMS: 15000, // 15s (was 5s)
       socketTimeoutMS: 60000, // 60s (was 45s)

@@ -114,83 +114,83 @@ const TodoAssistant = ({ onCreateTodo }) => {
     recognition.start();
   };
 
-  return (
-    <div className="todo-assistant">
-      {isOpen ? (
-        <>
-          <div className="todo-assistant-header">
-            <div>
-              <p className="todo-assistant-kicker">Assistant</p>
-              <h4>Quick todo assistant</h4>
-            </div>
-            <button
-              type="button"
-              className={`todo-assistant-voice ${isListening ? "listening" : ""}`}
-              onClick={handleVoice}
-              title={
-                canUseVoice
-                  ? "Speak a todo with deadline"
-                  : "Voice not supported"
-              }
-              disabled={isListening}
-            >
-              {isListening ? "🎙️ Listening" : "🎙️ Voice"}
-            </button>
-          </div>
+  // return (
+  //   <div className="todo-assistant">
+  //     {isOpen ? (
+  //       <>
+  //         <div className="todo-assistant-header">
+  //           <div>
+  //             <p className="todo-assistant-kicker">Assistant</p>
+  //             <h4>Quick todo assistant</h4>
+  //           </div>
+  //           <button
+  //             type="button"
+  //             className={`todo-assistant-voice ${isListening ? "listening" : ""}`}
+  //             onClick={handleVoice}
+  //             title={
+  //               canUseVoice
+  //                 ? "Speak a todo with deadline"
+  //                 : "Voice not supported"
+  //             }
+  //             disabled={isListening}
+  //           >
+  //             {isListening ? "🎙️ Listening" : "🎙️ Voice"}
+  //           </button>
+  //         </div>
 
-          <textarea
-            className="todo-assistant-input"
-            value={prompt}
-            onChange={(e) => {
-              setPrompt(e.target.value);
-              setParsed(null);
-            }}
-            placeholder='Try: "Pay electricity bill next Friday" or "Call mom tomorrow"'
-            rows={3}
-          />
+  //         <textarea
+  //           className="todo-assistant-input"
+  //           value={prompt}
+  //           onChange={(e) => {
+  //             setPrompt(e.target.value);
+  //             setParsed(null);
+  //           }}
+  //           placeholder='Try: "Pay electricity bill next Friday" or "Call mom tomorrow"'
+  //           rows={3}
+  //         />
 
-          <div className="todo-assistant-actions">
-            <button
-              type="button"
-              className="todo-assistant-secondary"
-              onClick={() => setIsOpen(false)}
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              className="todo-assistant-primary todo-assistant-full"
-              onClick={handleVerifyAndAdd}
-            >
-              Verify & Add
-            </button>
-          </div>
+  //         <div className="todo-assistant-actions">
+  //           <button
+  //             type="button"
+  //             className="todo-assistant-secondary"
+  //             onClick={() => setIsOpen(false)}
+  //           >
+  //             Close
+  //           </button>
+  //           <button
+  //             type="button"
+  //             className="todo-assistant-primary todo-assistant-full"
+  //             onClick={handleVerifyAndAdd}
+  //           >
+  //             Verify & Add
+  //           </button>
+  //         </div>
 
-          <div className="todo-assistant-preview">
-            <div className="todo-assistant-preview-label">Parsed result</div>
-            <div className="todo-assistant-preview-grid">
-              <div>
-                <span>Todo</span>
-                <strong>{parsed?.text || "Waiting for input"}</strong>
-              </div>
-              <div>
-                <span>Deadline</span>
-                <strong>{parsed?.deadline || "No deadline detected"}</strong>
-              </div>
-            </div>
-          </div>
-        </>
-      ) : (
-        <button
-          type="button"
-          className="todo-assistant-launcher"
-          onClick={() => setIsOpen(true)}
-        >
-          🎙️ Open quick assistant
-        </button>
-      )}
-    </div>
-  );
+  //         <div className="todo-assistant-preview">
+  //           <div className="todo-assistant-preview-label">Parsed result</div>
+  //           <div className="todo-assistant-preview-grid">
+  //             <div>
+  //               <span>Todo</span>
+  //               <strong>{parsed?.text || "Waiting for input"}</strong>
+  //             </div>
+  //             <div>
+  //               <span>Deadline</span>
+  //               <strong>{parsed?.deadline || "No deadline detected"}</strong>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </>
+  //     ) : (
+  //       <button
+  //         type="button"
+  //         className="todo-assistant-launcher"
+  //         onClick={() => setIsOpen(true)}
+  //       >
+  //         🎙️ Open quick assistant
+  //       </button>
+  //     )}
+  //   </div>
+  // );
 };
 
 export default TodoAssistant;

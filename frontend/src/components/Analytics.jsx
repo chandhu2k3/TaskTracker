@@ -66,7 +66,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📅 By Day - Actual vs Planned</h4>
+            <h4>Productivity Trend</h4>
             <div className="day-breakdown">
               {analytics.byDay &&
                 Object.entries(analytics.byDay).map(([day, data]) => (
@@ -119,7 +119,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📊 Category Distribution - Time Achieved</h4>
+            <h4>Category Split</h4>
             <div className="pie-chart-container">
               <div className="pie-chart-wrapper">
                 <svg
@@ -173,12 +173,12 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                     }
 
                     const colors = [
-                      "#D97706",
-                      "#10b981",
-                      "#6366f1",
-                      "#e9b84a",
-                      "#8b5cf6",
-                      "#ec4899",
+                      "#191c1d",
+                      "#685c53",
+                      "#9e9e9e",
+                      "#d0c4bc",
+                      "#4d453f",
+                      "#b8b0a8",
                     ];
                     let cumulativeAngle = 0;
 
@@ -249,18 +249,33 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                       );
                     });
                   })()}
+                  {/* Donut center cutout */}
+                  <circle cx="100" cy="100" r="55" fill="var(--bg-card, #ffffff)" />
+                  {analytics.byCategory && (() => {
+                    const total = Object.values(analytics.byCategory).reduce((sum, d) => sum + d.totalTime, 0);
+                    return total > 0 ? (
+                      <>
+                        <text x="100" y="96" textAnchor="middle" fill="var(--text-primary, #191c1d)" fontSize="16" fontWeight="700">
+                          {formatTime(total)}
+                        </text>
+                        <text x="100" y="112" textAnchor="middle" fill="var(--text-muted, #7f756e)" fontSize="9">
+                          Total
+                        </text>
+                      </>
+                    ) : null;
+                  })()}
                 </svg>
                 <div className="pie-legend">
                   {analytics.byCategory &&
                     Object.entries(analytics.byCategory).map(
                       ([category, data], index) => {
                         const colors = [
-                          "#D97706",
-                          "#10b981",
-                          "#6366f1",
-                          "#e9b84a",
-                          "#8b5cf6",
-                          "#ec4899",
+                          "#191c1d",
+                          "#685c53",
+                          "#9e9e9e",
+                          "#d0c4bc",
+                          "#4d453f",
+                          "#b8b0a8",
                         ];
                         const total = Object.values(
                           analytics.byCategory
@@ -302,7 +317,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📂 By Category - Detailed</h4>
+            <h4>Category Breakdown</h4>
             <div className="category-breakdown">
               {analytics.byCategory &&
                 Object.entries(analytics.byCategory).map(([category, data]) => (
@@ -323,8 +338,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                             data.totalTime,
                             analytics.totalTime
                           ),
-                          background:
-                            "linear-gradient(135deg, #10b981, #059669)",
+                          background: "var(--accent-primary, #000)",
                         }}
                       />
                     </div>
@@ -362,7 +376,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📊 By Week</h4>
+            <h4>Weekly Overview</h4>
             <div className="week-comparison">
               {analytics.byWeek &&
                 Object.entries(analytics.byWeek).map(([week, data]) => (
@@ -378,8 +392,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                             data.totalTime,
                             analytics.totalTime
                           ),
-                          background:
-                            "linear-gradient(135deg, #e9b84a, #d97706)",
+                          background: "var(--accent-primary, #000)",
                         }}
                       />
                     </div>
@@ -393,7 +406,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📂 By Category</h4>
+            <h4>Category Breakdown</h4>
             <div className="category-breakdown">
               {analytics.byCategory &&
                 Object.entries(analytics.byCategory).map(([category, data]) => (
@@ -414,8 +427,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                             data.totalTime,
                             analytics.totalTime
                           ),
-                          background:
-                            "linear-gradient(135deg, #10b981, #059669)",
+                          background: "var(--accent-primary, #000)",
                         }}
                       />
                     </div>
@@ -455,7 +467,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>⏱️ Time Comparison: Actual vs Planned</h4>
+            <h4>Time Comparison</h4>
             <div className="pie-chart-container">
               <div className="pie-chart-wrapper">
                 <svg
@@ -471,7 +483,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                     if (plannedTime === 0) {
                       return (
                         <>
-                          <circle cx="100" cy="100" r="80" fill="#D97706" />
+                          <circle cx="100" cy="100" r="80" fill="var(--accent-primary, #191c1d)" />
                           <text
                             x="100"
                             y="105"
@@ -507,7 +519,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                         {percentage > 0 && (
                           <path
                             d={`M 100 20 A 80 80 0 ${largeArc} 1 ${x} ${y} L 100 100 Z`}
-                            fill="#D97706"
+                            fill="var(--accent-primary, #191c1d)"
                           />
                         )}
 
@@ -539,7 +551,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                   <div className="legend-item">
                     <span
                       className="legend-color"
-                      style={{ background: "#D97706" }}
+                      style={{ background: "var(--accent-primary, #191c1d)" }}
                     ></span>
                     <span className="legend-label">
                       Actual: {formatTime(analytics.totalTime)}(
@@ -566,7 +578,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
 
           <div className="analytics-section">
-            <h4>📅 Activity Over Time</h4>
+            <h4>Activity Timeline</h4>
             <div className="date-timeline">
               {Object.entries(analytics.byDate || {}).map(([date, data]) => (
                 <div key={date} className="date-stat">
@@ -581,7 +593,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                           data.totalTime,
                           analytics.totalTime
                         ),
-                        background: "linear-gradient(135deg, #D97706, #b45309)",
+                        background: "var(--accent-primary, #000)",
                       }}
                     />
                   </div>

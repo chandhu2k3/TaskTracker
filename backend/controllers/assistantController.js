@@ -4,6 +4,7 @@ const Todo = require("../models/Todo");
 const TaskTemplate = require("../models/TaskTemplate");
 const Category = require("../models/Category");
 const AssistantEmbedding = require("../models/AssistantEmbedding");
+const AssistantConversation = require("../models/AssistantConversation");
 const tz = require("../utils/timezone");
 const {
   parseDateReference,
@@ -26,7 +27,7 @@ const ASSISTANT_API_KEY =
   process.env.OPENAI_API_KEY ||
   process.env.AI_API_KEY;
 const ASSISTANT_MAX_TURNS = Number(process.env.ASSISTANT_MAX_TURNS || 8);
-const ASSISTANT_MAX_TOKENS = Number(process.env.ASSISTANT_MAX_TOKENS || 220);
+const ASSISTANT_MAX_TOKENS = Number(process.env.ASSISTANT_MAX_TOKENS || 500);
 const ASSISTANT_TEMPERATURE = Number(process.env.ASSISTANT_TEMPERATURE || 0.4);
 const ASSISTANT_REQUEST_TIMEOUT_MS = Number(
   process.env.ASSISTANT_REQUEST_TIMEOUT_MS || 12000,
@@ -53,6 +54,7 @@ const ASSISTANT_RAG_PREFILTER_LIMIT = Number(
 const ASSISTANT_EMBEDDING_CACHE_MAX = Number(
   process.env.ASSISTANT_EMBEDDING_CACHE_MAX || 500,
 );
+const ASSISTANT_MEMORY_LIMIT = Number(process.env.ASSISTANT_MEMORY_LIMIT || 20);
 
 const RAG_STOP_WORDS = new Set([
   "the",
@@ -713,6 +715,103 @@ const normalizeConversation = (conversation = []) => {
     .filter((item) => item.content.length > 0);
 };
 
+const normalizeAssistantMessages = (messages = []) => {
+  if (!Array.isArray(messages)) {
+    return [];
+  }
+
+  return messages
+    .filter((item) => item && typeof item.text === "string")
+    .slice(-ASSISTANT_MEMORY_LIMIT)
+    .map((item) => ({
+      role: item.role === "assistant" ? "assistant" : "user",
+      text: item.text.trim(),
+    }))
+    .filter((item) => item.text.length > 0);
+};
+
+const convertAssistantMessagesToConversation = (messages = []) =>
+  normalizeAssistantMessages(messages).map((item) => ({
+    role: item.role,
+    content: item.text,
+  }));
+
+const buildPersonalContext = (user) => {
+  if (!user) {
+    return "";
+  }
+
+  const contextParts = [];
+
+  if (user.name) {
+    contextParts.push(`name=${user.name}`);
+  }
+
+  if (user.authProvider) {
+    contextParts.push(`authProvider=${user.authProvider}`);
+  }
+
+  if (typeof user.onboardingComplete === "boolean") {
+    contextParts.push(
+      `onboardingComplete=${user.onboardingComplete ? "true" : "false"}`,
+    );
+  }
+
+  if (user.googleCalendar) {
+    contextParts.push(
+      `calendar=${user.googleCalendar.connected ? "connected" : "disconnected"}`,
+    );
+  }
+
+  return contextParts.join(", ");
+};
+
+const getStoredAssistantConversation = async (userId) => {
+  const conversation = await AssistantConversation.findOne({ user: userId })
+    .lean()
+    .catch(() => null);
+
+  return normalizeAssistantMessages(conversation?.messages || []);
+};
+
+const persistAssistantConversation = async (userId, messages) => {
+  const normalizedMessages = normalizeAssistantMessages(messages);
+
+  if (normalizedMessages.length === 0) {
+    return null;
+  }
+
+  return AssistantConversation.findOneAndUpdate(
+    { user: userId },
+    {
+      $push: {
+        messages: {
+          $each: normalizedMessages,
+          $slice: -ASSISTANT_MEMORY_LIMIT,
+        },
+      },
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    },
+  );
+};
+
+const persistAssistantExchange = async ({ userId, prompt, reply }) => {
+  if (!prompt || !reply) {
+    return;
+  }
+
+  await persistAssistantConversation(userId, [
+    { role: "user", text: prompt },
+    { role: "assistant", text: reply },
+  ]).catch((error) => {
+    console.error("Failed to persist assistant conversation:", error.message);
+  });
+};
+
 const buildSystemPrompt = ({
   timezone,
   selectedDate,
@@ -720,6 +819,7 @@ const buildSystemPrompt = ({
   activeTab,
   viewMode,
   retrievedContext,
+  personalContext,
 }) => {
   const selectedWeekLabel =
     selectedDate?.year !== undefined &&
@@ -729,34 +829,59 @@ const buildSystemPrompt = ({
       : "not set";
 
   return [
-    "You are a fast, friendly assistant inside a task tracking app.",
-    "Sound human, concise, and practical.",
-    "Keep replies short unless the user asks for detail.",
-    "Use a warm, conversational tone.",
-    "If the user asks for an action, confirm the result clearly and briefly.",
-    "If the user is just chatting, answer naturally and keep the flow going.",
-    "Ask at most one short follow-up question when you need clarification.",
-    "Use the retrieved workspace context as grounding for app-specific claims. Prefer the freshest relevant items and do not invent details that are not present in the context.",
+    "You are a smart productivity coach embedded inside a task tracking app called Task Tracker Pro.",
+    "Your goal is to help the user improve their productivity, habits, and time management.",
+    "",
+    "CAPABILITIES:",
+    "- Analyze weekly/daily task completion rates, time management, and patterns",
+    "- Identify productivity trends (which days are most productive, which categories get the most time)",
+    "- Spot problems: overdue todos, unfinished tasks, time overruns, neglected categories",
+    "- Give actionable improvement suggestions backed by the user's actual data",
+    "- Answer questions like 'How am I doing?', 'Where am I wasting time?', 'What should I focus on?'",
+    "- Compare planned vs actual time to find estimation patterns",
+    "- Create tasks, quick todos, and edit templates when asked",
+    "",
+    "TONE & STYLE:",
+    "- Warm, encouraging but honest — celebrate wins and gently flag problems",
+    "- Use specific numbers and data from context (don't be vague)",
+    "- Keep replies concise unless asked for detail",
+    "- Use emoji sparingly for emphasis (📊 🎯 ⚠️ ✅)",
+    "- When analyzing, structure with bullet points for readability",
+    "- If data is insufficient, say so honestly and suggest what the user can do",
+    "",
+    "ANALYSIS FRAMEWORK (when user asks about progress):",
+    "1. Task Completion: X/Y tasks done, completion rate",
+    "2. Time Management: planned vs actual, over/under-estimation patterns",
+    "3. Active Work: currently running tasks, focus areas",
+    "4. Overdue Items: overdue todos, missed deadlines",
+    "5. Category Distribution: where time is going",
+    "6. Actionable Tips: 1-2 specific suggestions based on the data",
+    "",
+    personalContext
+      ? `Personal user context: ${personalContext}.`
+      : "No personal user context available.",
     `Context: timezone=${timezone}, tab=${activeTab || "unknown"}, viewMode=${viewMode || "unknown"}, selectedWeek=${selectedWeekLabel}, selectedDay=${selectedDayDate || "not set"}.`,
     retrievedContext
       ? `Retrieved workspace context:\n${retrievedContext}`
       : "No retrieved workspace context available.",
-  ].join(" ");
+  ].join("\n");
 };
 
 const buildConversationMessages = ({
   prompt,
-  conversation,
+  conversationMessages,
   timezone,
   selectedDate,
   selectedDayDate,
   activeTab,
   viewMode,
   retrievedContext,
+  personalContext,
 }) => {
-  const history = normalizeConversation(conversation);
   const messages =
-    history.length > 0 ? history : [{ role: "user", content: prompt }];
+    conversationMessages.length > 0
+      ? conversationMessages
+      : [{ role: "user", content: prompt }];
 
   return [
     {
@@ -768,6 +893,7 @@ const buildConversationMessages = ({
         activeTab,
         viewMode,
         retrievedContext,
+        personalContext,
       }),
     },
     ...messages,
@@ -788,8 +914,50 @@ const fallbackConversationReply = (prompt) => {
   return "I can make this conversational once the assistant API key is configured. For now I can still create tasks, quick todos, edit templates, and analyze your week.";
 };
 
+const buildConversationalPayload = async ({
+  userId,
+  user,
+  prompt,
+  conversation,
+  timezone,
+  selectedDate,
+  selectedDayDate,
+  activeTab,
+  viewMode,
+}) => {
+  const retrievedContext = await buildRagContext({
+    userId,
+    prompt,
+    timezone,
+    selectedDate,
+  }).catch(() => "");
+
+  const requestConversation = normalizeConversation(conversation);
+  const conversationMessages =
+    requestConversation.length > 0
+      ? requestConversation
+      : convertAssistantMessagesToConversation(
+          await getStoredAssistantConversation(userId),
+        );
+
+  const messages = buildConversationMessages({
+    prompt,
+    conversationMessages,
+    timezone,
+    selectedDate,
+    selectedDayDate,
+    activeTab,
+    viewMode,
+    retrievedContext,
+    personalContext: buildPersonalContext(user),
+  });
+
+  return { retrievedContext, messages };
+};
+
 const generateConversationalReply = async ({
   userId,
+  user,
   prompt,
   conversation,
   timezone,
@@ -812,12 +980,17 @@ const generateConversationalReply = async ({
     ASSISTANT_REQUEST_TIMEOUT_MS,
   );
 
-  const retrievedContext = await buildRagContext({
+  const { messages } = await buildConversationalPayload({
     userId,
+    user,
     prompt,
+    conversation,
     timezone,
     selectedDate,
-  }).catch(() => "");
+    selectedDayDate,
+    activeTab,
+    viewMode,
+  });
 
   try {
     const response = await fetch(`${ASSISTANT_BASE_URL}/chat/completions`, {
@@ -829,16 +1002,7 @@ const generateConversationalReply = async ({
       },
       body: JSON.stringify({
         model: ASSISTANT_MODEL,
-        messages: buildConversationMessages({
-          prompt,
-          conversation,
-          timezone,
-          selectedDate,
-          selectedDayDate,
-          activeTab,
-          viewMode,
-          retrievedContext,
-        }),
+        messages,
         temperature: ASSISTANT_TEMPERATURE,
         max_tokens: ASSISTANT_MAX_TOKENS,
       }),
@@ -865,6 +1029,173 @@ const generateConversationalReply = async ({
       return {
         reply:
           "I hit a timeout talking to the model, but I’m still here. Try a shorter prompt or ask me for a quick task action.",
+        type: "help",
+        refresh: false,
+      };
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+const streamConversationalReply = async ({
+  userId,
+  user,
+  prompt,
+  conversation,
+  timezone,
+  selectedDate,
+  selectedDayDate,
+  activeTab,
+  viewMode,
+  res,
+}) => {
+  if (!ASSISTANT_API_KEY) {
+    return {
+      reply: fallbackConversationReply(prompt),
+      type: "help",
+      refresh: false,
+    };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    ASSISTANT_REQUEST_TIMEOUT_MS,
+  );
+
+  const { messages } = await buildConversationalPayload({
+    userId,
+    user,
+    prompt,
+    conversation,
+    timezone,
+    selectedDate,
+    selectedDayDate,
+    activeTab,
+    viewMode,
+  });
+
+  try {
+    const response = await fetch(`${ASSISTANT_BASE_URL}/chat/completions`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${ASSISTANT_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: ASSISTANT_MODEL,
+        messages,
+        temperature: ASSISTANT_TEMPERATURE,
+        max_tokens: ASSISTANT_MAX_TOKENS,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok || !response.body) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(
+        errorText || "Assistant chat request failed while streaming.",
+      );
+    }
+
+    res.status(200);
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+
+    if (typeof res.flushHeaders === "function") {
+      res.flushHeaders();
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let reply = "";
+
+    const flushLine = (line) => {
+      const trimmed = line.trim();
+
+      if (!trimmed.startsWith("data:")) {
+        return false;
+      }
+
+      const data = trimmed.slice(5).trim();
+
+      if (!data || data === "[DONE]") {
+        return data === "[DONE]";
+      }
+
+      try {
+        const parsed = JSON.parse(data);
+        const delta =
+          parsed?.choices?.[0]?.delta?.content ||
+          parsed?.choices?.[0]?.message?.content ||
+          "";
+
+        if (delta) {
+          reply += delta;
+          res.write(delta);
+        }
+      } catch {
+        return false;
+      }
+
+      return false;
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const finished = flushLine(line);
+        if (finished) {
+          break;
+        }
+      }
+    }
+
+    if (buffer.trim()) {
+      flushLine(buffer);
+    }
+
+    const finalReply = reply.trim();
+    await persistAssistantExchange({
+      userId,
+      prompt,
+      reply: finalReply,
+    });
+
+    res.end();
+
+    return {
+      reply: finalReply,
+      type: "chat",
+      refresh: false,
+    };
+  } catch (error) {
+    if (res.headersSent) {
+      const fallbackMessage =
+        error.name === "AbortError"
+          ? "I hit a timeout talking to the model, but I'm still here. Try a shorter prompt or ask me for a quick task action."
+          : "I hit an error while replying, but I can still help with tasks and templates.";
+      res.write(fallbackMessage);
+      res.end();
+
+      return {
+        reply: fallbackMessage,
         type: "help",
         refresh: false,
       };
@@ -921,62 +1252,100 @@ const buildInsights = async ({ userId, timezone, selectedDate }) => {
     0,
   );
 
+  // Category breakdown
   const categoryMap = new Map();
   for (const task of tasks) {
     const categoryKey = task.category || "Uncategorized";
-    const current = categoryMap.get(categoryKey) || 0;
-    categoryMap.set(
-      categoryKey,
-      current + (task.totalTime || task.plannedTime || 0),
-    );
+    const current = categoryMap.get(categoryKey) || { time: 0, count: 0 };
+    categoryMap.set(categoryKey, {
+      time: current.time + (task.totalTime || task.plannedTime || 0),
+      count: current.count + 1,
+    });
   }
 
-  const topCategoryEntry = [...categoryMap.entries()].sort(
-    (a, b) => b[1] - a[1],
-  )[0];
+  const categoryBreakdown = [...categoryMap.entries()]
+    .sort((a, b) => b[1].time - a[1].time)
+    .slice(0, 5)
+    .map(([name, data]) => {
+      const cat = categories.find((c) => c.name === name);
+      const icon = cat?.icon || "📌";
+      return `${icon} ${name}: ${data.count} tasks, ${Math.round(data.time / 60000)} min`;
+    });
+
+  // Day-by-day productivity
+  const dayMap = new Map();
+  for (const task of tasks) {
+    const day = task.day || "unknown";
+    const current = dayMap.get(day) || { total: 0, completed: 0, time: 0 };
+    current.total += 1;
+    if (!task.isActive && (task.totalTime || 0) > 0) current.completed += 1;
+    current.time += task.totalTime || 0;
+    dayMap.set(day, current);
+  }
+
+  const bestDay = [...dayMap.entries()].sort((a, b) => b[1].time - a[1].time)[0];
+
+  // Overdue & due today
+  const todayStr = toDateString(now);
   const overdueTodos = todos.filter(
     (todo) =>
       !todo.completed &&
-      ((todo.deadline && todo.deadline < toDateString(now)) ||
-        (todo.date && todo.date < toDateString(now))),
+      ((todo.deadline && todo.deadline < todayStr) ||
+        (todo.date && todo.date < todayStr)),
   ).length;
   const dueTodayTodos = todos.filter(
     (todo) =>
       !todo.completed &&
-      (todo.deadline === toDateString(now) || todo.date === toDateString(now)),
+      (todo.deadline === todayStr || todo.date === todayStr),
   ).length;
+  const openTodos = todos.filter((todo) => !todo.completed).length;
 
   const completionRate =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  const topCategoryName = topCategoryEntry ? topCategoryEntry[0] : null;
-  const topCategory = categories.find(
-    (category) =>
-      category._id.toString() === String(topCategoryName) ||
-      category.name === topCategoryName,
-  );
-  const topCategoryLabel = topCategory
-    ? `${topCategory.icon} ${topCategory.name}`
-    : topCategoryName || "none";
+
+  // Time accuracy
+  const timeAccuracy = plannedTime > 0 ? Math.round((actualTime / plannedTime) * 100) : null;
+  const timeAccuracyLabel = timeAccuracy !== null
+    ? timeAccuracy > 120
+      ? `⚠️ You're spending ${timeAccuracy}% of planned time — you may be underestimating tasks.`
+      : timeAccuracy < 60
+        ? `💡 You're only using ${timeAccuracy}% of planned time — you might be overestimating or skipping tasks.`
+        : `✅ Time accuracy at ${timeAccuracy}% — solid estimation skills!`
+    : null;
+
+  // Coaching tips
+  const tips = [];
+  if (overdueTodos > 0) tips.push(`Clear ${overdueTodos} overdue todo${overdueTodos > 1 ? "s" : ""} — they add mental clutter.`);
+  if (completionRate < 50 && totalTasks > 0) tips.push("Your completion rate is below 50%. Consider breaking big tasks into smaller ones.");
+  if (completionRate >= 80 && totalTasks > 3) tips.push("Great completion rate! Consider challenging yourself with stretch goals.");
+  if (activeTasks > 3) tips.push(`${activeTasks} tasks are running simultaneously — try focusing on 1-2 at a time.`);
+  if (categoryBreakdown.length > 0 && categoryMap.size === 1) tips.push("All your time is in one category. Consider diversifying if you have other goals.");
 
   return {
     reply: [
-      `This week you have ${totalTasks} tasks with ${completionRate}% completion.`,
-      `Planned time: ${Math.round(plannedTime / 60000)} min, actual logged time: ${Math.round(actualTime / 60000)} min.`,
+      `📊 **Weekly Progress** (${startDate} → ${endDate})`,
+      "",
+      `**Tasks:** ${completedTasks}/${totalTasks} completed (${completionRate}%)`,
+      `**Time:** ${Math.round(plannedTime / 60000)} min planned → ${Math.round(actualTime / 60000)} min logged`,
+      timeAccuracyLabel,
       activeTasks > 0
-        ? `${activeTasks} task${activeTasks > 1 ? "s are" : " is"} still running.`
-        : "No active tasks right now.",
-      overdueTodos > 0
-        ? `${overdueTodos} quick todo${overdueTodos > 1 ? "s" : ""} are overdue.`
-        : "No overdue quick todos found.",
-      dueTodayTodos > 0
-        ? `${dueTodayTodos} quick todo${dueTodayTodos > 1 ? "s are" : " is"} due today.`
+        ? `**Active:** ${activeTasks} task${activeTasks > 1 ? "s" : ""} currently running`
         : null,
-      topCategoryEntry
-        ? `Your most time-heavy category is ${topCategoryLabel}.`
+      "",
+      categoryBreakdown.length > 0
+        ? `**Category Breakdown:**\n${categoryBreakdown.join("\n")}`
         : null,
+      "",
+      bestDay
+        ? `**Most productive day:** ${bestDay[0]} (${bestDay[1].completed}/${bestDay[1].total} tasks, ${Math.round(bestDay[1].time / 60000)} min)`
+        : null,
+      "",
+      `**Quick Todos:** ${openTodos} open${overdueTodos > 0 ? `, ⚠️ ${overdueTodos} overdue` : ""}${dueTodayTodos > 0 ? `, ${dueTodayTodos} due today` : ""}`,
+      "",
+      tips.length > 0 ? `**💡 Tips:**\n${tips.map((t) => `• ${t}`).join("\n")}` : "Keep up the good work! 🎯",
     ]
       .filter(Boolean)
-      .join(" "),
+      .join("\n"),
     type: "insight",
     data: {
       totalTasks,
@@ -986,7 +1355,9 @@ const buildInsights = async ({ userId, timezone, selectedDate }) => {
       actualTime,
       overdueTodos,
       dueTodayTodos,
-      topCategory: topCategoryLabel,
+      completionRate,
+      timeAccuracy,
+      categoryBreakdown: [...categoryMap.entries()].map(([name, data]) => ({ name, ...data })),
     },
     refresh: false,
   };
@@ -1164,10 +1535,12 @@ const handleAssistantMessage = async (req, res) => {
     const activeTab = req.body.context?.activeTab || null;
     const viewMode = req.body.context?.viewMode || null;
     const conversation = req.body.conversation || [];
+    const wantsStream = req.body.stream === true;
     const userId = req.user._id;
+    const user = req.user;
 
     const insightMatch =
-      /\b(insight|insights|analy[sz]e|analysis|summary|review|report|how am i doing|what do you see)\b/i;
+      /\b(insight|insights|analy[sz]e|analysis|summary|review|report|progress|how am i doing|what do you see|how.s my|where.+wasting|what should i focus|productivity|my week|my day|completion rate|time management|overdue|how.+going)\b/i;
     const templateMatch = /\btemplate\b/i;
     const taskMatch =
       /\b(add|create|make|new|schedule).*(task|deadline|reminder)\b/i;
@@ -1212,8 +1585,35 @@ const handleAssistantMessage = async (req, res) => {
         selectedDate: { selectedDayDate },
       });
     } else {
+      if (wantsStream) {
+        const streamedResult = await streamConversationalReply({
+          userId,
+          user,
+          prompt,
+          conversation,
+          timezone,
+          selectedDate,
+          selectedDayDate,
+          activeTab,
+          viewMode,
+          res,
+        });
+
+        if (streamedResult && !res.headersSent) {
+          await persistAssistantExchange({
+            userId,
+            prompt,
+            reply: streamedResult.reply,
+          });
+          return res.json(streamedResult);
+        }
+
+        return;
+      }
+
       result = await generateConversationalReply({
         userId,
+        user,
         prompt,
         conversation,
         timezone,
@@ -1224,6 +1624,14 @@ const handleAssistantMessage = async (req, res) => {
       });
     }
 
+    if (result?.reply && result.type !== "error") {
+      await persistAssistantExchange({
+        userId,
+        prompt,
+        reply: result.reply,
+      });
+    }
+
     return res.json(result);
   } catch (error) {
     console.error("Assistant error:", error);
@@ -1231,6 +1639,40 @@ const handleAssistantMessage = async (req, res) => {
   }
 };
 
+const getAssistantHistory = async (req, res) => {
+  try {
+    const messages = await getStoredAssistantConversation(req.user._id);
+    return res.json({ messages });
+  } catch (error) {
+    console.error("Assistant history error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const clearAssistantHistory = async (req, res) => {
+  try {
+    await AssistantConversation.deleteOne({ user: req.user._id });
+    return res.json({ message: "Assistant history cleared" });
+  } catch (error) {
+    console.error("Assistant history clear error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getAssistantStatus = async (req, res) => {
+  return res.json({
+    configured: Boolean(ASSISTANT_API_KEY),
+    provider: ASSISTANT_BASE_URL.includes("openai") ? "openai-compatible" : "custom",
+    model: ASSISTANT_MODEL,
+    baseUrl: ASSISTANT_BASE_URL,
+    memoryLimit: ASSISTANT_MEMORY_LIMIT,
+    streamEnabled: true,
+  });
+};
+
 module.exports = {
   handleAssistantMessage,
+  getAssistantHistory,
+  clearAssistantHistory,
+  getAssistantStatus,
 };

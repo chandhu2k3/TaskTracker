@@ -31,7 +31,7 @@ const getRedis = () => {
 // Longer TTLs = fewer SET operations = lower Redis command usage
 const TTL = {
   TASKS: 120,        // 2 min - not currently cached (auto-complete logic)
-  CATEGORIES: 86400, // 1 day - categories rarely change (manual update only)
+  CATEGORIES: 300,   // 5 min - includes task counts that change with task CRUD
   TEMPLATES: 604800, // 1 week - templates rarely change (manual update only)
   TODOS: 120,        // 2 min - todos get toggled often
   ANALYTICS: 1800,   // 30 min - analytics expensive but can be stale
@@ -108,9 +108,8 @@ const invalidateCache = async (pattern) => {
     const keysToDelete = [];
     
     if (pattern.includes(':tasks*')) {
-      // Tasks aren't cached (auto-complete logic), skip
-      console.log(`[CACHE INVALIDATE] ${pattern} → skipped (not cached)`);
-      return;
+      // Tasks aren't cached, but invalidate categories too (task counts)
+      keysToDelete.push(`user:${userId}:categories`);
     } else if (pattern.includes(':analytics*')) {
       // Analytics cache is NOT invalidated to save Redis commands
       // 5-minute TTL means max 5 min staleness, which is acceptable

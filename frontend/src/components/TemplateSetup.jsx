@@ -130,6 +130,34 @@ const TemplateSetup = ({
     ]);
   };
 
+  const copyTasksFromDay = (sourceDay) => {
+    if (!sourceDay) return;
+    const sourceTasks = templateTasks.filter((t) => t.day === sourceDay);
+    if (sourceTasks.length === 0) {
+      alert(`No tasks found on ${sourceDay}!`);
+      return;
+    }
+    const copiedTasks = sourceTasks.map((task) => ({
+      ...task,
+      day: selectedEditDay,
+    }));
+    setTemplateTasks([...templateTasks, ...copiedTasks]);
+  };
+
+  const copyTodosFromDay = (sourceDay) => {
+    if (!sourceDay) return;
+    const sourceTodos = templateTodos.filter((t) => t.day === sourceDay);
+    if (sourceTodos.length === 0) {
+      alert(`No quick todos found on ${sourceDay}!`);
+      return;
+    }
+    const copiedTodos = sourceTodos.map((todo) => ({
+      ...todo,
+      day: selectedEditDay,
+    }));
+    setTemplateTodos([...templateTodos, ...copiedTodos]);
+  };
+
   const updateTask = (index, field, value) => {
     console.log("Frontend - updateTask called:", {
       index,
@@ -446,9 +474,28 @@ const TemplateSetup = ({
                         selectedEditDay.slice(1)}{" "}
                       Tasks
                     </h4>
-                    <button onClick={addTask} className="btn-add-task">
-                      + Add Task
-                    </button>
+                    <div className="tasks-header-actions">
+                      <div className="copy-from-day">
+                        <select
+                          className="copy-day-select"
+                          defaultValue=""
+                          onChange={(e) => {
+                            copyTasksFromDay(e.target.value);
+                            e.target.value = "";
+                          }}
+                        >
+                          <option value="" disabled>Copy from…</option>
+                          {days.filter((d) => d !== selectedEditDay).map((d) => (
+                            <option key={d} value={d}>
+                              {d.charAt(0).toUpperCase() + d.slice(1)} ({templateTasks.filter((t) => t.day === d).length})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button onClick={addTask} className="btn-add-task">
+                        + Add Task
+                      </button>
+                    </div>
                   </div>
 
                   {templateTasks.filter((t) => t.day === selectedEditDay)
@@ -611,13 +658,32 @@ const TemplateSetup = ({
                         selectedEditDay.slice(1)}{" "}
                       Quick Todos
                     </h4>
-                    <button
-                      onClick={addTodo}
-                      className="btn-add-task btn-add-todo"
-                      type="button"
-                    >
-                      + Add Todo
-                    </button>
+                    <div className="tasks-header-actions">
+                      <div className="copy-from-day">
+                        <select
+                          className="copy-day-select"
+                          defaultValue=""
+                          onChange={(e) => {
+                            copyTodosFromDay(e.target.value);
+                            e.target.value = "";
+                          }}
+                        >
+                          <option value="" disabled>Copy from…</option>
+                          {days.filter((d) => d !== selectedEditDay).map((d) => (
+                            <option key={d} value={d}>
+                              {d.charAt(0).toUpperCase() + d.slice(1)} ({templateTodos.filter((t) => t.day === d).length})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        onClick={addTodo}
+                        className="btn-add-task btn-add-todo"
+                        type="button"
+                      >
+                        + Add Todo
+                      </button>
+                    </div>
                   </div>
 
                   {templateTodos.filter((todo) => todo.day === selectedEditDay)

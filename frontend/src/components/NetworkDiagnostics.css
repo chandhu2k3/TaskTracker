@@ -1,10 +1,8 @@
 .network-diagnostics-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,168 +11,101 @@
 }
 
 .network-diagnostics-modal {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  max-width: 600px;
+  background: var(--bg-secondary, #ffffff);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  max-width: 560px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 88vh;
   overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-strong);
+  border: 1px solid var(--border-light);
 }
 
-.dark-mode .network-diagnostics-modal {
-  background: #1a1a1a;
-  color: #f5f5f5;
-}
-
-.network-diagnostics-modal h2 {
-  margin: 0 0 10px 0;
-  font-size: 24px;
-}
-
-.api-url {
-  color: #666;
-  font-size: 12px;
-  margin-bottom: 20px;
-  word-break: break-all;
-}
-
-.dark-mode .api-url {
-  color: #999;
-}
+.network-diagnostics-modal h2 { margin: 0 0 8px; font-size: 1.3rem; color: var(--text-primary); }
+.api-url { color: var(--text-muted); font-size: 0.72rem; margin-bottom: 16px; word-break: break-all; }
 
 .btn-run-diagnostics {
   width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
+  padding: 10px;
+  background: var(--accent-primary, #000);
+  color: var(--bg-primary, #f8f9fa);
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 20px;
-  transition: all 0.2s;
+  margin-bottom: 16px;
+  transition: opacity 0.15s;
 }
 
-.btn-run-diagnostics:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.btn-run-diagnostics:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.btn-run-diagnostics:hover:not(:disabled) { opacity: 0.85; }
+.btn-run-diagnostics:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .diagnostics-results {
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-light);
 }
 
-.dark-mode .diagnostics-results {
-  background: #2a2a2a;
-}
-
-.test-result {
-  padding: 12px 0;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.dark-mode .test-result {
-  border-bottom-color: #444;
-}
-
-.test-result:last-child {
-  border-bottom: none;
-}
-
-.test-result strong {
-  display: block;
-  margin-bottom: 4px;
-  color: #374151;
-}
-
-.dark-mode .test-result strong {
-  color: #e5e7eb;
-}
+.test-result { padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+.test-result:last-child { border-bottom: none; }
+.test-result strong { display: block; margin-bottom: 3px; color: var(--text-primary); }
 
 .error-detail {
-  font-size: 12px;
-  color: #ef4444;
-  margin-top: 4px;
-  padding: 8px;
-  background: #fee2e2;
+  font-size: 0.72rem;
+  color: var(--danger);
+  margin-top: 3px;
+  padding: 6px;
+  background: rgba(186,26,26,0.04);
   border-radius: 4px;
-}
-
-.dark-mode .error-detail {
-  background: #7f1d1d;
-  color: #fecaca;
 }
 
 .health-details {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 8px;
-  padding: 8px;
-  background: white;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  padding: 6px;
+  background: var(--bg-secondary);
   border-radius: 4px;
-}
-
-.dark-mode .health-details {
-  background: #1a1a1a;
-  color: #9ca3af;
 }
 
 .recommendations {
-  margin-top: 20px;
-  padding: 15px;
-  background: #fffbeb;
-  border-left: 4px solid #e9b84a;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-left: 3px solid var(--accent-primary, #000);
   border-radius: 4px;
 }
 
-.dark-mode .recommendations {
-  background: #7c2d12;
-  border-left-color: #e9b84a;
-}
-
-.recommendations h3 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  color: #92400e;
-}
-
-.dark-mode .recommendations h3 {
-  color: #e9b84a;
-}
-
-.recommendations p {
-  margin: 8px 0;
-  font-size: 14px;
-  color: #78350f;
-}
-
-.dark-mode .recommendations p {
-  color: #fcd34d;
-}
+.recommendations h3 { margin: 0 0 8px; font-size: 0.92rem; color: var(--text-primary); }
+.recommendations p { margin: 6px 0; font-size: 0.82rem; color: var(--text-secondary); }
 
 .btn-close {
   width: 100%;
-  padding: 10px;
-  background: #6b7280;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
-.btn-close:hover {
-  background: #4b5563;
-}
+.btn-close:hover { background: var(--border-light); }
+
+/* Dark Mode */
+body[data-theme="dark"] .network-diagnostics-overlay { background: rgba(0,0,0,0.55); }
+body[data-theme="dark"] .network-diagnostics-modal { background: var(--bg-secondary); border-color: var(--border-light); color: var(--text-primary); }
+body[data-theme="dark"] .api-url { color: var(--text-muted); }
+body[data-theme="dark"] .diagnostics-results { background: var(--bg-tertiary); }
+body[data-theme="dark"] .test-result { border-bottom-color: var(--border-light); }
+body[data-theme="dark"] .test-result strong { color: var(--text-primary); }
+body[data-theme="dark"] .error-detail { background: rgba(239,68,68,0.08); color: #ef4444; }
+body[data-theme="dark"] .health-details { background: var(--bg-card); color: var(--text-muted); }
+body[data-theme="dark"] .recommendations { background: var(--bg-tertiary); border-left-color: var(--accent-primary); }
+body[data-theme="dark"] .recommendations h3 { color: var(--text-primary); }
+body[data-theme="dark"] .recommendations p { color: var(--text-muted); }

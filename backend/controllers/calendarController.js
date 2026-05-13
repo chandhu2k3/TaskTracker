@@ -1,6 +1,7 @@
 const { google } = require("googleapis");
 const User = require("../models/User");
 const Task = require("../models/Task");
+const Todo = require("../models/Todo");
 const {
   cacheKey,
   getCache,
@@ -164,6 +165,7 @@ exports.createEvent = async (req, res) => {
       durationMinutes = 30,
       reminderMinutes,
       taskId,
+      todoId,
     } = req.body;
     // Use user's timezone from header, fallback to UTC
     const userTimeZone = req.headers["x-timezone"] || "UTC";
@@ -260,9 +262,14 @@ exports.createEvent = async (req, res) => {
       resource: event,
     });
 
-    // Store the calendar event ID on the task to prevent duplicates
+    // Store the calendar event ID on the task/todo to prevent duplicates
     if (taskId) {
       await Task.findByIdAndUpdate(taskId, {
+        calendarEventId: response.data.id,
+      });
+    }
+    if (todoId) {
+      await Todo.findByIdAndUpdate(todoId, {
         calendarEventId: response.data.id,
       });
     }
@@ -327,6 +334,16 @@ exports.deleteEvent = async (req, res) => {
       calendarId: "primary",
       eventId: eventId,
     });
+
+    // Clear calendarEventId from any Task or Todo referencing this event
+    await Task.updateOne(
+      { user: req.user._id, calendarEventId: eventId },
+      { $set: { calendarEventId: null } }
+    );
+    await Todo.updateOne(
+      { user: req.user._id, calendarEventId: eventId },
+      { $set: { calendarEventId: null } }
+    );
 
     res.json({ success: true, message: "Event deleted from calendar" });
   } catch (error) {

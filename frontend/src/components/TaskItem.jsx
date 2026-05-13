@@ -93,7 +93,7 @@ const TaskItem = ({
   const progressDenominator =
     task.plannedTime > 0
       ? task.plannedTime
-      : isManuallyCompleted
+      : task.totalTime > 0
         ? task.totalTime
         : 1;
 
@@ -227,15 +227,28 @@ const TaskItem = ({
   // Toggle reminder picker on calendar button click
   const handleCalendarClick = (e) => {
     e.stopPropagation();
-    if (task.calendarEventId) {
-      toast.info("📅 This task already has a calendar reminder");
-      return;
-    }
     if (!showCalendarPicker && calendarBtnRef.current) {
       const rect = calendarBtnRef.current.getBoundingClientRect();
       setPickerPos({ top: rect.bottom + 4, left: rect.right - 170 });
     }
     setShowCalendarPicker(!showCalendarPicker);
+  };
+
+  // Remove calendar event
+  const handleRemoveFromCalendar = async () => {
+    if (!task.calendarEventId) return;
+    setShowCalendarPicker(false);
+    setCalendarStatus("adding");
+    try {
+      await calendarService.deleteEvent(task.calendarEventId);
+      task.calendarEventId = null; // Update local reference
+      setCalendarStatus(null);
+      toast.success("🗑 Removed from Google Calendar");
+    } catch (err) {
+      console.error("Calendar delete error:", err);
+      setCalendarStatus(null);
+      toast.error("Failed to remove calendar event");
+    }
   };
 
   // Add task to Google Calendar via API with chosen reminder
@@ -449,25 +462,37 @@ const TaskItem = ({
                   className="calendar-reminder-picker"
                   style={{ top: pickerPos.top, left: pickerPos.left }}
                 >
-                  <div className="calendar-picker-title">Set Reminder</div>
-                  <button onClick={() => handleAddToCalendar(0)}>
-                    No reminder
-                  </button>
-                  <button onClick={() => handleAddToCalendar(5)}>
-                    5 min before
-                  </button>
-                  <button onClick={() => handleAddToCalendar(10)}>
-                    10 min before
-                  </button>
-                  <button onClick={() => handleAddToCalendar(15)}>
-                    15 min before
-                  </button>
-                  <button onClick={() => handleAddToCalendar(30)}>
-                    30 min before
-                  </button>
-                  <button onClick={() => handleAddToCalendar(60)}>
-                    1 hour before
-                  </button>
+                  {task.calendarEventId ? (
+                    <>
+                      <div className="calendar-picker-title">Calendar Event</div>
+                      <div className="calendar-event-status">✅ In Calendar</div>
+                      <button className="btn-remove-calendar" onClick={handleRemoveFromCalendar}>
+                        🗑 Remove from Calendar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="calendar-picker-title">Set Reminder</div>
+                      <button onClick={() => handleAddToCalendar(0)}>
+                        No reminder
+                      </button>
+                      <button onClick={() => handleAddToCalendar(5)}>
+                        5 min before
+                      </button>
+                      <button onClick={() => handleAddToCalendar(10)}>
+                        10 min before
+                      </button>
+                      <button onClick={() => handleAddToCalendar(15)}>
+                        15 min before
+                      </button>
+                      <button onClick={() => handleAddToCalendar(30)}>
+                        30 min before
+                      </button>
+                      <button onClick={() => handleAddToCalendar(60)}>
+                        1 hour before
+                      </button>
+                    </>
+                  )}
                 </div>,
                 document.body,
               )}
@@ -575,8 +600,8 @@ const TaskItem = ({
               )}
             </div>
           )}
-          <div
-            className={`toggle-switch ${task.isActive ? "active" : ""} ${
+          <button
+            className={`btn-play-pause ${task.isActive ? "active" : ""} ${
               !canToggle ? "disabled" : ""
             }`}
             onClick={() => {
@@ -584,11 +609,20 @@ const TaskItem = ({
                 onToggle(task._id, !task.isActive);
               }
             }}
-            title={!canToggle ? "You can only start/stop today's tasks" : ""}
+            title={
+              !canToggle
+                ? "You can only start/stop today's tasks"
+                : task.isActive
+                  ? "Pause task"
+                  : "Start task"
+            }
             draggable="false"
+            disabled={!canToggle}
           >
-            <div className="toggle-slider"></div>
-          </div>
+            <span className="material-symbols-outlined">
+              {task.isActive ? "pause" : "play_arrow"}
+            </span>
+          </button>
           <button
             className="btn-delete"
             onClick={() => {
@@ -610,6 +644,10 @@ const TaskItem = ({
       <div className="task-info">
         {/* Progress bar showing actual vs planned time */}
         <div className="task-progress-container">
+          <span className="progress-text">
+            {task.isActive ? "" : ""}
+            {formatTime(calculateTime())}
+          </span>
           <div className="progress-bar-wrapper">
             <div
               className="progress-bar-fill"
@@ -619,15 +657,10 @@ const TaskItem = ({
                   100,
                 )}%`,
               }}
-            >
-              <span className="progress-text">
-                {task.isActive ? "⏱️ " : "✓ "}
-                {formatTime(calculateTime())}
-              </span>
-            </div>
+            />
           </div>
           <span className="planned-time-label">
-            🎯 {formatTime(task.plannedTime || task.totalTime || 0)}
+            {formatTime(task.plannedTime || task.totalTime || 0)}
           </span>
         </div>
       </div>
