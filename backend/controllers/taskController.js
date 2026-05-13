@@ -114,7 +114,7 @@ const getTasksByWeek = async (req, res) => {
       date: { $gte: startDate, $lte: endDate },
       deleted: { $ne: true },
     })
-      .sort({ date: 1, order: 1, createdAt: 1 })
+      .sort({ date: 1, scheduledStartTime: 1, order: 1, createdAt: 1 })
       .lean();
 
     // Auto-complete automated tasks for today and past dates

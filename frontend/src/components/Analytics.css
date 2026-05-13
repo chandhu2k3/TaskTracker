@@ -93,28 +93,22 @@
   gap: 6px;
 }
 
-/* ─── Day Breakdown — Vertical bar chart style ─── */
-.day-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.day-stat-detailed {
+.analytics-charts-grid {
   display: grid;
-  grid-template-columns: 80px 1fr auto;
-  gap: 12px;
-  align-items: center;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
 }
 
-.day-name {
-  font-weight: 600;
-  font-size: 0.78rem;
-  color: var(--text-secondary, #4d453f);
-  text-transform: capitalize;
+@media (max-width: 900px) {
+  .analytics-charts-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.progress-bars-container { display: flex; flex-direction: column; gap: 4px; }
+.chart-container {
+  font-family: inherit;
+}
 
 .bar-row {
   display: flex;

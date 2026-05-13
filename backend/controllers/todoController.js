@@ -50,6 +50,18 @@ const getTodos = async (req, res) => {
       }),
     );
 
+    updatedTodos.sort((a, b) => {
+      if (a.isOverdue && !b.isOverdue) return -1;
+      if (!a.isOverdue && b.isOverdue) return 1;
+      
+      if (a.deadline && b.deadline) {
+        if (a.deadline < b.deadline) return -1;
+        if (a.deadline > b.deadline) return 1;
+      }
+      
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
     res.json(updatedTodos);
   } catch (error) {
     res.status(500).json({ message: error.message });

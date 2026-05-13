@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "./Analytics.css";
 
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+
 const Analytics = ({ analytics, type, todos = [] }) => {
   const formatTime = (milliseconds) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
@@ -14,7 +16,6 @@ const Analytics = ({ analytics, type, todos = [] }) => {
     }
   };
 
-  // Calculate todo stats
   const totalTodos = todos.length;
   const completedTodos = todos.filter(todo => todo.completed).length;
   const missedTodos = todos.filter(todo => !todo.completed).length;
@@ -29,6 +30,28 @@ const Analytics = ({ analytics, type, todos = [] }) => {
   if (!analytics) {
     return <div className="analytics-loading">Loading analytics...</div>;
   }
+
+  // Prepare recharts data
+  const trendData = analytics.byDay
+    ? Object.entries(analytics.byDay).map(([day, data]) => {
+        const actualMins = Math.round(data.totalTime / 60000);
+        const plannedMins = Math.round((data.plannedTime || 0) / 60000);
+        
+        let productivity = 0;
+        if (plannedMins > 0) {
+          productivity = Math.round((actualMins / plannedMins) * 100);
+        } else if (actualMins > 0) {
+          productivity = 100; // Unplanned work
+        }
+
+        return {
+          name: day.substring(0, 3).toUpperCase(),
+          Productivity: productivity,
+          Actual: actualMins,
+          Target: plannedMins
+        };
+      })
+    : [];
 
   return (
     <div className="analytics-container">
@@ -65,189 +88,158 @@ const Analytics = ({ analytics, type, todos = [] }) => {
             </div>
           </div>
 
-          <div className="analytics-section">
-            <h4>Productivity Trend</h4>
-            <div className="day-breakdown">
-              {analytics.byDay &&
-                Object.entries(analytics.byDay).map(([day, data]) => (
-                  <div key={day} className="day-stat-detailed">
-                    <div className="day-name">
-                      {day.charAt(0).toUpperCase() + day.slice(1)}
-                    </div>
-                    <div className="progress-bars-container">
-                      <div className="bar-row">
-                        <span className="bar-label">Actual:</span>
-                        <div className="bar-wrapper">
-                          <div
-                            className="bar-fill actual"
-                            style={{
-                              width: formatPercentage(
-                                data.totalTime,
-                                Math.max(data.plannedTime, data.totalTime) || 1
-                              ),
-                            }}
-                          />
-                        </div>
-                        <span className="bar-value">
-                          {formatTime(data.totalTime)}
-                        </span>
-                      </div>
-                      <div className="bar-row">
-                        <span className="bar-label">Target:</span>
-                        <div className="bar-wrapper">
-                          <div
-                            className="bar-fill target"
-                            style={{
-                              width: formatPercentage(
-                                data.plannedTime,
-                                Math.max(data.plannedTime, data.totalTime) || 1
-                              ),
-                            }}
-                          />
-                        </div>
-                        <span className="bar-value">
-                          {formatTime(data.plannedTime || 0)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="day-meta">
-                      {data.taskCount} tasks • {data.sessions} sessions
-                    </div>
-                  </div>
-                ))}
+          <div className="analytics-charts-grid">
+            <div className="analytics-section">
+              <h4>Productivity Trend</h4>
+              <div className="chart-container" style={{ height: 280, marginTop: 20 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barCategoryGap="10%">
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#7f756e' }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#7f756e' }} tickFormatter={(val) => `${val}%`} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e1e3e4', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                      formatter={(value, name) => {
+                        if (name === 'Productivity') return [`${value}%`, name];
+                        return [`${value} min`, name];
+                      }}
+                    />
+                    <Bar dataKey="Productivity" fill="#191c1d" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
 
-          <div className="analytics-section">
-            <h4>Category Split</h4>
-            <div className="pie-chart-container">
-              <div className="pie-chart-wrapper">
-                <svg
-                  viewBox="0 0 200 200"
-                  className="pie-chart"
-                  width="300"
-                  height="300"
-                >
-                  {(() => {
-                    if (
-                      !analytics.byCategory ||
-                      Object.keys(analytics.byCategory).length === 0
-                    ) {
-                      return (
-                        <>
-                          <circle cx="100" cy="100" r="80" fill="#e5e7eb" />
-                          <text
-                            x="100"
-                            y="105"
-                            textAnchor="middle"
-                            fill="#64748b"
-                            fontSize="14"
-                          >
-                            No data
-                          </text>
-                        </>
-                      );
-                    }
-
-                    const categoryData = Object.entries(analytics.byCategory);
-                    const total = categoryData.reduce(
-                      (sum, [, data]) => sum + data.totalTime,
-                      0
-                    );
-
-                    if (total === 0) {
-                      return (
-                        <>
-                          <circle cx="100" cy="100" r="80" fill="#e5e7eb" />
-                          <text
-                            x="100"
-                            y="105"
-                            textAnchor="middle"
-                            fill="#64748b"
-                            fontSize="14"
-                          >
-                            No time logged
-                          </text>
-                        </>
-                      );
-                    }
-
-                    const colors = [
-                      "#191c1d",
-                      "#685c53",
-                      "#9e9e9e",
-                      "#d0c4bc",
-                      "#4d453f",
-                      "#b8b0a8",
-                    ];
-                    let cumulativeAngle = 0;
-
-                    return categoryData.map(([category, data], index) => {
-                      const percentageValue = (data.totalTime / total) * 100;
-                      const angle = (percentageValue / 100) * 360;
-                      const startAngle = cumulativeAngle - 90;
-                      const endAngle = startAngle + angle;
-
-                      const startRadians = (startAngle * Math.PI) / 180;
-                      const endRadians = (endAngle * Math.PI) / 180;
-                      const midAngle = startAngle + angle / 2;
-                      const midRadians = (midAngle * Math.PI) / 180;
-
-                      const radius = 80;
-                      const x1 = 100 + radius * Math.cos(startRadians);
-                      const y1 = 100 + radius * Math.sin(startRadians);
-                      const x2 = 100 + radius * Math.cos(endRadians);
-                      const y2 = 100 + radius * Math.sin(endRadians);
-
-                      // Calculate offset for pop-out effect
-                      const isHovered = hoveredCategory === category;
-                      const offset = isHovered ? 8 : 0;
-                      const offsetX = offset * Math.cos(midRadians);
-                      const offsetY = offset * Math.sin(midRadians);
-
-                      // Label position
-                      const labelRadius = radius * 0.7;
-                      const lx = 100 + labelRadius * Math.cos(midRadians) + offsetX;
-                      const ly = 100 + labelRadius * Math.sin(midRadians) + offsetY;
-
-                      const largeArc = angle > 180 ? 1 : 0;
-                      cumulativeAngle += angle;
-
-                      return (
-                        <g key={category}>
-                          <path
-                            d={`M 100 100 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                            fill={colors[index % colors.length]}
-                            style={{ 
-                              transform: `translate(${offsetX}px, ${offsetY}px)`,
-                              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                              cursor: 'pointer',
-                              filter: isHovered ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' : 'none'
-                            }}
-                            onMouseEnter={() => setHoveredCategory(category)}
-                            onMouseLeave={() => setHoveredCategory(null)}
-                          />
-                          {percentageValue > 5 && (
+            <div className="analytics-section">
+              <h4>Category Split</h4>
+              <div className="pie-chart-container">
+                <div className="pie-chart-wrapper">
+                  <svg
+                    viewBox="0 0 200 200"
+                    className="pie-chart"
+                    width="260"
+                    height="260"
+                  >
+                    {(() => {
+                      if (
+                        !analytics.byCategory ||
+                        Object.keys(analytics.byCategory).length === 0
+                      ) {
+                        return (
+                          <>
+                            <circle cx="100" cy="100" r="80" fill="#e5e7eb" />
                             <text
-                              x={lx}
-                              y={ly}
+                              x="100"
+                              y="105"
                               textAnchor="middle"
-                              alignmentBaseline="middle"
-                              fill="#fff"
-                              fontSize="10"
-                              fontWeight="700"
-                              style={{ 
-                                pointerEvents: 'none',
-                                opacity: isHovered ? 1 : 0.8,
-                                transition: 'all 0.3s'
-                              }}
+                              fill="#64748b"
+                              fontSize="14"
                             >
-                              {Math.round(percentageValue)}%
+                              No data
                             </text>
-                          )}
-                        </g>
+                          </>
+                        );
+                      }
+
+                      const categoryData = Object.entries(analytics.byCategory);
+                      const total = categoryData.reduce(
+                        (sum, [, data]) => sum + data.totalTime,
+                        0
                       );
-                    });
+
+                      if (total === 0) {
+                        return (
+                          <>
+                            <circle cx="100" cy="100" r="80" fill="#e5e7eb" />
+                            <text
+                              x="100"
+                              y="105"
+                              textAnchor="middle"
+                              fill="#64748b"
+                              fontSize="14"
+                            >
+                              No time logged
+                            </text>
+                          </>
+                        );
+                      }
+
+                      const colors = [
+                        "#191c1d",
+                        "#685c53",
+                        "#9e9e9e",
+                        "#d0c4bc",
+                        "#4d453f",
+                        "#b8b0a8",
+                      ];
+                      let cumulativeAngle = 0;
+
+                      return categoryData.map(([category, data], index) => {
+                        const percentageValue = (data.totalTime / total) * 100;
+                        const angle = (percentageValue / 100) * 360;
+                        const startAngle = cumulativeAngle - 90;
+                        const endAngle = startAngle + angle;
+
+                        const startRadians = (startAngle * Math.PI) / 180;
+                        const endRadians = (endAngle * Math.PI) / 180;
+                        const midAngle = startAngle + angle / 2;
+                        const midRadians = (midAngle * Math.PI) / 180;
+
+                        const radius = 80;
+                        const x1 = 100 + radius * Math.cos(startRadians);
+                        const y1 = 100 + radius * Math.sin(startRadians);
+                        const x2 = 100 + radius * Math.cos(endRadians);
+                        const y2 = 100 + radius * Math.sin(endRadians);
+
+                        // Calculate offset for pop-out effect
+                        const isHovered = hoveredCategory === category;
+                        const offset = isHovered ? 8 : 0;
+                        const offsetX = offset * Math.cos(midRadians);
+                        const offsetY = offset * Math.sin(midRadians);
+
+                        // Label position
+                        const labelRadius = radius * 0.7;
+                        const lx = 100 + labelRadius * Math.cos(midRadians) + offsetX;
+                        const ly = 100 + labelRadius * Math.sin(midRadians) + offsetY;
+
+                        const largeArc = angle > 180 ? 1 : 0;
+                        cumulativeAngle += angle;
+
+                        return (
+                          <g key={category}>
+                            <path
+                              d={`M 100 100 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                              fill={colors[index % colors.length]}
+                              style={{ 
+                                transform: `translate(${offsetX}px, ${offsetY}px)`,
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                cursor: 'pointer',
+                                filter: isHovered ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' : 'none'
+                              }}
+                              onMouseEnter={() => setHoveredCategory(category)}
+                              onMouseLeave={() => setHoveredCategory(null)}
+                            />
+                            {percentageValue > 5 && (
+                              <text
+                                x={lx}
+                                y={ly}
+                                textAnchor="middle"
+                                alignmentBaseline="middle"
+                                fill="#fff"
+                                fontSize="10"
+                                fontWeight="700"
+                                style={{ 
+                                  pointerEvents: 'none',
+                                  opacity: isHovered ? 1 : 0.8,
+                                  transition: 'all 0.3s'
+                                }}
+                              >
+                                {Math.round(percentageValue)}%
+                              </text>
+                            )}
+                          </g>
+                        );
+                      });
                   })()}
                   {/* Donut center cutout */}
                   <circle cx="100" cy="100" r="55" fill="var(--bg-card, #ffffff)" />
@@ -265,8 +257,9 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                     ) : null;
                   })()}
                 </svg>
-                <div className="pie-legend">
-                  {analytics.byCategory &&
+              </div>
+              <div className="pie-legend">
+                {analytics.byCategory &&
                     Object.entries(analytics.byCategory).map(
                       ([category, data], index) => {
                         const colors = [
@@ -351,6 +344,8 @@ const Analytics = ({ analytics, type, todos = [] }) => {
           </div>
         </>
       )}
+      
+
 
       {type === "month" && (
         <>
