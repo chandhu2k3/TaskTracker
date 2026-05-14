@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+well import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -808,9 +808,10 @@ const Dashboard = () => {
     try {
       await templateService.createTemplate(templateData);
       toast.success("Template created successfully");
-      loadTemplates();
+      await loadTemplates();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create template");
+      throw error; // Re-throw to inform caller
     } finally {
       setCreatingTemplate(false);
     }
@@ -825,6 +826,7 @@ const Dashboard = () => {
       await loadTemplates(); // Wait for templates to reload
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update template");
+      throw error; // Re-throw to inform caller
     } finally {
       setUpdatingTemplate((prev) => {
         const newState = { ...prev };

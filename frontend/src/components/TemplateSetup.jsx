@@ -244,13 +244,17 @@ const TemplateSetup = ({
       quickTodos: validTodos,
     };
 
-    if (editingTemplate) {
-      onUpdateTemplate(editingTemplate._id, templateData);
-    } else {
-      onCreateTemplate(templateData);
-    }
-
-    setShowModal(false);
+    try {
+      if (editingTemplate) {
+        await onUpdateTemplate(editingTemplate._id, templateData);
+        setShowModal(false);
+      } else {
+        await onCreateTemplate(templateData);
+        setShowModal(false);
+      }
+    } catch (err) {
+      // Error handled by the parent
+    };
   };
 
   const handleDelete = (templateId) => {
