@@ -57,8 +57,8 @@ const TemplateSetup = ({
     const templateToImport = templates.find((t) => t._id === importTemplateId);
     if (!templateToImport) return;
 
-    // Import all tasks from the selected template with defaults
-    const importedTasks = (templateToImport.tasks || []).map((task) => ({
+    // Import all tasks from the selected template with defaults, strip _id
+    const importedTasks = (templateToImport.tasks || []).map(({ _id, ...task }) => ({
       ...task,
       isAutomated: task.isAutomated || false,
       completionCount: task.completionCount || 0,
@@ -66,7 +66,7 @@ const TemplateSetup = ({
       reminderMinutes: task.reminderMinutes || 0,
     }));
 
-    const importedTodos = (templateToImport.quickTodos || []).map((todo) => ({
+    const importedTodos = (templateToImport.quickTodos || []).map(({ _id, ...todo }) => ({
       ...todo,
       deadlineOffsetDays: todo.deadlineOffsetDays || 0,
     }));
@@ -137,7 +137,7 @@ const TemplateSetup = ({
       alert(`No tasks found on ${sourceDay}!`);
       return;
     }
-    const copiedTasks = sourceTasks.map((task) => ({
+    const copiedTasks = sourceTasks.map(({ _id, ...task }) => ({
       ...task,
       day: selectedEditDay,
     }));
@@ -151,7 +151,7 @@ const TemplateSetup = ({
       alert(`No quick todos found on ${sourceDay}!`);
       return;
     }
-    const copiedTodos = sourceTodos.map((todo) => ({
+    const copiedTodos = sourceTodos.map(({ _id, ...todo }) => ({
       ...todo,
       day: selectedEditDay,
     }));

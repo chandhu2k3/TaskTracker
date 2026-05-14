@@ -8,8 +8,8 @@ const Onboarding = ({ onComplete }) => {
   const steps = [
     {
       icon: '👋',
-      title: 'Welcome to Task Tracker!',
-      description: 'Your personal productivity companion. Let\'s take a quick tour of the features that will help you stay organized and track your time effectively.',
+      title: 'Welcome to Tracku!',
+      description: 'Your personal daily task and productivity manager. Let\'s quickly set up your workspace.',
       tip: 'This tour only takes 30 seconds!'
     },
     {

@@ -120,7 +120,7 @@ app.use("/api/assistant", require("./routes/assistant"));
 // Health check
 app.get("/", (req, res) => {
   res.json({
-    message: "Task Tracker API is running",
+    message: "Tracku API is running",
     status: "healthy",
     timestamp: new Date().toISOString(),
   });

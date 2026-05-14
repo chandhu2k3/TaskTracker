@@ -239,7 +239,7 @@ exports.createEvent = async (req, res) => {
 
     const event = {
       summary: title,
-      description: description || "Task from Task Tracker Pro",
+      description: description || "Task from Tracku",
       start: {
         dateTime: startDateTime.toISOString(),
         timeZone: userTimeZone,

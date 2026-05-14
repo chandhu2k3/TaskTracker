@@ -756,7 +756,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleApplyTemplate = async () => {
+  const handleApplyTemplate = async (templateIdFromProp) => {
     if (!selectedDate) {
       toast.error("Please select a week first");
       return;
@@ -767,7 +767,11 @@ const Dashboard = () => {
       return;
     }
 
-    if (!selectedTemplateForApply) {
+    const templateIdToApply = typeof templateIdFromProp === 'string' 
+      ? templateIdFromProp 
+      : selectedTemplateForApply;
+
+    if (!templateIdToApply) {
       setShowTemplateModal(true);
       return;
     }
@@ -781,7 +785,7 @@ const Dashboard = () => {
     setLoading(true);
     try {
       await templateService.applyTemplate(
-        selectedTemplateForApply,
+        templateIdToApply,
         selectedDate.year,
         selectedDate.month,
         selectedDate.week,
@@ -1163,10 +1167,10 @@ const Dashboard = () => {
           >
             <img
               src="\logo.svg"
-              alt="Task Tracker Pro Logo"
+              alt="Tracku Logo"
               className="app-logo"
             />
-            <h1>Task Tracker</h1>
+            <h1>Tracku</h1>
           </div>
         </div>
         {/* Mobile right side: Sleep + Theme Toggle */}

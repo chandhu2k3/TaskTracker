@@ -251,7 +251,7 @@ const calendarService = {
     
     return `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Task Tracker//NONSGML v1.0//EN
+PRODID:-//Tracku//NONSGML v1.0//EN
 BEGIN:VEVENT
 UID:${uid}
 DTSTAMP:${formatICSDate(new Date())}

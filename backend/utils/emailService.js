@@ -14,7 +14,7 @@ const FRONTEND_URL = (
 const BACKEND_URL =
   process.env.BACKEND_URL ||
   (isProd ? "https://your-backend.vercel.app" : "http://localhost:5000");
-const FROM_NAME = "Task Tracker";
+const FROM_NAME = "Tracku";
 
 // Lazily created transporter — skips gracefully if Gmail creds aren't set (local dev)
 let _transporter = null;
@@ -50,7 +50,7 @@ const sendVerificationEmail = async (name, email, token) => {
   await transporter.sendMail({
     from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: "Verify your Task Tracker account",
+    subject: "Verify your Tracku account",
     html: `
       <!DOCTYPE html>
       <html>
@@ -65,7 +65,7 @@ const sendVerificationEmail = async (name, email, token) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#1e293b;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                 <tr>
                   <td style="background:linear-gradient(135deg,#F59E0B,#FBBF24);padding:32px;text-align:center;">
-                    <h1 style="margin:0;color:#1a1a2e;font-size:28px;font-weight:800;letter-spacing:-0.5px;">✓ Task Tracker</h1>
+                    <h1 style="margin:0;color:#1a1a2e;font-size:28px;font-weight:800;letter-spacing:-0.5px;">✓ Tracku</h1>
                     <p style="margin:6px 0 0;color:#92400e;font-size:14px;font-weight:500;">Your productivity companion</p>
                   </td>
                 </tr>
@@ -87,7 +87,7 @@ const sendVerificationEmail = async (name, email, token) => {
                 </tr>
                 <tr>
                   <td style="background:#0f172a;padding:20px 32px;text-align:center;">
-                    <p style="margin:0;color:#475569;font-size:12px;">© ${new Date().getFullYear()} Task Tracker Pro. All rights reserved.</p>
+                    <p style="margin:0;color:#475569;font-size:12px;">© ${new Date().getFullYear()} Tracku. All rights reserved.</p>
                   </td>
                 </tr>
               </table>
@@ -117,7 +117,7 @@ const sendWelcomeEmail = async (name, email) => {
     .sendMail({
       from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: "Welcome to Task Tracker Pro! 🎉",
+      subject: "Welcome to Tracku! 🎉",
       html: `
       <!DOCTYPE html>
       <html>
@@ -128,7 +128,7 @@ const sendWelcomeEmail = async (name, email) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#1e293b;border-radius:16px;overflow:hidden;">
                 <tr>
                   <td style="background:linear-gradient(135deg,#F59E0B,#FBBF24);padding:32px;text-align:center;">
-                    <h1 style="margin:0;color:#1a1a2e;font-size:28px;font-weight:800;">✓ Task Tracker</h1>
+                    <h1 style="margin:0;color:#1a1a2e;font-size:28px;font-weight:800;">✓ Tracku</h1>
                   </td>
                 </tr>
                 <tr>
@@ -145,7 +145,7 @@ const sendWelcomeEmail = async (name, email) => {
                 </tr>
                 <tr>
                   <td style="background:#0f172a;padding:20px 32px;text-align:center;">
-                    <p style="margin:0;color:#475569;font-size:12px;">© ${new Date().getFullYear()} Task Tracker Pro. All rights reserved.</p>
+                    <p style="margin:0;color:#475569;font-size:12px;">© ${new Date().getFullYear()} Tracku. All rights reserved.</p>
                   </td>
                 </tr>
               </table>

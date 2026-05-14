@@ -431,7 +431,7 @@ const applyTemplate = async (req, res) => {
               calendarId: "primary",
               resource: {
                 summary: `📋 ${existing.name}`,
-                description: `Task from Task Tracker Pro template: ${template.name}`,
+                description: `Task from Tracku template: ${template.name}`,
                 start: {
                   dateTime: startDt.toISOString(),
                   timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -582,7 +582,7 @@ const applyTemplate = async (req, res) => {
               calendarId: "primary",
               resource: {
                 summary: `📋 ${newTask.name}`,
-                description: `Task from Task Tracker Pro template: ${template.name}`,
+                description: `Task from Tracku template: ${template.name}`,
                 start: {
                   dateTime: startDt2.toISOString(),
                   timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,

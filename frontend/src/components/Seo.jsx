@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 
-const SITE_NAME = "Task Tracker Pro";
+const SITE_NAME = "Tracku";
 const SITE_URL = "https://task-tracker-frontend-lime.vercel.app";
 
 const Seo = ({ title, description, path = "/", noindex = false }) => {
