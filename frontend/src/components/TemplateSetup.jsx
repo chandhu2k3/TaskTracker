@@ -214,7 +214,7 @@ const TemplateSetup = ({
     setDraggedTaskIndex(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!templateName.trim()) {
       alert("Please provide a template name!");
       return;
