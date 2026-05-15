@@ -142,13 +142,13 @@ const DayCard = forwardRef(
 
     // Check if this day card is for today
     const isToday = () => {
-      const cardDate = new Date(date);
       const today = new Date();
-      return (
-        cardDate.getFullYear() === today.getFullYear() &&
-        cardDate.getMonth() === today.getMonth() &&
-        cardDate.getDate() === today.getDate()
-      );
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
+      
+      return date === todayStr;
     };
 
     const stats = calculateDayStats();

@@ -4,7 +4,7 @@ const Task = require("./models/Task");
 require("dotenv").config({ path: ".env.development" });
 
 async function test() {
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(process.env.MONGODB_URI);
   console.log("Connected");
   
   // Find a user and their template

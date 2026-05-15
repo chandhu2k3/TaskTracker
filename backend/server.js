@@ -96,7 +96,10 @@ app.use("/api", async (req, res, next) => {
   // Skip DB check for ping (no DB needed)
   if (req.path === "/ping") return next();
   try {
-    await connectDB();
+    // Only wait for connection if not already connected
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
     next();
   } catch (err) {
     console.error("❌ DB connection failed for request:", req.path);

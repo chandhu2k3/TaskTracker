@@ -9,8 +9,8 @@ const api = axios.create({
 });
 
 // Retry configuration
-const MAX_RETRIES = 5; // More retries for unreliable networks
-const RETRY_DELAY_BASE = 2000; // 2 seconds base delay
+const MAX_RETRIES = 2; // Reduced to prevent server flooding (thundering herd)
+const RETRY_DELAY_BASE = 3000; // 3 seconds base delay for more backoff room
 
 // Check if an error is retryable
 const isRetryable = (error) => {

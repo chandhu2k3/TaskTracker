@@ -173,6 +173,19 @@ const createDateTime = (dateString, hour, minute, timezone = DEFAULT_TIMEZONE) =
 };
 
 /**
+ * Create a date with specific time slot (HH:mm) in user's timezone
+ * @param {string} dateString - Date in YYYY-MM-DD format
+ * @param {string} timeSlot - Time in HH:mm format
+ * @param {string} timezone 
+ * @returns {Date}
+ */
+const createDateTimeFromSlot = (dateString, timeSlot, timezone = DEFAULT_TIMEZONE) => {
+  if (!timeSlot) return null;
+  const [hour, minute] = timeSlot.split(":").map(Number);
+  return createDateTime(dateString, hour, minute, timezone);
+};
+
+/**
  * Format duration in milliseconds to human readable string
  * @param {number} ms - Duration in milliseconds
  * @returns {string} - e.g., "2h 30m"
@@ -201,5 +214,6 @@ module.exports = {
   isPast,
   isTodayOrPast,
   createDateTime,
+  createDateTimeFromSlot,
   formatDuration,
 };

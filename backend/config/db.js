@@ -6,7 +6,6 @@ let cachedConnection = null;
 const connectDB = async () => {
   // If we have a cached connection and it's ready, use it
   if (cachedConnection && mongoose.connection.readyState === 1) {
-    console.log('✅ Using cached database connection');
     return cachedConnection;
   }
 

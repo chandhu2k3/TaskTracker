@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -24,7 +24,15 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   // Helper function to get local date string (not UTC)
-  const getLocalDateString = (date = new Date()) => {
+  const getLocalDateString = (dateInput = new Date()) => {
+    // If it's a string from the backend (ISO format), extract the date part directly
+    // This prevents local timezone shifts for YYYY-MM-DD comparisons
+    if (typeof dateInput === 'string' && dateInput.includes('T')) {
+      return dateInput.split('T')[0];
+    }
+    
+    // Otherwise handle as Date object
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
@@ -191,7 +199,7 @@ const Dashboard = () => {
   }, []);
 
   // Load todos from API
-  const loadTodos = async () => {
+  const loadTodos = useCallback(async () => {
     try {
       const data = await todoService.getTodos();
       setTodos(Array.isArray(data) ? data : []);
@@ -199,7 +207,7 @@ const Dashboard = () => {
       console.log("Failed to load todos:", error.message);
       setTodos([]);
     }
-  };
+  }, []);
 
   // Check Google Calendar connection status
   const checkCalendarConnection = async () => {
@@ -295,7 +303,7 @@ const Dashboard = () => {
     };
   }, [tasks]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const data = await categoryService.getCategories();
       setCategories(Array.isArray(data) ? data : []);
@@ -306,9 +314,9 @@ const Dashboard = () => {
         navigate("/login");
       }
     }
-  };
+  }, [navigate]);
 
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     try {
       const data = await templateService.getTemplates();
       setTemplates(Array.isArray(data) ? data : []);
@@ -316,9 +324,9 @@ const Dashboard = () => {
       console.log("Failed to load templates:", error);
       setTemplates([]);
     }
-  };
+  }, []);
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!selectedDate || selectedDate.month === null || !selectedDate.week) {
       console.log("Cannot load tasks: incomplete date selection", selectedDate);
       return;
@@ -344,7 +352,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate, navigate]);
 
   // Scroll to specific day card when scrollToDate is set
   useEffect(() => {
@@ -359,7 +367,7 @@ const Dashboard = () => {
     }
   }, [scrollToDate, loading]);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     if (!selectedDate) return;
 
     try {
@@ -393,7 +401,7 @@ const Dashboard = () => {
           (error.response?.data?.message || error.message),
       );
     }
-  };
+  }, [selectedDate, analyticsType, selectedAnalyticsCategory]);
 
   const handleAssistantRefresh = async () => {
     await loadTasks();
@@ -1032,10 +1040,8 @@ const Dashboard = () => {
   const weekDays = getWeekDays();
   const groupedTasks = weekDays.reduce((acc, day) => {
     acc[day.date] = tasks.filter((task) => {
-      // Convert task date to YYYY-MM-DD format for comparison (use local date)
-      const taskDate = task.date
-        ? getLocalDateString(new Date(task.date))
-        : null;
+      // Use the helper to get YYYY-MM-DD without local time bias
+      const taskDate = task.date ? getLocalDateString(task.date) : null;
       return taskDate === day.date;
     });
     return acc;

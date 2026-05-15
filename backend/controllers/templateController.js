@@ -10,6 +10,8 @@ const {
   invalidateCache,
   TTL,
 } = require("../config/redis");
+const tz = require("../utils/timezone");
+const { DateTime } = require("luxon");
 
 // Helper: get authenticated Google Calendar client
 const getCalendarClient = async (userId) => {
@@ -45,20 +47,7 @@ const getCalendarClient = async (userId) => {
   return google.calendar({ version: "v3", auth: oauth2Client });
 };
 
-// Helper function to get day name from date
-const getDayName = (date) => {
-  const days = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-  return days[new Date(date).getDay()];
-};
-
+// Map template days to actual day of week indices (0 = Sunday, 6 = Saturday)
 const dayToWeekday = {
   sunday: 0,
   monday: 1,
@@ -67,19 +56,6 @@ const dayToWeekday = {
   thursday: 4,
   friday: 5,
   saturday: 6,
-};
-
-const formatDate = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const addDays = (date, days) => {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
 };
 
 // @desc    Get all user's templates
@@ -261,6 +237,7 @@ const deleteTemplate = async (req, res) => {
 const applyTemplate = async (req, res) => {
   try {
     const { id, year, month, weekNumber } = req.params;
+    const timezone = tz.getTimezoneFromRequest(req);
 
     // Get template
     const template = await TaskTemplate.findOne({
@@ -278,23 +255,18 @@ const applyTemplate = async (req, res) => {
         .json({ message: "Template not found or has no tasks/quick todos" });
     }
 
-    // Calculate week dates (Week 1: 1-7, Week 2: 8-14, Week 3: 15-21, Week 4: 22-end)
-    // Always 4 weeks per month
-    const startDay = 1 + (parseInt(weekNumber) - 1) * 7;
+    // Calculate week dates using timezone utilities
+    const { startDate } = tz.getWeekDates(
+      parseInt(year),
+      parseInt(month),
+      parseInt(weekNumber),
+      timezone,
+    );
 
-    // Get the actual day of week for the start date (0 = Sunday, 1 = Monday, etc.)
-    const startDate = new Date(parseInt(year), parseInt(month), startDay);
+    const startDay = startDate.getDate();
     const startDayOfWeek = startDate.getDay();
 
-    // Map template days to actual day of week indices (0 = Sunday, 6 = Saturday)
-    // Get calendar client once if any task needs calendar
-    const hasCalendarTasks = (template.tasks || []).some(
-      (t) => t.addToCalendar,
-    );
-    let calendarClient = null;
-    if (hasCalendarTasks) {
-      calendarClient = await getCalendarClient(req.user._id);
-    }
+    const calendarClient = await getCalendarClient(req.user._id);
 
     const createdTasks = [];
     const createdTodos = [];
@@ -317,33 +289,24 @@ const applyTemplate = async (req, res) => {
 
       const dayOfMonth = startDay + dayOffset;
 
-      // Create date at noon to avoid timezone issues
-      const taskDate = new Date(
-        parseInt(year),
-        parseInt(month),
-        dayOfMonth,
-        12,
+      // Create date and format as YYYY-MM-DD for database
+      const taskDateObj = tz.createDateTime(
+        `${year}-${String(parseInt(month) + 1).padStart(2, "0")}-${String(dayOfMonth).padStart(2, "0")}`,
+        12, // Noon to avoid boundary issues
         0,
-        0,
-        0,
+        timezone,
       );
 
       // Check if date is valid and in the same month
-      if (taskDate.getMonth() !== parseInt(month)) {
+      if (taskDateObj.getMonth() !== parseInt(month)) {
+        console.log(`Skipping template task ${templateTask.name} - outside target month:`, {
+          taskMonth: taskDateObj.getMonth(),
+          targetMonth: parseInt(month)
+        });
         continue; // Skip if date would be in next/previous month
       }
 
-      // Format date as YYYY-MM-DD for database
-      const dateObj = new Date(
-        parseInt(year),
-        parseInt(month),
-        dayOfMonth,
-        12,
-        0,
-        0,
-        0,
-      );
-      const dateStr = formatDate(dateObj);
+      const dateStr = tz.dateToString(taskDateObj, timezone);
 
       // Check if task already exists for this date
       const existing = await Task.findOne({
@@ -368,6 +331,8 @@ const applyTemplate = async (req, res) => {
         existing.isAutomated = templateTask.isAutomated || false;
         existing.scheduledStartTime = templateTask.scheduledStartTime || null;
         existing.scheduledEndTime = templateTask.scheduledEndTime || null;
+        existing.deleted = false;
+        existing.deletedAt = null;
 
         // Only reset completion if the task hasn't been worked on yet
         if (existing.totalTime === 0 && existing.sessions.length === 0) {
@@ -375,22 +340,16 @@ const applyTemplate = async (req, res) => {
 
           // Auto-complete if automated task is for today or past
           if (existing.isAutomated && existing.plannedTime > 0) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const taskDateObj = new Date(dateStr);
-            taskDateObj.setHours(0, 0, 0, 0);
-
-            if (taskDateObj <= today) {
-              console.log("Auto-completing updated automated task...");
+            if (tz.isTodayOrPast(dateStr, timezone)) {
+              console.log("Auto-completing existing task...");
               const completionTime = existing.plannedTime;
+              const startTime = tz.createDateTimeFromSlot(dateStr, existing.scheduledStartTime || "09:00", timezone);
+              const endTime = new Date(startTime.getTime() + completionTime);
+              
               existing.sessions = [
                 {
-                  startTime: new Date(
-                    taskDateObj.getTime() + 9 * 60 * 60 * 1000,
-                  ),
-                  endTime: new Date(
-                    taskDateObj.getTime() + 9 * 60 * 60 * 1000 + completionTime,
-                  ),
+                  startTime,
+                  endTime,
                   duration: completionTime,
                 },
               ];
@@ -412,15 +371,10 @@ const applyTemplate = async (req, res) => {
           !existing.calendarEventId
         ) {
           try {
-            const taskDateObj = new Date(dateStr + "T12:00:00");
-            const [sh, sm] = existing.scheduledStartTime.split(":").map(Number);
-            const startDt = new Date(taskDateObj);
-            startDt.setHours(sh, sm, 0, 0);
+            const startDt = tz.createDateTimeFromSlot(dateStr, existing.scheduledStartTime, timezone);
             let endDt;
             if (existing.scheduledEndTime) {
-              const [eh, em] = existing.scheduledEndTime.split(":").map(Number);
-              endDt = new Date(taskDateObj);
-              endDt.setHours(eh, em, 0, 0);
+              endDt = tz.createDateTimeFromSlot(dateStr, existing.scheduledEndTime, timezone);
             } else {
               endDt = new Date(
                 startDt.getTime() + (existing.plannedTime || 30 * 60000),
@@ -434,11 +388,11 @@ const applyTemplate = async (req, res) => {
                 description: `Task from Tracku template: ${template.name}`,
                 start: {
                   dateTime: startDt.toISOString(),
-                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  timeZone: timezone,
                 },
                 end: {
                   dateTime: endDt.toISOString(),
-                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  timeZone: timezone,
                 },
                 reminders:
                   reminderMins > 0
@@ -517,25 +471,21 @@ const applyTemplate = async (req, res) => {
           console.log(
             "Task is automated with plannedTime, checking if should auto-complete...",
           );
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const taskDateObj = new Date(dateStr + "T12:00:00");
-          taskDateObj.setHours(0, 0, 0, 0);
-
-          console.log("Date comparison:", {
-            taskDate: taskDateObj,
-            today,
-            shouldComplete: taskDateObj <= today,
+          console.log("Date comparison using tz:", {
+            taskDate: dateStr,
+            today: tz.getTodayString(timezone),
+            shouldComplete: tz.isTodayOrPast(dateStr, timezone),
           });
 
-          if (taskDateObj <= today) {
+          if (tz.isTodayOrPast(dateStr, timezone)) {
             console.log("Auto-completing task...");
             const completionTime = newTask.plannedTime;
+            const startTime = tz.createDateTimeFromSlot(dateStr, newTask.scheduledStartTime || "09:00", timezone);
+            const endTime = new Date(startTime.getTime() + completionTime);
+            
             newTask.sessions.push({
-              startTime: new Date(taskDateObj.getTime() + 9 * 60 * 60 * 1000), // 9 AM
-              endTime: new Date(
-                taskDateObj.getTime() + 9 * 60 * 60 * 1000 + completionTime,
-              ),
+              startTime,
+              endTime,
               duration: completionTime,
             });
             newTask.totalTime = completionTime;
@@ -559,50 +509,41 @@ const applyTemplate = async (req, res) => {
           !newTask.calendarEventId
         ) {
           try {
-            const taskDateObj2 = new Date(dateStr + "T12:00:00");
-            const [sh2, sm2] = newTask.scheduledStartTime
-              .split(":")
-              .map(Number);
-            const startDt2 = new Date(taskDateObj2);
-            startDt2.setHours(sh2, sm2, 0, 0);
-            let endDt2;
+            const startDt = tz.createDateTimeFromSlot(dateStr, newTask.scheduledStartTime, timezone);
+            let endDt;
             if (newTask.scheduledEndTime) {
-              const [eh2, em2] = newTask.scheduledEndTime
-                .split(":")
-                .map(Number);
-              endDt2 = new Date(taskDateObj2);
-              endDt2.setHours(eh2, em2, 0, 0);
+              endDt = tz.createDateTimeFromSlot(dateStr, newTask.scheduledEndTime, timezone);
             } else {
-              endDt2 = new Date(
-                startDt2.getTime() + (newTask.plannedTime || 30 * 60000),
+              endDt = new Date(
+                startDt.getTime() + (newTask.plannedTime || 30 * 60000),
               );
             }
-            const reminderMins2 = templateTask.reminderMinutes || 0;
-            const calResponse2 = await calendarClient.events.insert({
+            const reminderMins = templateTask.reminderMinutes || 0;
+            const calResponse = await calendarClient.events.insert({
               calendarId: "primary",
               resource: {
                 summary: `📋 ${newTask.name}`,
                 description: `Task from Tracku template: ${template.name}`,
                 start: {
-                  dateTime: startDt2.toISOString(),
-                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  dateTime: startDt.toISOString(),
+                  timeZone: timezone,
                 },
                 end: {
-                  dateTime: endDt2.toISOString(),
-                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  dateTime: endDt.toISOString(),
+                  timeZone: timezone,
                 },
                 reminders:
-                  reminderMins2 > 0
+                  reminderMins > 0
                     ? {
                         useDefault: false,
                         overrides: [
-                          { method: "popup", minutes: reminderMins2 },
+                          { method: "popup", minutes: reminderMins },
                         ],
                       }
                     : { useDefault: true },
               },
             });
-            newTask.calendarEventId = calResponse2.data.id;
+            newTask.calendarEventId = calResponse.data.id;
             await newTask.save();
             calendarEventsCreated++;
           } catch (calErr) {
@@ -625,24 +566,24 @@ const applyTemplate = async (req, res) => {
       }
 
       const dayOfMonth = startDay + dayOffset;
-      const todoDateObj = new Date(
-        parseInt(year),
-        parseInt(month),
-        dayOfMonth,
+      const todoDateObj = tz.createDateTime(
+        `${year}-${String(parseInt(month) + 1).padStart(2, "0")}-${String(dayOfMonth).padStart(2, "0")}`,
         12,
         0,
-        0,
-        0,
+        timezone,
       );
       if (todoDateObj.getMonth() !== parseInt(month)) {
         continue;
       }
 
-      const todoDateStr = formatDate(todoDateObj);
+      const todoDateStr = tz.dateToString(todoDateObj, timezone);
       const deadlineOffsetDays = Number(templateTodo.deadlineOffsetDays || 0);
-      const deadlineDateStr = formatDate(
-        addDays(todoDateObj, deadlineOffsetDays),
-      );
+      
+      // Calculate deadline using Luxon for accuracy
+      const deadlineDate = DateTime.fromJSDate(todoDateObj)
+        .plus({ days: deadlineOffsetDays })
+        .toJSDate();
+      const deadlineDateStr = tz.dateToString(deadlineDate, timezone);
 
       const existingTodo = await Todo.findOne({
         user: req.user._id,
