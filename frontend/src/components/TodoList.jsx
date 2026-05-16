@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { toast } from "react-toastify";
+import { getTodayString } from "../utils/timezone";
 import "./TodoList.css";
 import TodoAssistant from "./TodoAssistant";
 import calendarService from "../services/calendarService";
@@ -25,8 +26,8 @@ const TodoList = ({
     reminderMinutes: 15,
   });
 
-  // Compute today string for overdue comparison (YYYY-MM-DD)
-  const todayStr = new Date().toISOString().split("T")[0];
+  // Compute today string for overdue comparison (YYYY-MM-DD) - use local timezone
+  const todayStr = getTodayString();
 
   // Close picker with Escape
   React.useEffect(() => {
