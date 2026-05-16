@@ -178,32 +178,32 @@ exports.createEvent = async (req, res) => {
 
     const resolvedDate = date || new Date().toISOString().split("T")[0];
 
-    // Duplicate check: if taskId provided, check if task already has a calendar event
+    // Duplicate check and Update: if taskId provided, check if task already has a calendar event
     if (taskId) {
       const existingTask = await Task.findOne({
         _id: taskId,
         user: req.user._id,
       });
+      
       if (existingTask && existingTask.calendarEventId) {
-        // Verify the event still exists in Google Calendar
         try {
+          // If we found an existing event ID, we'll try to update it instead of creating a new one
           const calendar = await getCalendarClient(req.user._id);
-          const existing = await calendar.events.get({
+          
+          // First check if it exists
+          await calendar.events.get({
             calendarId: "primary",
             eventId: existingTask.calendarEventId,
           });
-          if (existing.data && existing.data.status !== "cancelled") {
-            return res.json({
-              success: true,
-              eventId: existingTask.calendarEventId,
-              eventLink: existing.data.htmlLink,
-              message: "Event already exists in Google Calendar!",
-              duplicate: true,
-            });
-          }
+
+          // If we reach here, the event exists. We will proceed to the creation logic
+          // but use 'update' instead of 'insert' later.
+          req.isUpdate = true;
+          req.existingEventId = existingTask.calendarEventId;
+          console.log(`[Calendar Debug] Found existing event ${req.existingEventId}, will update instead of insert.`);
         } catch (checkErr) {
-          // Event was deleted from Google Calendar - clear stale reference and recreate
-          console.log("Previous calendar event not found, creating new one");
+          // Event was deleted from Google Calendar - clear stale reference and create fresh
+          console.log("Previous calendar event not found or inaccessible, creating new one");
           existingTask.calendarEventId = null;
           await existingTask.save();
         }
@@ -263,18 +263,29 @@ exports.createEvent = async (req, res) => {
           : { useDefault: true },
     };
 
-    const response = await calendar.events.insert({
-      calendarId: "primary",
-      resource: event,
-    });
+    let response;
+    if (req.isUpdate) {
+      response = await calendar.events.update({
+        calendarId: "primary",
+        eventId: req.existingEventId,
+        resource: event,
+      });
+      console.log(`[Calendar Debug] Event updated: ${response.data.id}`);
+    } else {
+      response = await calendar.events.insert({
+        calendarId: "primary",
+        resource: event,
+      });
+      console.log(`[Calendar Debug] Event created: ${response.data.id}`);
+    }
 
     // Store the calendar event ID on the task/todo to prevent duplicates
-    if (taskId) {
+    if (taskId && !req.isUpdate) {
       await Task.findByIdAndUpdate(taskId, {
         calendarEventId: response.data.id,
       });
     }
-    if (todoId) {
+    if (todoId && !req.isUpdate) {
       await Todo.findByIdAndUpdate(todoId, {
         calendarEventId: response.data.id,
       });
@@ -284,7 +295,7 @@ exports.createEvent = async (req, res) => {
       success: true,
       eventId: response.data.id,
       eventLink: response.data.htmlLink,
-      message: "Event created in Google Calendar!",
+      message: req.isUpdate ? "Event updated in Google Calendar!" : "Event created in Google Calendar!",
     });
   } catch (error) {
     console.error("Google Calendar Create Event Error:", {
