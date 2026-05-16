@@ -273,7 +273,7 @@ const TaskItem = ({
   const createCalendarEvent = async (reminderMinutes, startTime, endTime) => {
     setCalendarStatus("adding");
     const plannedMinutes = Math.round((task.plannedTime || 1800000) / 60000);
-    const eventDate = task.date || new Date().toISOString().split("T")[0];
+    const eventDate = task.date ? new Date(task.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
 
     try {
       const result = await calendarService.smartAddToCalendar(

@@ -287,7 +287,12 @@ exports.createEvent = async (req, res) => {
       message: "Event created in Google Calendar!",
     });
   } catch (error) {
-    console.error("Error creating event:", error);
+    console.error("Google Calendar Create Event Error:", {
+      message: error.message,
+      code: error.code,
+      errors: error.errors,
+      response: error.response?.data
+    });
 
     // Google Calendar not connected locally
     if (error.message === "Google Calendar not connected") {
