@@ -257,8 +257,9 @@ const applyTemplate = async (req, res) => {
       timezone,
     );
 
-    const startDay = startDate.getDate();
-    const startDayOfWeek = startDate.getDay();
+    const startDtLuxon = DateTime.fromJSDate(startDate).setZone(timezone);
+    const startDay = startDtLuxon.day;
+    const startDayOfWeek = startDtLuxon.weekday % 7; // Luxon 1-7 (Mon-Sun) -> 0-6 (Sun-Sat)
 
     const calendarClient = await getCalendarClient(req.user._id);
 
@@ -378,6 +379,14 @@ const applyTemplate = async (req, res) => {
               );
             }
             const endISO = DateTime.fromJSDate(endDt).setZone(timezone).toISO();
+
+            console.log(`[Calendar Debug] Creating template event for ${existing.name}:`, {
+              dateStr,
+              scheduled: `${existing.scheduledStartTime}-${existing.scheduledEndTime}`,
+              startISO,
+              endISO,
+              timezone
+            });
 
             console.log("Google Calendar Event Time Debug:", {
               task: existing.name,

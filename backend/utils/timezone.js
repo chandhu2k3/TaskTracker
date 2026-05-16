@@ -94,9 +94,8 @@ const getWeekDates = (year, month, weekNumber, timezone = DEFAULT_TIMEZONE) => {
   // For week 4, end at the last day of the month
   let endDay;
   if (weekNumber === 4) {
-    // Get last day of month
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    endDay = daysInMonth;
+    // Get last day of month using Luxon (safe from server timezone)
+    endDay = startDt.endOf("month").day;
   } else {
     endDay = startDay + 6;
   }

@@ -1,24 +1,15 @@
 import api from "./api";
-import { getUserTimezone } from "../utils/timezone";
 
 // Manually finish a task
 const manualFinishTask = async (id) => {
-  const response = await api.put(`/api/tasks/${id}/finish`, {}, getConfig());
+  const response = await api.put(`/api/tasks/${id}/finish`, {});
   return response.data;
 };
-
-// Get timezone header (auth is handled by api interceptor)
-const getConfig = () => ({
-  headers: {
-    "X-Timezone": getUserTimezone(),
-  },
-});
 
 // Get tasks by date range
 const getTasksByDateRange = async (startDate, endDate) => {
   const response = await api.get(
-    `/api/tasks/range?startDate=${startDate}&endDate=${endDate}`,
-    getConfig(),
+    `/api/tasks/range?startDate=${startDate}&endDate=${endDate}`
   );
   return response.data;
 };
@@ -26,41 +17,39 @@ const getTasksByDateRange = async (startDate, endDate) => {
 // Get tasks for specific week
 const getTasksByWeek = async (year, month, weekNumber) => {
   const response = await api.get(
-    `/api/tasks/week/${year}/${month}/${weekNumber}`,
-    getConfig(),
+    `/api/tasks/week/${year}/${month}/${weekNumber}`
   );
   return response.data;
 };
 
 // Create task
 const createTask = async (taskData) => {
-  const response = await api.post(`/api/tasks`, taskData, getConfig());
+  const response = await api.post(`/api/tasks`, taskData);
   return response.data;
 };
 
 // Update task (toggle, edit)
 const updateTask = async (id, taskData) => {
-  const response = await api.put(`/api/tasks/${id}`, taskData, getConfig());
+  const response = await api.put(`/api/tasks/${id}`, taskData);
   return response.data;
 };
 
 // Delete task
 const deleteTask = async (id) => {
-  const response = await api.delete(`/api/tasks/${id}`, getConfig());
+  const response = await api.delete(`/api/tasks/${id}`);
   return response.data;
 };
 
 // Delete all tasks for a specific day
 const deleteTasksByDay = async (date) => {
-  const response = await api.delete(`/api/tasks/day/${date}`, getConfig());
+  const response = await api.delete(`/api/tasks/day/${date}`);
   return response.data;
 };
 
 // Delete all tasks for a specific week
 const deleteTasksByWeek = async (year, month, weekNumber) => {
   const response = await api.delete(
-    `/api/tasks/week/${year}/${month}/${weekNumber}`,
-    getConfig(),
+    `/api/tasks/week/${year}/${month}/${weekNumber}`
   );
   return response.data;
 };
@@ -68,8 +57,7 @@ const deleteTasksByWeek = async (year, month, weekNumber) => {
 // Get weekly analytics
 const getWeeklyAnalytics = async (year, month, weekNumber) => {
   const response = await api.get(
-    `/api/tasks/analytics/week/${year}/${month}/${weekNumber}`,
-    getConfig(),
+    `/api/tasks/analytics/week/${year}/${month}/${weekNumber}`
   );
   return response.data;
 };
@@ -77,8 +65,7 @@ const getWeeklyAnalytics = async (year, month, weekNumber) => {
 // Get monthly analytics
 const getMonthlyAnalytics = async (year, month) => {
   const response = await api.get(
-    `/api/tasks/analytics/month/${year}/${month}`,
-    getConfig(),
+    `/api/tasks/analytics/month/${year}/${month}`
   );
   return response.data;
 };
@@ -89,7 +76,7 @@ const getCategoryAnalytics = async (category, startDate, endDate) => {
   if (startDate && endDate) {
     url += `?startDate=${startDate}&endDate=${endDate}`;
   }
-  const response = await api.get(url, getConfig());
+  const response = await api.get(url);
   return response.data;
 };
 
@@ -97,8 +84,7 @@ const getCategoryAnalytics = async (category, startDate, endDate) => {
 const stopTask = async (id) => {
   const response = await api.put(
     `/api/tasks/${id}`,
-    { isActive: false },
-    getConfig(),
+    { isActive: false }
   );
   return response.data;
 };
@@ -117,11 +103,11 @@ const taskService = {
   getMonthlyAnalytics,
   getCategoryAnalytics,
   getDeletedTasks: async () => {
-    const response = await api.get(`/api/tasks/deleted`, getConfig());
+    const response = await api.get(`/api/tasks/deleted`);
     return response.data;
   },
   restoreTask: async (id) => {
-    const response = await api.put(`/api/tasks/${id}/restore`, {}, getConfig());
+    const response = await api.put(`/api/tasks/${id}/restore`, {});
     return response.data;
   },
 };

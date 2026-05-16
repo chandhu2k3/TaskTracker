@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getUserTimezone } from "../utils/timezone";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -36,6 +37,8 @@ api.interceptors.request.use(
     if (user?.token) {
       config.headers.Authorization = `Bearer ${user.token}`;
     }
+    // Automatically attach timezone header to all requests
+    config.headers["X-Timezone"] = getUserTimezone();
     return config;
   },
   (error) => Promise.reject(error)

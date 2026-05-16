@@ -233,6 +233,16 @@ exports.createEvent = async (req, res) => {
     const startISO = DateTime.fromJSDate(startDateTime).setZone(userTimeZone).toISO();
     const endISO = DateTime.fromJSDate(endDateTime).setZone(userTimeZone).toISO();
 
+    console.log(`[Calendar Debug] Manual createEvent:`, {
+      title,
+      resolvedDate,
+      startTime,
+      endTime,
+      userTimeZone,
+      startISO,
+      endISO
+    });
+
     const event = {
       summary: title,
       description: description || "Task from Tracku",
