@@ -281,6 +281,15 @@ const createTask = async (req, res) => {
 
     res.status(201).json(task);
   } catch (error) {
+    console.error("createTask ERROR:", error);
+    
+    // Handle duplicate key error (11000)
+    if (error.code === 11000) {
+      return res.status(409).json({ 
+        message: "A task with this name and category already exists for this day." 
+      });
+    }
+
     res.status(500).json({ message: error.message });
   }
 };
@@ -384,9 +393,11 @@ const deleteTask = async (req, res) => {
 const deleteTasksByDay = async (req, res) => {
   try {
     const { date } = req.params;
+    const timezone = tz.getTimezoneFromRequest(req);
+    const targetDate = tz.parseDate(date, timezone);
 
     const result = await Task.updateMany(
-      { user: req.user._id, date: date, deleted: { $ne: true } },
+      { user: req.user._id, date: targetDate, deleted: { $ne: true } },
       { $set: { deleted: true, deletedAt: new Date() } },
     );
     await invalidateCache(`user:${req.user._id}:tasks*`);
@@ -580,21 +591,26 @@ const getMonthlyAnalytics = async (req, res) => {
   try {
     const { year, month } = req.params;
 
-    // Check cache first
+    const timezone = tz.getTimezoneFromRequest(req);
     const key = cacheKey(req.user._id, "analytics", "month", year, month);
     const cached = await getCache(key);
     if (cached) {
       return res.json(typeof cached === "string" ? JSON.parse(cached) : cached);
     }
 
-    const startDate = new Date(year, month, 1);
-    const endDate = new Date(year, parseInt(month) + 1, 0, 23, 59, 59, 999);
+    const { DateTime } = require("luxon");
+    const monthStart = DateTime.fromObject({ year: parseInt(year), month: parseInt(month) + 1 }, { zone: timezone }).startOf("month");
+    const monthEnd = monthStart.endOf("month");
+
+    const startDate = monthStart.toJSDate();
+    const endDate = monthEnd.toJSDate();
 
     // Fetch tasks and sleep in parallel
     const [tasks, sleepSessions] = await Promise.all([
       Task.find({
         user: req.user._id,
         date: { $gte: startDate, $lte: endDate },
+        deleted: { $ne: true },
       }).lean(),
       Sleep.find({
         user: req.user._id,

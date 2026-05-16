@@ -121,7 +121,7 @@ const getWeekDates = (year, month, weekNumber, timezone = DEFAULT_TIMEZONE) => {
  */
 const getDayName = (date, timezone = DEFAULT_TIMEZONE) => {
   const dt = DateTime.fromJSDate(new Date(date)).setZone(timezone);
-  return dt.toFormat("cccc").toLowerCase();
+  return dt.setLocale("en").toFormat("cccc").toLowerCase();
 };
 
 /**

@@ -172,13 +172,6 @@ const createTemplate = async (req, res) => {
 // @access  Private
 const updateTemplate = async (req, res) => {
   try {
-    const { name, tasks, quickTodos } = req.body;
-
-    console.log(
-      "Updating template with tasks:",
-      JSON.stringify(tasks, null, 2),
-    );
-
     const template = await TaskTemplate.findOne({
       _id: req.params.id,
       user: req.user._id,
@@ -188,23 +181,23 @@ const updateTemplate = async (req, res) => {
       return res.status(404).json({ message: "Template not found" });
     }
 
-    if (name) template.name = name;
-    if (Array.isArray(tasks)) template.tasks = tasks;
-    if (Array.isArray(quickTodos)) template.quickTodos = quickTodos;
-    template.updatedAt = Date.now();
+    const updatedTemplate = {
+      name: req.body.name || template.name,
+      tasks: req.body.tasks || template.tasks,
+      quickTodos: req.body.todos || req.body.quickTodos || template.quickTodos, // Handle both names
+    };
 
-    await template.save();
-
-    // Re-fetch to verify what was actually saved
-    const savedTemplate = await TaskTemplate.findById(req.params.id);
-    console.log(
-      "Template after save (re-fetched):",
-      JSON.stringify(savedTemplate.tasks, null, 2),
+    const savedTemplate = await TaskTemplate.findByIdAndUpdate(
+      req.params.id,
+      updatedTemplate,
+      { new: true },
     );
 
+    // Invalidate caches on template update
     await invalidateCache(`user:${req.user._id}:templates*`);
     res.json(savedTemplate);
   } catch (error) {
+    console.error("updateTemplate ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -308,13 +301,14 @@ const applyTemplate = async (req, res) => {
       }
 
       const dateStr = tz.dateToString(taskDateObj, timezone);
+      const targetDate = tz.parseDate(dateStr, timezone);
 
       // Check if task already exists for this date
       const existing = await Task.findOne({
         user: req.user._id,
         name: templateTask.name,
         category: templateTask.category,
-        date: dateStr,
+        date: targetDate,
       });
 
       if (existing) {

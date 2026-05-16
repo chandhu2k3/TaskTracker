@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ReactDOM from "react-dom";
+import {
+  getUserTimezone,
+  getTimezoneHeader,
+  formatLocalDate,
+  getTodayString,
+  parseDate as tzParseDate,
+} from "../utils/timezone";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CategoryManager from "../components/CategoryManager";
@@ -24,19 +31,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   // Helper function to get local date string (not UTC)
-  const getLocalDateString = (dateInput = new Date()) => {
-    // If it's a string from the backend (ISO format), extract the date part directly
-    // This prevents local timezone shifts for YYYY-MM-DD comparisons
-    if (typeof dateInput === 'string' && dateInput.includes('T')) {
-      return dateInput.split('T')[0];
-    }
-    
-    // Otherwise handle as Date object
-    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+  const getLocalDateString = (dateInput) => {
+    return formatLocalDate(dateInput);
   };
 
   // Calculate current week on component mount
@@ -1040,8 +1036,7 @@ const Dashboard = () => {
   const weekDays = getWeekDays();
   const groupedTasks = weekDays.reduce((acc, day) => {
     acc[day.date] = tasks.filter((task) => {
-      // Use the helper to get YYYY-MM-DD without local time bias
-      const taskDate = task.date ? getLocalDateString(task.date) : null;
+      const taskDate = formatLocalDate(task.date);
       return taskDate === day.date;
     });
     return acc;

@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 /**
  * Timezone Utility for Frontend
  * Automatically detects user's timezone and provides utilities for date handling
@@ -6,9 +8,8 @@
 // Get user's timezone from browser
 export const getUserTimezone = () => {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
   } catch (e) {
-    // Fallback to IST if detection fails
     return "Asia/Kolkata";
   }
 };
@@ -18,22 +19,33 @@ export const getTimezoneHeader = () => {
   return { "X-Timezone": getUserTimezone() };
 };
 
-// Format a date to local YYYY-MM-DD string
-export const formatLocalDate = (date = new Date()) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+/**
+ * Convert an ISO date string (from server) to a local YYYY-MM-DD string
+ * @param {string|Date} date - ISO string or Date object
+ * @returns {string} - YYYY-MM-DD
+ */
+export const formatLocalDate = (date) => {
+  if (!date) return DateTime.now().setZone(getUserTimezone()).toFormat("yyyy-MM-dd");
+  
+  if (typeof date === "string") {
+    // Handle both ISO strings and simple YYYY-MM-DD
+    if (date.includes("T")) {
+      return DateTime.fromISO(date).setZone(getUserTimezone()).toFormat("yyyy-MM-dd");
+    }
+    return date;
+  }
+  
+  return DateTime.fromJSDate(date).setZone(getUserTimezone()).toFormat("yyyy-MM-dd");
 };
 
 // Get current date string in user's timezone
 export const getTodayString = () => {
-  return formatLocalDate(new Date());
+  return DateTime.now().setZone(getUserTimezone()).toFormat("yyyy-MM-dd");
 };
 
-// Parse a date string and return a Date object
+// Parse a YYYY-MM-DD string and return a local Date object at midnight
 export const parseDate = (dateString) => {
-  return new Date(dateString + "T00:00:00");
+  return DateTime.fromISO(dateString, { zone: getUserTimezone() }).toJSDate();
 };
 
 const timezoneUtils = {
