@@ -8,6 +8,8 @@ const {
   setCache,
   invalidateCache,
 } = require("../config/redis");
+const tz = require("../utils/timezone");
+const { DateTime } = require("luxon");
 
 // Google OAuth2 Client
 const getOAuth2Client = () => {
@@ -209,43 +211,37 @@ exports.createEvent = async (req, res) => {
     }
 
     const calendar = await getCalendarClient(req.user._id);
-
-    // Parse date and times
-    const eventDate = new Date(resolvedDate);
-    let startDateTime, endDateTime;
-
-    if (startTime && endTime) {
-      const [startHour, startMin] = startTime.split(":").map(Number);
-      const [endHour, endMin] = endTime.split(":").map(Number);
-
-      startDateTime = new Date(eventDate);
-      startDateTime.setHours(startHour, startMin, 0, 0);
-
-      endDateTime = new Date(eventDate);
-      endDateTime.setHours(endHour, endMin, 0, 0);
-    } else if (startTime) {
-      const [startHour, startMin] = startTime.split(":").map(Number);
-
-      startDateTime = new Date(eventDate);
-      startDateTime.setHours(startHour, startMin, 0, 0);
-
-      endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+    
+    // Use timezone utilities to create accurate date-times
+    const dateStr = resolvedDate.includes('T') ? resolvedDate.split('T')[0] : resolvedDate;
+    
+    let startDateTime;
+    if (startTime) {
+      startDateTime = tz.createDateTimeFromSlot(dateStr, startTime, userTimeZone);
     } else {
       // Default to 2 PM if no time specified
-      startDateTime = new Date(eventDate);
-      startDateTime.setHours(14, 0, 0, 0);
+      startDateTime = tz.createDateTime(dateStr, 14, 0, userTimeZone);
+    }
+
+    let endDateTime;
+    if (endTime) {
+      endDateTime = tz.createDateTimeFromSlot(dateStr, endTime, userTimeZone);
+    } else {
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     }
+
+    const startISO = DateTime.fromJSDate(startDateTime).setZone(userTimeZone).toISO();
+    const endISO = DateTime.fromJSDate(endDateTime).setZone(userTimeZone).toISO();
 
     const event = {
       summary: title,
       description: description || "Task from Tracku",
       start: {
-        dateTime: startDateTime.toISOString(),
+        dateTime: startISO,
         timeZone: userTimeZone,
       },
       end: {
-        dateTime: endDateTime.toISOString(),
+        dateTime: endISO,
         timeZone: userTimeZone,
       },
       reminders:

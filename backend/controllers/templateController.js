@@ -238,6 +238,7 @@ const applyTemplate = async (req, res) => {
   try {
     const { id, year, month, weekNumber } = req.params;
     const timezone = tz.getTimezoneFromRequest(req);
+    console.log("Applying template with timezone:", timezone);
 
     // Get template
     const template = await TaskTemplate.findOne({
@@ -372,6 +373,8 @@ const applyTemplate = async (req, res) => {
         ) {
           try {
             const startDt = tz.createDateTimeFromSlot(dateStr, existing.scheduledStartTime, timezone);
+            const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
+            
             let endDt;
             if (existing.scheduledEndTime) {
               endDt = tz.createDateTimeFromSlot(dateStr, existing.scheduledEndTime, timezone);
@@ -380,6 +383,18 @@ const applyTemplate = async (req, res) => {
                 startDt.getTime() + (existing.plannedTime || 30 * 60000),
               );
             }
+            const endISO = DateTime.fromJSDate(endDt).setZone(timezone).toISO();
+
+            console.log("Google Calendar Event Time Debug:", {
+              task: existing.name,
+              dateStr,
+              startTime: existing.scheduledStartTime,
+              timezone,
+              startDt_raw: startDt,
+              startISO,
+              endISO
+            });
+
             const reminderMins = templateTask.reminderMinutes || 0;
             const calResponse = await calendarClient.events.insert({
               calendarId: "primary",
@@ -387,11 +402,11 @@ const applyTemplate = async (req, res) => {
                 summary: `📋 ${existing.name}`,
                 description: `Task from Tracku template: ${template.name}`,
                 start: {
-                  dateTime: startDt.toISOString(),
+                  dateTime: startISO,
                   timeZone: timezone,
                 },
                 end: {
-                  dateTime: endDt.toISOString(),
+                  dateTime: endISO,
                   timeZone: timezone,
                 },
                 reminders:
@@ -510,6 +525,8 @@ const applyTemplate = async (req, res) => {
         ) {
           try {
             const startDt = tz.createDateTimeFromSlot(dateStr, newTask.scheduledStartTime, timezone);
+            const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
+            
             let endDt;
             if (newTask.scheduledEndTime) {
               endDt = tz.createDateTimeFromSlot(dateStr, newTask.scheduledEndTime, timezone);
@@ -518,6 +535,8 @@ const applyTemplate = async (req, res) => {
                 startDt.getTime() + (newTask.plannedTime || 30 * 60000),
               );
             }
+            const endISO = DateTime.fromJSDate(endDt).setZone(timezone).toISO();
+
             const reminderMins = templateTask.reminderMinutes || 0;
             const calResponse = await calendarClient.events.insert({
               calendarId: "primary",
@@ -525,11 +544,11 @@ const applyTemplate = async (req, res) => {
                 summary: `📋 ${newTask.name}`,
                 description: `Task from Tracku template: ${template.name}`,
                 start: {
-                  dateTime: startDt.toISOString(),
+                  dateTime: startISO,
                   timeZone: timezone,
                 },
                 end: {
-                  dateTime: endDt.toISOString(),
+                  dateTime: endISO,
                   timeZone: timezone,
                 },
                 reminders:

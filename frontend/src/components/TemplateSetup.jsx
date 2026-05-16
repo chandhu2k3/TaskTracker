@@ -71,9 +71,23 @@ const TemplateSetup = ({
       deadlineOffsetDays: todo.deadlineOffsetDays || 0,
     }));
 
-    // Add imported tasks to existing tasks
-    setTemplateTasks([...templateTasks, ...importedTasks]);
-    setTemplateTodos([...templateTodos, ...importedTodos]);
+    // Filter out tasks that already exist in current template (match name, category, day)
+    const existingTaskKeys = new Set(templateTasks.map(t => `${t.name}|${t.category}|${t.day}`));
+    const uniqueImportedTasks = importedTasks.filter(t => !existingTaskKeys.has(`${t.name}|${t.category}|${t.day}`));
+
+    // Filter out todos that already exist in current template (match text, day)
+    const existingTodoKeys = new Set(templateTodos.map(t => `${t.text}|${t.day}`));
+    const uniqueImportedTodos = importedTodos.filter(t => !existingTodoKeys.has(`${t.text}|${t.day}`));
+
+    if (uniqueImportedTasks.length < importedTasks.length || uniqueImportedTodos.length < importedTodos.length) {
+      const skippedTasks = importedTasks.length - uniqueImportedTasks.length;
+      const skippedTodos = importedTodos.length - uniqueImportedTodos.length;
+      console.log(`Deduplication: Skipped ${skippedTasks} tasks and ${skippedTodos} todos that already existed.`);
+    }
+
+    // Add imported unique tasks to existing tasks
+    setTemplateTasks([...templateTasks, ...uniqueImportedTasks]);
+    setTemplateTodos([...templateTodos, ...uniqueImportedTodos]);
     setImportTemplateId(""); // Reset selection
   };
 
@@ -141,7 +155,23 @@ const TemplateSetup = ({
       ...task,
       day: selectedEditDay,
     }));
-    setTemplateTasks([...templateTasks, ...copiedTasks]);
+
+    // Deduplicate: Filter out tasks that already exist in the target day
+    const existingTaskNames = new Set(
+      templateTasks
+        .filter((t) => t.day === selectedEditDay)
+        .map((t) => `${t.name}|${t.category}`),
+    );
+    const uniqueCopiedTasks = copiedTasks.filter(
+      (t) => !existingTaskNames.has(`${t.name}|${t.category}`),
+    );
+
+    if (uniqueCopiedTasks.length === 0 && copiedTasks.length > 0) {
+      alert("All tasks from the source day already exist in the target day.");
+      return;
+    }
+
+    setTemplateTasks([...templateTasks, ...uniqueCopiedTasks]);
   };
 
   const copyTodosFromDay = (sourceDay) => {
@@ -155,7 +185,23 @@ const TemplateSetup = ({
       ...todo,
       day: selectedEditDay,
     }));
-    setTemplateTodos([...templateTodos, ...copiedTodos]);
+
+    // Deduplicate: Filter out todos that already exist in the target day
+    const existingTodoTexts = new Set(
+      templateTodos.filter((t) => t.day === selectedEditDay).map((t) => t.text),
+    );
+    const uniqueCopiedTodos = copiedTodos.filter(
+      (t) => !existingTodoTexts.has(t.text),
+    );
+
+    if (uniqueCopiedTodos.length === 0 && copiedTodos.length > 0) {
+      alert(
+        "All quick todos from the source day already exist in the target day.",
+      );
+      return;
+    }
+
+    setTemplateTodos([...templateTodos, ...uniqueCopiedTodos]);
   };
 
   const updateTask = (index, field, value) => {
