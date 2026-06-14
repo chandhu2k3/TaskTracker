@@ -561,46 +561,7 @@ const TaskItem = ({
                 document.body,
               )}
           </div>
-          {task.scheduledStartTime && (
-            <div className="notification-controls">
-              <button
-                className={`btn-notification ${task.notificationsEnabled ? "active" : ""}`}
-                onClick={() =>
-                  onToggleNotification(task._id, !task.notificationsEnabled)
-                }
-                title={
-                  task.notificationsEnabled
-                    ? "Disable notifications"
-                    : "Enable notifications"
-                }
-                draggable="false"
-              >
-                {task.notificationsEnabled ? "🔔" : "🔕"}
-              </button>
-              {task.notificationsEnabled && (
-                <select
-                  className="notification-time-select"
-                  value={task.notificationTime || 30}
-                  onChange={(e) =>
-                    onToggleNotification(
-                      task._id,
-                      true,
-                      parseInt(e.target.value),
-                    )
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                  draggable="false"
-                  title="Notification time before task"
-                >
-                  <option value={5}>5 min</option>
-                  <option value={10}>10 min</option>
-                  <option value={15}>15 min</option>
-                  <option value={30}>30 min</option>
-                  <option value={60}>1 hour</option>
-                </select>
-              )}
-            </div>
-          )}
+
           <button
             className={`btn-play-pause ${task.isActive ? "active" : ""} ${
               !canToggle ? "disabled" : ""

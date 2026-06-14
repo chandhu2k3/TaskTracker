@@ -18,6 +18,10 @@ const TodoList = ({
 }) => {
   const [newTodo, setNewTodo] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [reminderMinutes, setReminderMinutes] = useState(0);
+  const [reminderTime, setReminderTime] = useState("09:00");
+  const [showNewTodoCal, setShowNewTodoCal] = useState(false);
+  const [newTodoCalForm, setNewTodoCalForm] = useState({ date: "", time: "09:00", reminderMinutes: 0 });
   const [calendarStatuses, setCalendarStatuses] = useState({});
   const [showPickerForTodo, setShowPickerForTodo] = useState(null);
   const [calendarForm, setCalendarForm] = useState({
@@ -65,12 +69,37 @@ const TodoList = ({
     setShowPickerForTodo(todoId);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (newTodo.trim()) {
-      onAddTodo(newTodo.trim(), deadline || todayStr);
-      setNewTodo("");
-      setDeadline("");
+    if (!newTodo.trim()) return;
+    const todoText = newTodo.trim();
+    const todoDeadline = deadline || todayStr;
+    setNewTodo("");
+    setDeadline("");
+    setReminderMinutes(0);
+    setReminderTime("09:00");
+    // Create the todo
+    const created = await onAddTodo(todoText, todoDeadline);
+    // If a reminder was requested and a todo was returned, add to calendar
+    if (reminderMinutes > 0 && created && created._id) {
+      try {
+        await calendarService.smartAddToCalendar(
+          {
+            title: `✓ ${todoText}`,
+            description: `Quick todo reminder`,
+            date: todoDeadline,
+            startTime: reminderTime || "09:00",
+            durationMinutes: 30,
+            reminderMinutes,
+            todoId: created._id,
+          },
+          () => {
+            // Not connected — silently skip; user can add manually via calendar button
+          },
+        );
+      } catch {
+        // Calendar errors are non-fatal for todo creation
+      }
     }
   };
 
@@ -99,7 +128,8 @@ const TodoList = ({
         {
           title: `✓ ${todo.text}`,
           description: `Quick todo from Task Tracker Pro\nDate: ${new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}\nTime: ${selectedTime}`,
-          date: eventDate,
+          date: selectedDate,
+          startTime: selectedTime,
           durationMinutes: 30,
           reminderMinutes,
           todoId: todo._id,
@@ -213,6 +243,81 @@ const TodoList = ({
             className="todo-deadline-input"
             title="Optional deadline"
           />
+          <div className="todo-reminder-btn-wrap">
+            <button
+              type="button"
+              className={`todo-calendar-btn${reminderMinutes > 0 ? " calendar-added" : ""}`}
+              title={reminderMinutes > 0 ? `Reminder set: ${newTodoCalForm.time} • ${reminderMinutes < 60 ? reminderMinutes + " min" : reminderMinutes === 1440 ? "1 day" : reminderMinutes / 60 + " hr"} before` : "Set date, time & reminder"}
+              onClick={() => {
+                setNewTodoCalForm({ date: deadline || todayStr, time: "09:00", reminderMinutes: reminderMinutes || 0 });
+                setShowNewTodoCal(true);
+              }}
+            >
+              📅
+            </button>
+          </div>
+          {showNewTodoCal && ReactDOM.createPortal(
+            <div className="calendar-picker-overlay" onClick={() => setShowNewTodoCal(false)}>
+              <div className="calendar-reminder-picker" onClick={(e) => e.stopPropagation()}>
+                <div className="calendar-picker-title">Set Date, Time &amp; Reminder</div>
+                <div className="calendar-picker-context">
+                  <div className="calendar-picker-context-label">Adding reminder for</div>
+                  <div className="calendar-picker-context-title">{newTodo || "New todo"}</div>
+                  <div className="calendar-picker-context-meta">
+                    {new Date((newTodoCalForm.date || todayStr) + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                  </div>
+                </div>
+                <div className="calendar-picker-grid">
+                  <label className="calendar-picker-field">
+                    <span>Date</span>
+                    <input
+                      type="date"
+                      value={newTodoCalForm.date}
+                      onChange={(e) => setNewTodoCalForm((p) => ({ ...p, date: e.target.value || todayStr }))}
+                    />
+                  </label>
+                  <label className="calendar-picker-field">
+                    <span>Time</span>
+                    <input
+                      type="time"
+                      value={newTodoCalForm.time}
+                      onChange={(e) => setNewTodoCalForm((p) => ({ ...p, time: e.target.value }))}
+                    />
+                  </label>
+                </div>
+                <label className="calendar-picker-field">
+                  <span>Reminder</span>
+                  <select
+                    value={newTodoCalForm.reminderMinutes}
+                    onChange={(e) => setNewTodoCalForm((p) => ({ ...p, reminderMinutes: Number(e.target.value) }))}
+                  >
+                    <option value={0}>No reminder</option>
+                    <option value={5}>5 min before</option>
+                    <option value={10}>10 min before</option>
+                    <option value={15}>15 min before</option>
+                    <option value={30}>30 min before</option>
+                    <option value={60}>1 hour before</option>
+                  </select>
+                </label>
+                <div className="calendar-picker-actions">
+                  <button className="btn-cancel" type="button" onClick={() => setShowNewTodoCal(false)}>Cancel</button>
+                  <button
+                    className="btn-add"
+                    type="button"
+                    onClick={() => {
+                      setDeadline(newTodoCalForm.date);
+                      setReminderMinutes(newTodoCalForm.reminderMinutes);
+                      setReminderTime(newTodoCalForm.time);
+                      setShowNewTodoCal(false);
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
         </div>
         <button type="submit" className="todo-add-btn" disabled={isAddingTodo}>
           {isAddingTodo ? "Adding..." : "+ Add"}

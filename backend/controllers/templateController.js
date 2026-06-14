@@ -611,6 +611,7 @@ const applyTemplate = async (req, res) => {
         user: req.user._id,
         text: templateTodo.text,
         date: todoDateStr,
+        deleted: { $ne: true },
       });
 
       if (existingTodo) {
@@ -619,6 +620,29 @@ const applyTemplate = async (req, res) => {
         existingTodo.deletedAt = null;
         await existingTodo.save();
         createdTodos.push(existingTodo);
+        // Add calendar reminder if configured and not already in calendar
+        if (templateTodo.reminderMinutes > 0 && calendarClient && !existingTodo.calendarEventId) {
+          try {
+            const calResponse = await calendarClient.events.insert({
+              calendarId: "primary",
+              resource: {
+                summary: `✓ ${existingTodo.text}`,
+                description: `Quick todo from Tracku template: ${template.name}`,
+                start: { date: deadlineDateStr },
+                end: { date: deadlineDateStr },
+                reminders: {
+                  useDefault: false,
+                  overrides: [{ method: "popup", minutes: templateTodo.reminderMinutes }],
+                },
+              },
+            });
+            existingTodo.calendarEventId = calResponse.data.id;
+            await existingTodo.save();
+            calendarEventsCreated++;
+          } catch (calErr) {
+            console.error("Calendar reminder create failed for existing todo:", calErr.message);
+          }
+        }
         continue;
       }
 
@@ -630,6 +654,30 @@ const applyTemplate = async (req, res) => {
         deadline: deadlineDateStr,
         isOverdue: false,
       });
+
+      // Add calendar reminder if configured
+      if (templateTodo.reminderMinutes > 0 && calendarClient) {
+        try {
+          const calResponse = await calendarClient.events.insert({
+            calendarId: "primary",
+            resource: {
+              summary: `✓ ${newTodo.text}`,
+              description: `Quick todo from Tracku template: ${template.name}`,
+              start: { date: deadlineDateStr },
+              end: { date: deadlineDateStr },
+              reminders: {
+                useDefault: false,
+                overrides: [{ method: "popup", minutes: templateTodo.reminderMinutes }],
+              },
+            },
+          });
+          newTodo.calendarEventId = calResponse.data.id;
+          await newTodo.save();
+          calendarEventsCreated++;
+        } catch (calErr) {
+          console.error("Calendar reminder create failed for new todo:", calErr.message);
+        }
+      }
 
       createdTodos.push(newTodo);
     }

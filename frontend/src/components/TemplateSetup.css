@@ -77,6 +77,23 @@
 
 .todo-deadline-offset-input:focus { outline: none; border-color: var(--accent-secondary); box-shadow: 0 0 0 2px var(--accent-light); }
 
+/* Compact calendar reminder button inside template todo rows */
+.todo-cal-icon-btn {
+  flex-shrink: 0;
+  background: var(--bg-secondary, #ffffff);
+  border: 1px solid var(--border-light, #e1e3e4);
+  color: var(--text-muted, #7f756e);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 5px 7px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.todo-cal-icon-btn:hover { border-color: var(--border-medium); background: var(--bg-tertiary); }
+.todo-cal-icon-btn.active { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.25); }
+
 .template-actions { display: flex; gap: 8px; }
 
 .btn-new-template {
@@ -526,6 +543,12 @@ body[data-theme="dark"] .time-slot-separator-template { color: var(--text-light)
 body[data-theme="dark"] .todo-text-input,
 body[data-theme="dark"] .todo-deadline-offset-input { background: var(--bg-card); color: var(--text-primary); border-color: var(--border-light); }
 body[data-theme="dark"] .todo-deadline-label { color: var(--text-muted); }
+body[data-theme="dark"] .todo-cal-icon-btn { background: var(--bg-card); border-color: var(--border-light); color: var(--text-muted); }
+body[data-theme="dark"] .todo-cal-icon-btn:hover { background: var(--bg-secondary); border-color: var(--border-medium); }
+body[data-theme="dark"] .todo-reminder-popup { background: var(--bg-card); border-color: var(--border-light); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+body[data-theme="dark"] .todo-reminder-opt { color: var(--text-primary); }
+body[data-theme="dark"] .todo-reminder-opt:hover { background: var(--bg-tertiary); }
+body[data-theme="dark"] .todo-reminder-opt.active { background: var(--accent-light); color: var(--accent-secondary); }
 body[data-theme="dark"] .template-selector { background: var(--bg-tertiary); border-color: var(--border-light); }
 body[data-theme="dark"] .template-selector label { color: var(--text-secondary); }
 body[data-theme="dark"] .template-dropdown { background: var(--bg-card); border-color: var(--border-light); color: var(--text-primary); }

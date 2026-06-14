@@ -1049,6 +1049,7 @@ const Dashboard = () => {
     try {
       const newTodo = await todoService.createTodo(text, deadline);
       setTodos([...todos, newTodo]);
+      return newTodo; // Return so callers can use the created todo (e.g., for reminders)
     } catch (error) {
       toast.error("Failed to add todo");
     } finally {

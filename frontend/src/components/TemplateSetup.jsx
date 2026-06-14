@@ -69,6 +69,8 @@ const TemplateSetup = ({
     const importedTodos = (templateToImport.quickTodos || []).map(({ _id, ...todo }) => ({
       ...todo,
       deadlineOffsetDays: todo.deadlineOffsetDays || 0,
+      reminderMinutes: todo.reminderMinutes || 0,
+      _tempId: `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     }));
 
     // Filter out tasks that already exist in current template (match name, category, day)
@@ -107,6 +109,8 @@ const TemplateSetup = ({
       (template.quickTodos || []).map((todo) => ({
         ...todo,
         deadlineOffsetDays: todo.deadlineOffsetDays || 0,
+        reminderMinutes: todo.reminderMinutes || 0,
+        _tempId: todo._id || `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       })),
     );
     setShowModal(true);
@@ -137,9 +141,11 @@ const TemplateSetup = ({
     setTemplateTodos([
       ...templateTodos,
       {
+        _tempId: `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         text: "",
         day: selectedEditDay,
         deadlineOffsetDays: 0,
+        reminderMinutes: 0,
       },
     ]);
   };
@@ -181,9 +187,11 @@ const TemplateSetup = ({
       alert(`No quick todos found on ${sourceDay}!`);
       return;
     }
-    const copiedTodos = sourceTodos.map(({ _id, ...todo }) => ({
+    const copiedTodos = sourceTodos.map(({ _id, _tempId, ...todo }) => ({
       ...todo,
       day: selectedEditDay,
+      _tempId: `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      reminderMinutes: todo.reminderMinutes || 0,
     }));
 
     // Deduplicate: Filter out todos that already exist in the target day
@@ -272,7 +280,10 @@ const TemplateSetup = ({
     }
 
     const validTasks = templateTasks.filter((t) => t.name.trim());
-    const validTodos = templateTodos.filter((t) => t.text.trim());
+    // Strip UI-only fields before saving — backend doesn't need them
+    const validTodos = templateTodos
+      .filter((t) => t.text.trim())
+      .map(({ _tempId, _showReminder, ...todo }) => todo);
     if (validTasks.length === 0 && validTodos.length === 0) {
       alert("Please provide names for your tasks or quick todos!");
       return;
@@ -745,7 +756,7 @@ const TemplateSetup = ({
                   ) : (
                     templateTodos.map((todo, index) =>
                       todo.day === selectedEditDay ? (
-                        <div key={index} className="template-todo-row">
+                        <div key={todo._tempId || todo._id || index} className="template-todo-row">
                           <input
                             type="text"
                             value={todo.text}
@@ -756,7 +767,7 @@ const TemplateSetup = ({
                             className="todo-text-input"
                           />
                           <label className="todo-deadline-label">
-                            Deadline + days
+                            +days
                             <input
                               type="number"
                               min="0"
@@ -771,6 +782,30 @@ const TemplateSetup = ({
                               className="todo-deadline-offset-input"
                             />
                           </label>
+                          <div className="todo-reminder-btn-wrap">
+                            <button
+                              type="button"
+                              className={`todo-cal-icon-btn${(todo.reminderMinutes || 0) > 0 ? " active" : ""}`}
+                              title={(todo.reminderMinutes || 0) > 0 ? `Reminder: ${todo.reminderMinutes < 60 ? todo.reminderMinutes + " min" : todo.reminderMinutes === 1440 ? "1 day" : todo.reminderMinutes / 60 + " hr"} before` : "Set reminder"}
+                              onClick={() => updateTodo(index, "_showReminder", !(todo._showReminder))}
+                            >
+                              📅
+                            </button>
+                            {todo._showReminder && (
+                              <div className="todo-reminder-popup">
+                                {[0, 5, 10, 15, 30, 60, 1440].map((min) => (
+                                  <button
+                                    key={min}
+                                    type="button"
+                                    className={`todo-reminder-opt${(todo.reminderMinutes || 0) === min ? " active" : ""}`}
+                                    onClick={() => { updateTodo(index, "reminderMinutes", min); updateTodo(index, "_showReminder", false); }}
+                                  >
+                                    {min === 0 ? "No reminder" : min < 60 ? `${min} min` : min === 1440 ? "1 day" : `${min / 60} hr`}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <button
                             onClick={() => removeTodo(index)}
                             className="btn-remove-task"
