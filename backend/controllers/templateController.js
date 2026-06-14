@@ -623,13 +623,25 @@ const applyTemplate = async (req, res) => {
         // Add calendar reminder if configured and not already in calendar
         if (templateTodo.reminderMinutes > 0 && calendarClient && !existingTodo.calendarEventId) {
           try {
+            const timeStr = templateTodo.reminderTime || "09:00";
+            const startDt = tz.createDateTimeFromSlot(deadlineDateStr, timeStr, timezone);
+            const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
+            const endDt = new Date(startDt.getTime() + 30 * 60000); // 30 minutes duration
+            const endISO = DateTime.fromJSDate(endDt).setZone(timezone).toISO();
+
             const calResponse = await calendarClient.events.insert({
               calendarId: "primary",
               resource: {
                 summary: `✓ ${existingTodo.text}`,
                 description: `Quick todo from Tracku template: ${template.name}`,
-                start: { date: deadlineDateStr },
-                end: { date: deadlineDateStr },
+                start: {
+                  dateTime: startISO,
+                  timeZone: timezone,
+                },
+                end: {
+                  dateTime: endISO,
+                  timeZone: timezone,
+                },
                 reminders: {
                   useDefault: false,
                   overrides: [{ method: "popup", minutes: templateTodo.reminderMinutes }],
@@ -658,13 +670,25 @@ const applyTemplate = async (req, res) => {
       // Add calendar reminder if configured
       if (templateTodo.reminderMinutes > 0 && calendarClient) {
         try {
+          const timeStr = templateTodo.reminderTime || "09:00";
+          const startDt = tz.createDateTimeFromSlot(deadlineDateStr, timeStr, timezone);
+          const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
+          const endDt = new Date(startDt.getTime() + 30 * 60000); // 30 minutes duration
+          const endISO = DateTime.fromJSDate(endDt).setZone(timezone).toISO();
+
           const calResponse = await calendarClient.events.insert({
             calendarId: "primary",
             resource: {
               summary: `✓ ${newTodo.text}`,
               description: `Quick todo from Tracku template: ${template.name}`,
-              start: { date: deadlineDateStr },
-              end: { date: deadlineDateStr },
+              start: {
+                dateTime: startISO,
+                timeZone: timezone,
+              },
+              end: {
+                dateTime: endISO,
+                timeZone: timezone,
+              },
               reminders: {
                 useDefault: false,
                 overrides: [{ method: "popup", minutes: templateTodo.reminderMinutes }],

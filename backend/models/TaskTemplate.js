@@ -83,6 +83,10 @@ const templateTodoSchema = new mongoose.Schema({
     type: Number,
     default: 0, // 0 means no reminder, otherwise minutes before deadline/time
   },
+  reminderTime: {
+    type: String,
+    default: "09:00",
+  },
 });
 
 const taskTemplateSchema = new mongoose.Schema({

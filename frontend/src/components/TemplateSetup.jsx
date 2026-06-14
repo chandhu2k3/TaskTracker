@@ -23,6 +23,8 @@ const TemplateSetup = ({
   const [draggedTaskIndex, setDraggedTaskIndex] = useState(null);
   const [selectedEditDay, setSelectedEditDay] = useState("monday"); // Track which day is being edited
   const [importTemplateId, setImportTemplateId] = useState(""); // Track which template to import from
+  const [editingTodoReminderIndex, setEditingTodoReminderIndex] = useState(null);
+  const [reminderModalForm, setReminderModalForm] = useState({ time: "09:00", reminderMinutes: 0 });
 
   const days = [
     "monday",
@@ -70,6 +72,7 @@ const TemplateSetup = ({
       ...todo,
       deadlineOffsetDays: todo.deadlineOffsetDays || 0,
       reminderMinutes: todo.reminderMinutes || 0,
+      reminderTime: todo.reminderTime || "09:00",
       _tempId: `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     }));
 
@@ -110,6 +113,7 @@ const TemplateSetup = ({
         ...todo,
         deadlineOffsetDays: todo.deadlineOffsetDays || 0,
         reminderMinutes: todo.reminderMinutes || 0,
+        reminderTime: todo.reminderTime || "09:00",
         _tempId: todo._id || `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       })),
     );
@@ -146,6 +150,7 @@ const TemplateSetup = ({
         day: selectedEditDay,
         deadlineOffsetDays: 0,
         reminderMinutes: 0,
+        reminderTime: "09:00",
       },
     ]);
   };
@@ -192,6 +197,7 @@ const TemplateSetup = ({
       day: selectedEditDay,
       _tempId: `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       reminderMinutes: todo.reminderMinutes || 0,
+      reminderTime: todo.reminderTime || "09:00",
     }));
 
     // Deduplicate: Filter out todos that already exist in the target day
@@ -786,25 +792,17 @@ const TemplateSetup = ({
                             <button
                               type="button"
                               className={`todo-cal-icon-btn${(todo.reminderMinutes || 0) > 0 ? " active" : ""}`}
-                              title={(todo.reminderMinutes || 0) > 0 ? `Reminder: ${todo.reminderMinutes < 60 ? todo.reminderMinutes + " min" : todo.reminderMinutes === 1440 ? "1 day" : todo.reminderMinutes / 60 + " hr"} before` : "Set reminder"}
-                              onClick={() => updateTodo(index, "_showReminder", !(todo._showReminder))}
+                              title={(todo.reminderMinutes || 0) > 0 ? `Reminder: ${todo.reminderTime || "09:00"} • ${todo.reminderMinutes < 60 ? todo.reminderMinutes + " min" : todo.reminderMinutes === 1440 ? "1 day" : todo.reminderMinutes / 60 + " hr"} before` : "Set reminder"}
+                              onClick={() => {
+                                setReminderModalForm({
+                                  time: todo.reminderTime || "09:00",
+                                  reminderMinutes: todo.reminderMinutes || 0,
+                                });
+                                setEditingTodoReminderIndex(index);
+                              }}
                             >
                               📅
                             </button>
-                            {todo._showReminder && (
-                              <div className="todo-reminder-popup">
-                                {[0, 5, 10, 15, 30, 60, 1440].map((min) => (
-                                  <button
-                                    key={min}
-                                    type="button"
-                                    className={`todo-reminder-opt${(todo.reminderMinutes || 0) === min ? " active" : ""}`}
-                                    onClick={() => { updateTodo(index, "reminderMinutes", min); updateTodo(index, "_showReminder", false); }}
-                                  >
-                                    {min === 0 ? "No reminder" : min < 60 ? `${min} min` : min === 1440 ? "1 day" : `${min / 60} hr`}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
                           </div>
                           <button
                             onClick={() => removeTodo(index)}
@@ -848,6 +846,62 @@ const TemplateSetup = ({
           </div>,
           document.body,
         )}
+      {editingTodoReminderIndex !== null && ReactDOM.createPortal(
+        <div className="calendar-picker-overlay" onClick={() => setEditingTodoReminderIndex(null)}>
+          <div className="calendar-reminder-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="calendar-picker-title">Set Time &amp; Reminder</div>
+            <div className="calendar-picker-context">
+              <div className="calendar-picker-context-label">Adding reminder for</div>
+              <div className="calendar-picker-context-title">
+                {templateTodos[editingTodoReminderIndex]?.text || "Quick todo"}
+              </div>
+              <div className="calendar-picker-context-meta">
+                Scheduled for {selectedEditDay.charAt(0).toUpperCase() + selectedEditDay.slice(1)} (offset +{templateTodos[editingTodoReminderIndex]?.deadlineOffsetDays || 0} days)
+              </div>
+            </div>
+            <div className="calendar-picker-grid" style={{ gridTemplateColumns: "1fr" }}>
+              <label className="calendar-picker-field">
+                <span>Time</span>
+                <input
+                  type="time"
+                  value={reminderModalForm.time}
+                  onChange={(e) => setReminderModalForm((p) => ({ ...p, time: e.target.value }))}
+                />
+              </label>
+            </div>
+            <label className="calendar-picker-field">
+              <span>Reminder</span>
+              <select
+                value={reminderModalForm.reminderMinutes}
+                onChange={(e) => setReminderModalForm((p) => ({ ...p, reminderMinutes: Number(e.target.value) }))}
+              >
+                <option value={0}>No reminder</option>
+                <option value={5}>5 min before</option>
+                <option value={10}>10 min before</option>
+                <option value={15}>15 min before</option>
+                <option value={30}>30 min before</option>
+                <option value={60}>1 hour before</option>
+                <option value={1440}>1 day before</option>
+              </select>
+            </label>
+            <div className="calendar-picker-actions">
+              <button className="btn-cancel" type="button" onClick={() => setEditingTodoReminderIndex(null)}>Cancel</button>
+              <button
+                className="btn-add"
+                type="button"
+                onClick={() => {
+                  updateTodo(editingTodoReminderIndex, "reminderTime", reminderModalForm.time);
+                  updateTodo(editingTodoReminderIndex, "reminderMinutes", reminderModalForm.reminderMinutes);
+                  setEditingTodoReminderIndex(null);
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

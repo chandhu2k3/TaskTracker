@@ -36,11 +36,10 @@ const getTodos = async (req, res) => {
           : todo.date < today && !todo.completed; // Legacy: date-based overdue
 
         if (todo.date < today && !todo.completed) {
-          // Carry forward to today
-          await Todo.findByIdAndUpdate(todo._id, {
-            date: today,
-            isOverdue: isOverdueNow,
-          });
+          // Carry forward in memory only so it shows up in the current list, but do not update the date in DB
+          if (todo.isOverdue !== isOverdueNow) {
+            await Todo.findByIdAndUpdate(todo._id, { isOverdue: isOverdueNow });
+          }
           return { ...todo, date: today, isOverdue: isOverdueNow };
         }
         if (todo.isOverdue !== isOverdueNow) {
