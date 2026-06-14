@@ -11,6 +11,7 @@ const TodoList = ({
   onAddTodo,
   onToggleTodo,
   onDeleteTodo,
+  onClearCompleted,
   isAddingTodo = false,
   togglingTodo = {},
   deletingTodo = {},
@@ -551,7 +552,16 @@ const TodoList = ({
 
       {todos.length > 0 && (
         <div className="todo-stats">
-          {todos.filter((t) => t.completed).length} of {todos.length} completed
+          <span>{todos.filter((t) => t.completed).length} of {todos.length} completed</span>
+          {onClearCompleted && todos.some((t) => t.completed) && (
+            <button
+              className="todo-clear-btn"
+              onClick={onClearCompleted}
+              title="Clear all completed todos"
+            >
+              🗑 Clear Completed
+            </button>
+          )}
         </div>
       )}
     </div>

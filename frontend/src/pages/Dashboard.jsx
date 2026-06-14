@@ -1077,6 +1077,22 @@ const Dashboard = () => {
     }
   };
 
+  const handleClearCompletedTodos = async () => {
+    const completedCount = todos.filter((t) => t.completed).length;
+    if (completedCount === 0) {
+      toast.info("No completed todos to clear.");
+      return;
+    }
+    if (!window.confirm(`Clear ${completedCount} completed todo(s)? This cannot be undone.`)) return;
+    try {
+      await todoService.clearCompleted();
+      setTodos((prev) => prev.filter((t) => !t.completed));
+      toast.success(`${completedCount} completed todo(s) cleared!`);
+    } catch (error) {
+      toast.error("Failed to clear completed todos");
+    }
+  };
+
   const handleDeleteTodo = async (id) => {
     if (deletingTodo[id]) return;
     setDeletingTodo((prev) => ({ ...prev, [id]: true }));
@@ -1586,6 +1602,7 @@ const Dashboard = () => {
                         onAddTodo={handleAddTodo}
                         onToggleTodo={handleToggleTodo}
                         onDeleteTodo={handleDeleteTodo}
+                        onClearCompleted={handleClearCompletedTodos}
                         isAddingTodo={addingTodo}
                         togglingTodo={togglingTodo}
                         deletingTodo={deletingTodo}

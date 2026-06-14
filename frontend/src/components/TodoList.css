@@ -375,15 +375,36 @@
   margin: 0 -20px -20px;
   background: var(--bg-tertiary, #f3f4f5);
   border-top: 1px solid var(--border-light, #e1e3e4);
-  text-align: center;
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-secondary, #4d453f);
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   gap: 6px;
+  padding-left: 16px;
+  padding-right: 16px;
 }
+
+.todo-clear-btn {
+  background: none;
+  border: 1px solid var(--border-light, #e1e3e4);
+  color: var(--danger, #ba1a1a);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.todo-clear-btn:hover {
+  background: rgba(186, 26, 26, 0.07);
+  border-color: var(--danger, #ba1a1a);
+}
+
 
 @media (max-width: 768px) {
   .todo-list-container { padding: 14px; border-radius: var(--radius-lg); }
@@ -420,6 +441,8 @@ body[data-theme="dark"] .todo-item.completed .todo-text { color: var(--text-ligh
 body[data-theme="dark"] .todo-add-btn { background: var(--accent-primary); color: var(--bg-primary); }
 body[data-theme="dark"] .todo-stats { background: var(--bg-tertiary); border-top-color: var(--border-light); color: var(--text-muted); }
 body[data-theme="dark"] .todo-delete-btn { color: #ef4444; }
+body[data-theme="dark"] .todo-clear-btn { color: #ef4444; border-color: var(--border-light); }
+body[data-theme="dark"] .todo-clear-btn:hover { background: rgba(239,68,68,0.1); border-color: #ef4444; }
 body[data-theme="dark"] .todo-calendar-btn { background: var(--bg-card); border-color: var(--border-light); color: var(--text-muted); }
 
 body[data-theme="dark"] .calendar-picker-overlay { background: rgba(0,0,0,0.55); }
