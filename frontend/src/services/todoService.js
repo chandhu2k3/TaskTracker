@@ -57,6 +57,10 @@ const todoService = {
   toggleTodo,
   deleteTodo,
   clearCompleted,
+  deleteAll: async () => {
+    const response = await api.delete(`/api/todos/delete-all`, getConfig());
+    return response.data;
+  },
   getDeletedTodos: async () => {
     const response = await api.get(`/api/todos/deleted`, getConfig());
     return response.data;

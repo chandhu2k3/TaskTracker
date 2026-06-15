@@ -208,12 +208,32 @@ const restoreTodo = async (req, res) => {
   }
 };
 
+// @desc    Delete ALL todos (soft delete)
+// @route   DELETE /api/todos/delete-all
+// @access  Private
+const deleteAllTodos = async (req, res) => {
+  try {
+    const result = await Todo.updateMany(
+      { user: req.user._id, deleted: { $ne: true } },
+      { $set: { deleted: true, deletedAt: new Date() } },
+    );
+    await invalidateCache(`user:${req.user._id}:todos*`);
+    res.json({
+      message: `Soft deleted ${result.modifiedCount} todo(s)`,
+      deletedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTodos,
   createTodo,
   updateTodo,
   deleteTodo,
   clearCompleted,
+  deleteAllTodos,
   getDeletedTodos,
   restoreTodo,
 };

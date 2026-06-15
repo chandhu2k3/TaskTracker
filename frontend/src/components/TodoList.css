@@ -405,6 +405,23 @@
   border-color: var(--danger, #ba1a1a);
 }
 
+.todo-stats-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.todo-delete-all-btn {
+  background: var(--danger, #ba1a1a);
+  color: #fff;
+  border-color: transparent;
+}
+
+.todo-delete-all-btn:hover {
+  background: #9b1515;
+  border-color: transparent;
+}
+
 
 @media (max-width: 768px) {
   .todo-list-container { padding: 14px; border-radius: var(--radius-lg); }

@@ -7,6 +7,7 @@ const {
   updateTodo,
   deleteTodo,
   clearCompleted,
+  deleteAllTodos,
   getDeletedTodos,
   restoreTodo,
 } = require("../controllers/todoController");
@@ -16,7 +17,9 @@ router.use(protect);
 
 router.route("/").get(getTodos).post(createTodo);
 
+// Specific routes MUST come before /:id wildcard
 router.delete("/clear-completed", clearCompleted);
+router.delete("/delete-all", deleteAllTodos);
 router.get("/deleted", getDeletedTodos);
 
 router.route("/:id").put(updateTodo).delete(deleteTodo);

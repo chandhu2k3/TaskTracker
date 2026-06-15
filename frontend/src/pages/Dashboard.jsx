@@ -1077,19 +1077,41 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteAllTodos = async () => {
+    if (todos.length === 0) {
+      toast.info("No todos to delete.");
+      return;
+    }
+    if (!window.confirm(`Delete all ${todos.length} todo(s)? This cannot be undone.`)) return;
+    try {
+      await todoService.deleteAll();
+      setTodos([]);
+      // Reload from server to confirm server state matches
+      await loadTodos();
+      toast.success("All todos deleted!");
+    } catch (error) {
+      console.error("Delete all todos error:", error);
+      toast.error("Failed to delete all todos");
+      await loadTodos(); // Re-sync with server on failure too
+    }
+  };
+
   const handleClearCompletedTodos = async () => {
     const completedCount = todos.filter((t) => t.completed).length;
     if (completedCount === 0) {
       toast.info("No completed todos to clear.");
       return;
     }
-    if (!window.confirm(`Clear ${completedCount} completed todo(s)? This cannot be undone.`)) return;
+    if (!window.confirm(`Clear ${completedCount} completed todo(s)?`)) return;
     try {
       await todoService.clearCompleted();
-      setTodos((prev) => prev.filter((t) => !t.completed));
+      // Reload from server to confirm server state
+      await loadTodos();
       toast.success(`${completedCount} completed todo(s) cleared!`);
     } catch (error) {
+      console.error("Clear completed error:", error);
       toast.error("Failed to clear completed todos");
+      await loadTodos();
     }
   };
 
@@ -1602,6 +1624,7 @@ const Dashboard = () => {
                         onAddTodo={handleAddTodo}
                         onToggleTodo={handleToggleTodo}
                         onDeleteTodo={handleDeleteTodo}
+                        onDeleteAll={handleDeleteAllTodos}
                         onClearCompleted={handleClearCompletedTodos}
                         isAddingTodo={addingTodo}
                         togglingTodo={togglingTodo}
