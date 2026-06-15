@@ -65,6 +65,7 @@ const getTasksByDateRange = async (req, res) => {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       },
+      deleted: { $ne: true }, // Exclude soft-deleted tasks
     })
       .sort({ date: 1, createdAt: 1 })
       .skip(skip)
@@ -78,6 +79,7 @@ const getTasksByDateRange = async (req, res) => {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       },
+      deleted: { $ne: true }, // Exclude soft-deleted tasks
     });
 
     res.json({
@@ -394,10 +396,17 @@ const deleteTasksByDay = async (req, res) => {
   try {
     const { date } = req.params;
     const timezone = tz.getTimezoneFromRequest(req);
-    const targetDate = tz.parseDate(date, timezone);
+
+    // Use day-range instead of exact timestamp to catch tasks regardless of
+    // whether they were stored at UTC midnight, IST midnight, or noon IST.
+    const { startOfDay, endOfDay } = tz.getDayBounds(date, timezone);
 
     const result = await Task.updateMany(
-      { user: req.user._id, date: targetDate, deleted: { $ne: true } },
+      {
+        user: req.user._id,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        deleted: { $ne: true },
+      },
       { $set: { deleted: true, deletedAt: new Date() } },
     );
     await invalidateCache(`user:${req.user._id}:tasks*`);

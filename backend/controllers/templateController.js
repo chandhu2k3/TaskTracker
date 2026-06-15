@@ -303,13 +303,17 @@ const applyTemplate = async (req, res) => {
 
       const dateStr = tz.dateToString(taskDateObj, timezone);
       const targetDate = tz.parseDate(dateStr, timezone);
+      // Build a day-range filter to find any task stored for that calendar day,
+      // regardless of exact timestamp. This is immune to UTC-midnight vs IST-midnight
+      // mismatches that happen when different code paths create Date objects.
+      const { startOfDay, endOfDay } = tz.getDayBounds(dateStr, timezone);
 
       // Check if task already exists (non-deleted) for this date
       const existing = await Task.findOne({
         user: req.user._id,
         name: templateTask.name,
         category: templateTask.category,
-        date: targetDate,
+        date: { $gte: startOfDay, $lte: endOfDay }, // day-range, not exact timestamp
         deleted: { $ne: true }, // Only find live (non-deleted) tasks
       });
 
@@ -446,7 +450,11 @@ const applyTemplate = async (req, res) => {
             user: req.user._id,
             name: templateTask.name,
             category: templateTask.category,
-            date: dateStr,
+            // IMPORTANT: use the same parsed Date object used by findOne / createTask.
+            // Passing `dateStr` (a raw string) causes Mongoose to call new Date(string)
+            // which gives UTC midnight — a different value from tz.parseDate() IST midnight,
+            // causing a guaranteed E11000 duplicate key error on the unique index.
+            date: targetDate,
             day: templateTask.day,
             isActive: false,
             sessions: [],
@@ -462,41 +470,42 @@ const applyTemplate = async (req, res) => {
           // unique key exists. Find it (including deleted ones) and restore + update it.
           if (err.code === 11000) {
             console.log(
-              "Duplicate key on create — restoring soft-deleted task...",
+              "Duplicate key on create — finding task by day range to restore/handle...",
             );
-            const softDeleted = await Task.findOne({
+            // Use day-range to be immune to timestamp mismatches
+            const anyExisting = await Task.findOne({
               user: req.user._id,
               name: templateTask.name,
               category: templateTask.category,
-              date: targetDate, // use the parsed Date, same as the unique index
+              date: { $gte: startOfDay, $lte: endOfDay },
             });
-            if (softDeleted) {
+            if (anyExisting) {
               // Restore and bring up to date with template values
-              softDeleted.deleted = false;
-              softDeleted.deletedAt = null;
-              softDeleted.plannedTime = templateTask.plannedTime || 0;
-              softDeleted.isAutomated = templateTask.isAutomated || false;
-              softDeleted.scheduledStartTime = templateTask.scheduledStartTime || null;
-              softDeleted.scheduledEndTime = templateTask.scheduledEndTime || null;
+              anyExisting.deleted = false;
+              anyExisting.deletedAt = null;
+              anyExisting.plannedTime = templateTask.plannedTime || 0;
+              anyExisting.isAutomated = templateTask.isAutomated || false;
+              anyExisting.scheduledStartTime = templateTask.scheduledStartTime || null;
+              anyExisting.scheduledEndTime = templateTask.scheduledEndTime || null;
 
-              // Only reset completion data if the task hasn\'t been worked on
-              if (softDeleted.totalTime === 0 && softDeleted.sessions.length === 0) {
-                softDeleted.completionCount = 0;
-                if (softDeleted.isAutomated && softDeleted.plannedTime > 0) {
+              // Only reset completion data if the task hasn't been worked on
+              if (anyExisting.totalTime === 0 && anyExisting.sessions.length === 0) {
+                anyExisting.completionCount = 0;
+                if (anyExisting.isAutomated && anyExisting.plannedTime > 0) {
                   if (tz.isTodayOrPast(dateStr, timezone)) {
-                    const completionTime = softDeleted.plannedTime;
-                    const startTime = tz.createDateTimeFromSlot(dateStr, softDeleted.scheduledStartTime || "09:00", timezone);
+                    const completionTime = anyExisting.plannedTime;
+                    const startTime = tz.createDateTimeFromSlot(dateStr, anyExisting.scheduledStartTime || "09:00", timezone);
                     const endTime = new Date(startTime.getTime() + completionTime);
-                    softDeleted.sessions = [{ startTime, endTime, duration: completionTime }];
-                    softDeleted.totalTime = completionTime;
-                    softDeleted.completionCount = 1;
+                    anyExisting.sessions = [{ startTime, endTime, duration: completionTime }];
+                    anyExisting.totalTime = completionTime;
+                    anyExisting.completionCount = 1;
                   }
                 }
               }
 
-              await softDeleted.save();
-              createdTasks.push(softDeleted);
-              console.log("Soft-deleted task restored from template:", softDeleted._id);
+              await anyExisting.save();
+              createdTasks.push(anyExisting);
+              console.log("Task found via day-range and handled:", anyExisting._id);
               continue; // Move to next template task
             }
           }
