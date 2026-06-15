@@ -304,12 +304,13 @@ const applyTemplate = async (req, res) => {
       const dateStr = tz.dateToString(taskDateObj, timezone);
       const targetDate = tz.parseDate(dateStr, timezone);
 
-      // Check if task already exists for this date
+      // Check if task already exists (non-deleted) for this date
       const existing = await Task.findOne({
         user: req.user._id,
         name: templateTask.name,
         category: templateTask.category,
         date: targetDate,
+        deleted: { $ne: true }, // Only find live (non-deleted) tasks
       });
 
       if (existing) {
@@ -457,23 +458,49 @@ const applyTemplate = async (req, res) => {
             scheduledEndTime: templateTask.scheduledEndTime || null,
           });
         } catch (err) {
-          // If duplicate key error (code 11000), task was created by concurrent request
+          // If duplicate key error (code 11000), a soft-deleted task with the same
+          // unique key exists. Find it (including deleted ones) and restore + update it.
           if (err.code === 11000) {
             console.log(
-              "Task already exists (concurrent request), fetching existing...",
+              "Duplicate key on create — restoring soft-deleted task...",
             );
-            newTask = await Task.findOne({
+            const softDeleted = await Task.findOne({
               user: req.user._id,
               name: templateTask.name,
               category: templateTask.category,
-              date: dateStr,
+              date: targetDate, // use the parsed Date, same as the unique index
             });
-            if (newTask) {
-              createdTasks.push(newTask);
-              continue; // Skip to next template task
+            if (softDeleted) {
+              // Restore and bring up to date with template values
+              softDeleted.deleted = false;
+              softDeleted.deletedAt = null;
+              softDeleted.plannedTime = templateTask.plannedTime || 0;
+              softDeleted.isAutomated = templateTask.isAutomated || false;
+              softDeleted.scheduledStartTime = templateTask.scheduledStartTime || null;
+              softDeleted.scheduledEndTime = templateTask.scheduledEndTime || null;
+
+              // Only reset completion data if the task hasn\'t been worked on
+              if (softDeleted.totalTime === 0 && softDeleted.sessions.length === 0) {
+                softDeleted.completionCount = 0;
+                if (softDeleted.isAutomated && softDeleted.plannedTime > 0) {
+                  if (tz.isTodayOrPast(dateStr, timezone)) {
+                    const completionTime = softDeleted.plannedTime;
+                    const startTime = tz.createDateTimeFromSlot(dateStr, softDeleted.scheduledStartTime || "09:00", timezone);
+                    const endTime = new Date(startTime.getTime() + completionTime);
+                    softDeleted.sessions = [{ startTime, endTime, duration: completionTime }];
+                    softDeleted.totalTime = completionTime;
+                    softDeleted.completionCount = 1;
+                  }
+                }
+              }
+
+              await softDeleted.save();
+              createdTasks.push(softDeleted);
+              console.log("Soft-deleted task restored from template:", softDeleted._id);
+              continue; // Move to next template task
             }
           }
-          throw err; // Re-throw if not duplicate error
+          throw err; // Re-throw if not a duplicate error or task not found
         }
 
         console.log("Task created:", {

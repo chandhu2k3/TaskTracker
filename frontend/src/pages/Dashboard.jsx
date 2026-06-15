@@ -591,12 +591,13 @@ const Dashboard = () => {
   const handleDeleteTask = async (taskId) => {
     if (deletingTask[taskId]) return;
     setDeletingTask((prev) => ({ ...prev, [taskId]: true }));
-    // Save the task for undo
+    // Snapshot the task before the async call so undo can restore it
     const deletedTask = tasks.find((t) => t._id === taskId);
     try {
       await taskService.deleteTask(taskId);
-      setTasks(tasks.filter((task) => task._id !== taskId));
-      // Show undo toast
+      // Functional updater prevents stale-closure bug when state changes during the await
+      setTasks((prev) => prev.filter((task) => task._id !== taskId));
+      // Show undo toast — `taskId` and `deletedTask` are safe snapshot values
       toast.info(
         ({ closeToast }) => (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -642,7 +643,7 @@ const Dashboard = () => {
   const handleDeleteDayTasks = async (date) => {
     if (
       !window.confirm(
-        `Delete all tasks for ${new Date(date).toLocaleDateString()}?`,
+        `Delete all tasks for ${new Date(date + "T00:00:00").toLocaleDateString()}?`,
       )
     ) {
       return;
@@ -650,8 +651,14 @@ const Dashboard = () => {
 
     try {
       await taskService.deleteTasksByDay(date);
-      setTasks(tasks.filter((task) => task.date !== date));
+      // task.date from MongoDB is a full ISO datetime string (e.g. "2026-06-15T06:30:00.000Z")
+      // `date` prop is YYYY-MM-DD — must normalise both sides before comparing
+      setTasks((prev) =>
+        prev.filter((task) => formatLocalDate(task.date) !== date)
+      );
       toast.success("Day tasks deleted successfully");
+      // Reload from server as a safety net to guarantee UI is fully in sync
+      await loadTasks();
     } catch (error) {
       toast.error("Failed to delete day tasks");
     }
@@ -1048,7 +1055,8 @@ const Dashboard = () => {
     setAddingTodo(true);
     try {
       const newTodo = await todoService.createTodo(text, deadline);
-      setTodos([...todos, newTodo]);
+      // Use functional updater to avoid stale closure on todos
+      setTodos((prev) => [...prev, newTodo]);
       return newTodo; // Return so callers can use the created todo (e.g., for reminders)
     } catch (error) {
       toast.error("Failed to add todo");
@@ -1061,10 +1069,12 @@ const Dashboard = () => {
     if (togglingTodo[id]) return;
     setTogglingTodo((prev) => ({ ...prev, [id]: true }));
     try {
+      // Read current todo state at call time to get its completed value
       const todo = todos.find((t) => t._id === id);
       if (todo) {
         const updated = await todoService.toggleTodo(id, !todo.completed);
-        setTodos(todos.map((t) => (t._id === id ? updated : t)));
+        // Functional updater avoids stale closure on todos
+        setTodos((prev) => prev.map((t) => (t._id === id ? updated : t)));
       }
     } catch (error) {
       toast.error("Failed to update todo");
@@ -1118,11 +1128,13 @@ const Dashboard = () => {
   const handleDeleteTodo = async (id) => {
     if (deletingTodo[id]) return;
     setDeletingTodo((prev) => ({ ...prev, [id]: true }));
+    // Capture the todo snapshot before the async call for undo support
     const deletedTodo = todos.find((t) => t._id === id);
     try {
       await todoService.deleteTodo(id);
-      setTodos(todos.filter((todo) => todo._id !== id));
-      // Show undo toast
+      // Functional updater prevents stale-closure bug when state changes during the await
+      setTodos((prev) => prev.filter((todo) => todo._id !== id));
+      // Show undo toast — closures over `id` and `deletedTodo` are safe (primitives / snapshot)
       toast.info(
         ({ closeToast }) => (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
