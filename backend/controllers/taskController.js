@@ -501,12 +501,14 @@ const getWeeklyAnalytics = async (req, res) => {
       totalTasks: tasks.length,
       completedTasks: 0,
       activeTasks: 0,
+      missedTasks: 0,
       totalTime: 0,
       totalPlannedTime: 0,
       byDay: {},
       byCategory: {},
       averagePerDay: 0,
       sessionCount: 0,
+      missedItems: [],
     };
 
     const days = [
@@ -538,6 +540,19 @@ const getWeeklyAnalytics = async (req, res) => {
         analytics.completedTasks++;
       }
 
+      if (task.missed) {
+        analytics.missedTasks++;
+        analytics.missedItems.push({
+          _id: task._id,
+          name: task.name,
+          category: task.category,
+          date: task.date,
+          day: task.day,
+          missedAt: task.missedAt,
+          type: "task",
+        });
+      }
+
       const sessionsCount = task.sessions?.length || 0;
       analytics.totalTime += taskTime;
       analytics.totalPlannedTime += task.plannedTime || 0;
@@ -550,6 +565,7 @@ const getWeeklyAnalytics = async (req, res) => {
         analytics.byDay[dayKey].totalTime += taskTime;
         analytics.byDay[dayKey].plannedTime += task.plannedTime || 0;
         analytics.byDay[dayKey].sessions += sessionsCount;
+        if (task.missed) analytics.byDay[dayKey].missedCount = (analytics.byDay[dayKey].missedCount || 0) + 1;
       }
 
       // By category
@@ -632,10 +648,22 @@ const getMonthlyAnalytics = async (req, res) => {
       totalTasks: tasks.length,
       completedTasks: tasks.filter((t) => !t.isActive && t.totalTime > 0)
         .length,
+      missedTasks: tasks.filter((t) => t.missed).length,
       totalTime: 0,
       byCategory: {},
       byWeek: {},
       sessionCount: 0,
+      missedItems: tasks
+        .filter((t) => t.missed)
+        .map((t) => ({
+          _id: t._id,
+          name: t.name,
+          category: t.category,
+          date: t.date,
+          day: t.day,
+          missedAt: t.missedAt,
+          type: "task",
+        })),
     };
 
     tasks.forEach((task) => {
@@ -797,6 +825,32 @@ const restoreTask = async (req, res) => {
   }
 };
 
+// @desc    Toggle missed status on a task
+// @route   PUT /api/tasks/:id/missed
+// @access  Private
+const markTaskMissed = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const timezone = tz.getTimezoneFromRequest(req);
+    const { missed } = req.body;
+    // Toggle: if missed is explicitly passed, use it; otherwise flip current
+    task.missed = missed !== undefined ? missed : !task.missed;
+    task.missedAt = task.missed ? tz.getNow(timezone).toJSDate() : null;
+
+    await task.save();
+    await invalidateCache(`user:${req.user._id}:tasks*`);
+    await invalidateCache(`user:${req.user._id}:analytics*`);
+    res.json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTasksByDateRange,
   getTasksByWeek,
@@ -811,4 +865,5 @@ module.exports = {
   getWeeklyAnalytics,
   getMonthlyAnalytics,
   getCategoryAnalytics,
+  markTaskMissed,
 };

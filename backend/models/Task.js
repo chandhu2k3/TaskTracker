@@ -107,6 +107,14 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  missed: {
+    type: Boolean,
+    default: false,
+  },
+  missedAt: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -385,3 +385,151 @@ body[data-theme="dark"] .week-label { color: var(--text-secondary); }
 body[data-theme="dark"] .week-details { color: var(--text-muted); }
 body[data-theme="dark"] .date-label { color: var(--text-secondary); }
 body[data-theme="dark"] .date-details { color: var(--text-muted); }
+
+/* ─── Missed Stat Cards ─── */
+.stat-card-missed {
+  border-color: rgba(186,26,26,0.2);
+  background: rgba(186,26,26,0.03);
+}
+
+.stat-card-missed:hover {
+  border-color: rgba(186,26,26,0.35);
+}
+
+.missed-stat-value {
+  color: var(--danger, #ba1a1a) !important;
+}
+
+/* ─── Missed Items Review Section ─── */
+.missed-review-section {
+  border-color: rgba(186,26,26,0.2);
+  background: rgba(186,26,26,0.02);
+  cursor: pointer;
+}
+
+.missed-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.missed-review-header h4 {
+  color: var(--danger, #ba1a1a) !important;
+  margin-bottom: 0 !important;
+}
+
+.missed-review-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger, #ba1a1a);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 8px;
+}
+
+.missed-review-toggle {
+  font-size: 0.72rem;
+  color: var(--danger, #ba1a1a);
+  opacity: 0.7;
+}
+
+.missed-review-body {
+  margin-top: 14px;
+  border-top: 1px solid rgba(186,26,26,0.12);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.missed-tasks-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.missed-group-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--danger, #ba1a1a);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.missed-day-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted, #7f756e);
+  margin: 6px 0 2px;
+}
+
+.missed-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-tertiary, #f3f4f5);
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid rgba(186,26,26,0.1);
+  animation: missedRowIn 0.2s ease;
+}
+
+@keyframes missedRowIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.missed-item-category {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted, #7f756e);
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border-light, #e1e3e4);
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.missed-item-todo-icon {
+  font-size: 0.75rem;
+  color: var(--text-muted, #7f756e);
+}
+
+.missed-item-name {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary, #191c1d);
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.missed-item-time {
+  font-size: 0.68rem;
+  color: var(--text-light, #9e9e9e);
+  white-space: nowrap;
+}
+
+.missed-summary-month {
+  border-color: rgba(186,26,26,0.15);
+  background: rgba(186,26,26,0.02);
+}
+
+/* Dark mode overrides for missed styles */
+body[data-theme="dark"] .stat-card-missed {
+  background: rgba(186,26,26,0.06);
+  border-color: rgba(186,26,26,0.25);
+}
+body[data-theme="dark"] .missed-review-section { background: rgba(186,26,26,0.05); border-color: rgba(186,26,26,0.25); }
+body[data-theme="dark"] .missed-item-row { background: var(--bg-tertiary); border-color: rgba(186,26,26,0.15); }
+body[data-theme="dark"] .missed-item-category { background: var(--bg-card); border-color: var(--border-light); }
+body[data-theme="dark"] .missed-item-name { color: var(--text-muted); }

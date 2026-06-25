@@ -374,6 +374,78 @@
 .task-item.completed .progress-text { color: var(--success); }
 .task-item.completed .planned-time-label { color: var(--success); }
 
+/* Missed task styles */
+.task-item.missed {
+  border-color: rgba(186,26,26,0.25);
+  background: rgba(186,26,26,0.03);
+  border-left: 3px solid rgba(186,26,26,0.5);
+  opacity: 0.82;
+}
+
+.task-item.missed .task-name {
+  text-decoration: line-through;
+  color: var(--text-muted, #7f756e);
+}
+
+.missed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(186,26,26,0.1);
+  color: var(--danger, #ba1a1a);
+  border: 1px solid rgba(186,26,26,0.25);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-decoration: none !important;
+  white-space: nowrap;
+  animation: missedPulse 0.4s ease;
+}
+
+@keyframes missedPulse {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.btn-mark-missed {
+  background: var(--bg-tertiary, #f3f4f5);
+  color: var(--text-muted, #7f756e);
+  border: 1px solid var(--border-light, #e1e3e4);
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.btn-mark-missed:hover {
+  background: rgba(186,26,26,0.08);
+  color: var(--danger, #ba1a1a);
+  border-color: rgba(186,26,26,0.3);
+}
+
+.btn-mark-missed.active-missed {
+  background: rgba(186,26,26,0.08);
+  color: var(--danger, #ba1a1a);
+  border-color: rgba(186,26,26,0.3);
+}
+
+.btn-mark-missed.active-missed:hover {
+  background: rgba(186,26,26,0.14);
+}
+
+.btn-mark-missed:disabled { opacity: 0.5; cursor: wait; }
+
+
+
 .task-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .task-time { font-weight: 600; color: var(--text-secondary, #4d453f); }
 

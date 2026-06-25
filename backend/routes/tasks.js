@@ -14,6 +14,7 @@ const {
   getWeeklyAnalytics,
   getMonthlyAnalytics,
   getCategoryAnalytics,
+  markTaskMissed,
 } = require("../controllers/taskController");
 const { protect } = require("../middleware/auth");
 
@@ -44,5 +45,8 @@ router.route("/:id").put(updateTask).delete(deleteTask);
 
 // Manual finish route
 router.put("/:id/finish", finishTaskManually);
+
+// Missed route
+router.put("/:id/missed", markTaskMissed);
 
 module.exports = router;

@@ -69,6 +69,14 @@ const todoService = {
     const response = await api.put(`/api/todos/${id}/restore`, {}, getConfig());
     return response.data;
   },
+  markTodoMissed: async (id, missed) => {
+    const response = await api.put(`/api/todos/${id}/missed`, { missed }, getConfig());
+    return response.data;
+  },
+  getMissedTodos: async () => {
+    const response = await api.get(`/api/todos/missed`, getConfig());
+    return response.data;
+  },
 };
 
 export default todoService;

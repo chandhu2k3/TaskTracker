@@ -110,6 +110,10 @@ const taskService = {
     const response = await api.put(`/api/tasks/${id}/restore`, {});
     return response.data;
   },
+  markTaskMissed: async (id, missed) => {
+    const response = await api.put(`/api/tasks/${id}/missed`, { missed });
+    return response.data;
+  },
 };
 
 export default taskService;

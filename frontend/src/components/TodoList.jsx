@@ -11,6 +11,7 @@ const TodoList = ({
   onAddTodo,
   onToggleTodo,
   onDeleteTodo,
+  onMarkTodoMissed,
   onDeleteAll,
   onClearCompleted,
   isAddingTodo = false,
@@ -76,6 +77,9 @@ const TodoList = ({
     if (!newTodo.trim()) return;
     const todoText = newTodo.trim();
     const todoDeadline = deadline || todayStr;
+    // Capture reminder details before clearing state
+    const capturedReminderMinutes = reminderMinutes;
+    const capturedReminderTime = reminderTime;
     setNewTodo("");
     setDeadline("");
     setReminderMinutes(0);
@@ -83,24 +87,54 @@ const TodoList = ({
     // Create the todo
     const created = await onAddTodo(todoText, todoDeadline);
     // If a reminder was requested and a todo was returned, add to calendar
-    if (reminderMinutes > 0 && created && created._id) {
+    if (capturedReminderMinutes > 0 && created && created._id) {
       try {
-        await calendarService.smartAddToCalendar(
+        const result = await calendarService.smartAddToCalendar(
           {
             title: `✓ ${todoText}`,
             description: `Quick todo reminder`,
             date: todoDeadline,
-            startTime: reminderTime || "09:00",
+            startTime: capturedReminderTime || "09:00",
             durationMinutes: 30,
-            reminderMinutes,
+            reminderMinutes: capturedReminderMinutes,
             todoId: created._id,
           },
           () => {
-            // Not connected — silently skip; user can add manually via calendar button
+            // Not connected — show toast with connect prompt
+            if (onConnectCalendar) {
+              toast.info(
+                ({ closeToast }) => (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span>Connect Google Calendar to save reminders</span>
+                    <button
+                      onClick={() => { closeToast(); onConnectCalendar(); }}
+                      style={{
+                        background: "#4285F4",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "4px 12px",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Connect
+                    </button>
+                  </div>
+                ),
+                { autoClose: 8000 },
+              );
+            } else {
+              toast.warn("Connect Google Calendar from Profile to enable reminders.");
+            }
           },
         );
+        if (result?.success) {
+          toast.success(`📅 Reminder added to Google Calendar at ${capturedReminderTime}`);
+        }
       } catch {
-        // Calendar errors are non-fatal for todo creation
+        toast.error("Could not create calendar event. Try again.");
       }
     }
   };
@@ -335,9 +369,28 @@ const TodoList = ({
         ) : (
           [...todos]
             .sort((a, b) => {
-              // Pending todos first, completed todos at bottom
-              if (a.completed === b.completed) return 0;
-              return a.completed ? 1 : -1;
+              // Completed always at bottom
+              if (a.completed !== b.completed) return a.completed ? 1 : -1;
+              // Among pending: today first, then overdue (past dates), then future
+              if (!a.completed && !b.completed) {
+                const aDate = a.deadline || todayStr;
+                const bDate = b.deadline || todayStr;
+                const aIsToday = aDate === todayStr;
+                const bIsToday = bDate === todayStr;
+                const aIsOverdue = aDate < todayStr;
+                const bIsOverdue = bDate < todayStr;
+                // Today beats everything else
+                if (aIsToday && !bIsToday) return -1;
+                if (!aIsToday && bIsToday) return 1;
+                // Both overdue — sort by date ascending (earliest overdue first)
+                if (aIsOverdue && bIsOverdue) return aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
+                // One overdue, one future
+                if (aIsOverdue && !bIsOverdue) return -1;
+                if (!aIsOverdue && bIsOverdue) return 1;
+                // Both future — sort by date ascending
+                return aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
+              }
+              return 0;
             })
             .map((todo) => {
               const todoTagDate = todo.deadline || todo.date || todayStr;
@@ -351,7 +404,7 @@ const TodoList = ({
               return (
                 <div
                   key={todo._id}
-                  className={`todo-item ${todo.completed ? "completed" : ""} ${isOverdue ? "overdue-item" : ""}`}
+                  className={`todo-item ${todo.completed ? "completed" : ""} ${isTodayTag && !todo.completed ? "today-item" : ""} ${isOverdue ? "overdue-item" : ""} ${todo.missed ? "missed-item" : ""}`}
                 >
                   <input
                     type="checkbox"
@@ -362,6 +415,7 @@ const TodoList = ({
                   />
                   <span className="todo-text">
                     {isOverdue && <span className="overdue-tag">OVERDUE</span>}
+                    {todo.missed && !todo.completed && <span className="missed-todo-tag">MISSED</span>}
                     {todo.text}
                     {todoTagDate && (
                       <span
@@ -536,6 +590,16 @@ const TodoList = ({
                           document.body,
                         )}
                     </div>
+                    {/* Mark Missed Button */}
+                    {!todo.completed && (
+                      <button
+                        onClick={() => onMarkTodoMissed && onMarkTodoMissed(todo._id, !todo.missed)}
+                        className={`todo-missed-btn ${todo.missed ? "active-missed" : ""}`}
+                        title={todo.missed ? "Remove missed mark" : "Mark as missed"}
+                      >
+                        {todo.missed ? "↺" : "✗"}
+                      </button>
+                    )}
                     <button
                       onClick={() => onDeleteTodo(todo._id)}
                       className="todo-delete-btn"

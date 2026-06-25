@@ -3,7 +3,7 @@ import "./Analytics.css";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const Analytics = ({ analytics, type, todos = [] }) => {
+const Analytics = ({ analytics, type, todos = [], missedTodos = [] }) => {
   const formatTime = (milliseconds) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -18,13 +18,21 @@ const Analytics = ({ analytics, type, todos = [] }) => {
 
   const totalTodos = todos.length;
   const completedTodos = todos.filter(todo => todo.completed).length;
-  const missedTodos = todos.filter(todo => !todo.completed).length;
+  // Deduplicate: include todos from the prop + any missed ones in the todos list
+  const allMissedTodos = [
+    ...todos.filter(t => t.missed && !t.completed),
+    ...missedTodos.filter(t => !todos.find(td => td._id === t._id)),
+  ];
+  const missedTasksCount = analytics?.missedTasks || 0;
+  const missedItems = analytics?.missedItems || [];
+
 
   const formatPercentage = (value, total) => {
     if (total === 0) return "0%";
     return `${Math.round((value / total) * 100)}%`;
   };
 
+  const [showMissedReview, setShowMissedReview] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState(null);
 
   if (!analytics) {
@@ -52,6 +60,75 @@ const Analytics = ({ analytics, type, todos = [] }) => {
         };
       })
     : [];
+
+  // Missed Items Review section
+  const hasMissed = missedItems.length > 0 || allMissedTodos.length > 0;
+  const byDay = {};
+  missedItems.forEach(item => {
+    const day = item.day || "unknown";
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(item);
+  });
+
+  const MissedReviewSection = () => {
+    if (!hasMissed) return null;
+    return (
+      <div className="analytics-section missed-review-section">
+        <div
+          className="missed-review-header"
+          onClick={() => setShowMissedReview(s => !s)}
+        >
+          <h4 style={{ margin: 0 }}>
+            <span style={{ marginRight: 6 }}>⚠️</span>
+            Missed Items Review
+            <span className="missed-review-count">{missedItems.length + allMissedTodos.length}</span>
+          </h4>
+          <span className="missed-review-toggle">{showMissedReview ? "▲" : "▼"}</span>
+        </div>
+        {showMissedReview && (
+          <div className="missed-review-body">
+            {Object.keys(byDay).length > 0 && (
+              <div className="missed-tasks-group">
+                <div className="missed-group-label">Tasks</div>
+                {Object.entries(byDay).map(([day, items]) => (
+                  <div key={day}>
+                    <div className="missed-day-label">{day.charAt(0).toUpperCase() + day.slice(1)}</div>
+                    {items.map(item => (
+                      <div key={item._id} className="missed-item-row">
+                        <span className="missed-item-category">{item.category}</span>
+                        <span className="missed-item-name">{item.name}</span>
+                        {item.missedAt && (
+                          <span className="missed-item-time">
+                            {new Date(item.missedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+            {allMissedTodos.length > 0 && (
+              <div className="missed-tasks-group">
+                <div className="missed-group-label">Quick Todos</div>
+                {allMissedTodos.map(todo => (
+                  <div key={todo._id} className="missed-item-row">
+                    <span className="missed-item-todo-icon">✓</span>
+                    <span className="missed-item-name">{todo.text}</span>
+                    {todo.deadline && (
+                      <span className="missed-item-time">
+                        Due: {new Date(todo.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="analytics-container">
@@ -82,8 +159,12 @@ const Analytics = ({ analytics, type, todos = [] }) => {
               <div className="stat-value">{completedTodos}/{totalTodos}</div>
               <div className="stat-label">Quick Todos</div>
             </div>
-            <div className="stat-card">
-              <div className="stat-value">{missedTodos}</div>
+            <div className="stat-card stat-card-missed">
+              <div className="stat-value missed-stat-value">{missedTasksCount}</div>
+              <div className="stat-label">Missed Tasks</div>
+            </div>
+            <div className="stat-card stat-card-missed">
+              <div className="stat-value missed-stat-value">{allMissedTodos.length}</div>
               <div className="stat-label">Missed Todos</div>
             </div>
           </div>
@@ -342,6 +423,7 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                 ))}
             </div>
           </div>
+          <MissedReviewSection />
         </>
       )}
       
@@ -431,6 +513,12 @@ const Analytics = ({ analytics, type, todos = [] }) => {
                     </div>
                   </div>
                 ))}
+            </div>
+          </div>
+          <div className="analytics-section missed-summary-month">
+            <div className="stat-card stat-card-missed" style={{ display: 'inline-flex', marginRight: 12 }}>
+              <div className="stat-value missed-stat-value">{analytics.missedTasks || 0}</div>
+              <div className="stat-label">Missed Tasks This Month</div>
             </div>
           </div>
         </>

@@ -1177,6 +1177,28 @@ const Dashboard = () => {
     }
   };
 
+  // Mark task as missed / undo missed
+  const handleMarkTaskMissed = async (taskId, missed) => {
+    try {
+      const updated = await taskService.markTaskMissed(taskId, missed);
+      setTasks((prev) => prev.map((t) => (t._id === taskId ? updated : t)));
+      toast.info(missed ? "Task marked as missed" : "Missed mark removed");
+    } catch (error) {
+      toast.error("Failed to update missed status");
+    }
+  };
+
+  // Mark todo as missed / undo missed
+  const handleMarkTodoMissed = async (todoId, missed) => {
+    try {
+      const updated = await todoService.markTodoMissed(todoId, missed);
+      setTodos((prev) => prev.map((t) => (t._id === todoId ? updated : t)));
+      toast.info(missed ? "Todo marked as missed" : "Missed mark removed");
+    } catch (error) {
+      toast.error("Failed to update missed status");
+    }
+  };
+
   return (
     <div className={`dashboard ${sleepMode ? "sleep-mode-active" : ""}`}>
       <Seo
@@ -1601,6 +1623,7 @@ const Dashboard = () => {
                             onDeleteTask={handleDeleteTask}
                             onDeleteDayTasks={handleDeleteDayTasks}
                             onToggleNotification={handleToggleNotification}
+                            onMarkMissed={handleMarkTaskMissed}
                             onReorderTasks={handleReorderTasks}
                             isToday={selectedTask.date === todayStr}
                           />
@@ -1636,6 +1659,7 @@ const Dashboard = () => {
                         onAddTodo={handleAddTodo}
                         onToggleTodo={handleToggleTodo}
                         onDeleteTodo={handleDeleteTodo}
+                        onMarkTodoMissed={handleMarkTodoMissed}
                         onDeleteAll={handleDeleteAllTodos}
                         onClearCompleted={handleClearCompletedTodos}
                         isAddingTodo={addingTodo}
@@ -1660,6 +1684,7 @@ const Dashboard = () => {
                         onDeleteTask={handleDeleteTask}
                         onDeleteDayTasks={handleDeleteDayTasks}
                         onReorderTasks={handleReorderTasks}
+                        onMarkMissed={handleMarkTaskMissed}
                         isAddingTask={addingTask}
                         deletingTask={deletingTask}
                         onHeaderClick={() => {
@@ -1878,6 +1903,7 @@ const Dashboard = () => {
                 analytics={analyticsData}
                 type={analyticsType}
                 todos={todos}
+                missedTodos={todos.filter(t => t.missed && !t.completed)}
               />
             ) : (
               <div className="empty-state-large">

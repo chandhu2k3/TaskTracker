@@ -227,6 +227,47 @@ const deleteAllTodos = async (req, res) => {
   }
 };
 
+// @desc    Toggle missed status on a todo
+// @route   PUT /api/todos/:id/missed
+// @access  Private
+const markTodoMissed = async (req, res) => {
+  try {
+    const todo = await Todo.findById(req.params.id);
+    if (!todo) return res.status(404).json({ message: "Todo not found" });
+    if (todo.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const { missed } = req.body;
+    todo.missed = missed !== undefined ? missed : !todo.missed;
+    todo.missedAt = todo.missed ? new Date() : null;
+
+    await todo.save();
+    await invalidateCache(`user:${req.user._id}:todos*`);
+    res.json(todo);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get missed todos (for analytics review)
+// @route   GET /api/todos/missed
+// @access  Private
+const getMissedTodos = async (req, res) => {
+  try {
+    const todos = await Todo.find({
+      user: req.user._id,
+      missed: true,
+      deleted: { $ne: true },
+    })
+      .sort({ missedAt: -1 })
+      .lean();
+    res.json(todos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTodos,
   createTodo,
@@ -236,4 +277,6 @@ module.exports = {
   deleteAllTodos,
   getDeletedTodos,
   restoreTodo,
+  markTodoMissed,
+  getMissedTodos,
 };
