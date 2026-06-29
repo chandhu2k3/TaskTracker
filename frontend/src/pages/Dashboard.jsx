@@ -111,7 +111,7 @@ const Dashboard = () => {
     new Date().getMonth(),
   );
   const [selectedAnalyticsWeek, setSelectedAnalyticsWeek] = useState(
-    Math.ceil(new Date().getDate() / 7),
+    Math.min(Math.ceil(new Date().getDate() / 7), 4), // Cap at 4 — days 29-31 are week 4
   );
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplateForApply, setSelectedTemplateForApply] = useState("");
@@ -994,10 +994,13 @@ const Dashboard = () => {
 
     const { year, month, week } = selectedDate;
 
-    // Week 1 starts from the 1st of the month
-    // Week 2 starts from the 8th, Week 3 from the 15th, etc.
     const startDay = 1 + (week - 1) * 7;
-    const weekStart = new Date(year, month, startDay, 12, 0, 0);
+
+    // For weeks 1-3: always 7 days (startDay to startDay+6).
+    // For week 4: extend to the actual last day of the month so days 29, 30, 31
+    // are included — they were previously cut off by the hardcoded `i < 7` loop.
+    const lastDayOfMonth = new Date(year, month + 1, 0).getDate(); // day-0 of next month = last day of this month
+    const endDay = week === 4 ? lastDayOfMonth : startDay + 6;
 
     const days = [];
     const dayNames = [
@@ -1010,27 +1013,23 @@ const Dashboard = () => {
       "Saturday",
     ];
 
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + i);
+    for (let dayNum = startDay; dayNum <= endDay; dayNum++) {
+      const date = new Date(year, month, dayNum, 12, 0, 0);
 
-      // Only include if still in the same month
-      if (date.getMonth() === month) {
-        // Format date as YYYY-MM-DD without timezone conversion
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const dateString = `${year}-${month}-${day}`;
+      // Format date as YYYY-MM-DD without timezone conversion
+      const yr = date.getFullYear();
+      const mo = String(date.getMonth() + 1).padStart(2, "0");
+      const dy = String(date.getDate()).padStart(2, "0");
+      const dateString = `${yr}-${mo}-${dy}`;
 
-        const dayOfWeek = date.getDay();
-        days.push({
-          date: dateString,
-          dayName: dayNames[dayOfWeek],
-          displayName: `${dayNames[dayOfWeek]} (${date.getDate()}/${
-            date.getMonth() + 1
-          })`,
-        });
-      }
+      const dayOfWeek = date.getDay();
+      days.push({
+        date: dateString,
+        dayName: dayNames[dayOfWeek],
+        displayName: `${dayNames[dayOfWeek]} (${date.getDate()}/${
+          date.getMonth() + 1
+        })`,
+      });
     }
 
     return days;

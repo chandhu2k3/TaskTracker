@@ -488,6 +488,7 @@ const getWeeklyAnalytics = async (req, res) => {
       Task.find({
         user: req.user._id,
         date: { $gte: startDate, $lte: endDate },
+        deleted: { $ne: true }, // Exclude soft-deleted tasks from analytics
       }).lean(), // Use lean() for faster queries
       Sleep.find({
         user: req.user._id,
@@ -600,7 +601,10 @@ const getWeeklyAnalytics = async (req, res) => {
       analytics.sessionCount += sleepSessions.length;
     }
 
-    analytics.averagePerDay = analytics.totalTime / 7;
+    // Compute actual number of days in this week (week 4 of long months can be 8-10 days)
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const actualDaysInWeek = Math.round((endDate - startDate) / msPerDay) + 1;
+    analytics.averagePerDay = analytics.totalTime / actualDaysInWeek;
 
     await setCache(key, analytics, TTL.ANALYTICS);
     res.json(analytics);
