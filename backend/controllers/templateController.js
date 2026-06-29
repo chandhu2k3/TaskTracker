@@ -250,16 +250,26 @@ const applyTemplate = async (req, res) => {
     }
 
     // Calculate week dates using timezone utilities
-    const { startDate } = tz.getWeekDates(
+    const { startDate, endDate } = tz.getWeekDates(
       parseInt(year),
       parseInt(month),
       parseInt(weekNumber),
       timezone,
     );
 
-    const startDtLuxon = DateTime.fromJSDate(startDate).setZone(timezone);
-    const startDay = startDtLuxon.day;
-    const startDayOfWeek = startDtLuxon.weekday % 7; // Luxon 1-7 (Mon-Sun) -> 0-6 (Sun-Sat)
+    const startDtLuxon = DateTime.fromJSDate(startDate).setZone(timezone).startOf("day");
+    const endDtLuxon = DateTime.fromJSDate(endDate).setZone(timezone).endOf("day");
+
+    // "Apply from today" — if we're mid-week, only create tasks for today onwards.
+    // If the week hasn't started yet (future week), apply from the week start.
+    const todayDt = DateTime.now().setZone(timezone).startOf("day");
+    const effectiveStartDt = todayDt > startDtLuxon ? todayDt : startDtLuxon;
+
+    // Map Luxon weekday numbers (1=Mon…7=Sun) to template day names for fast lookup
+    const luxonWeekdayMap = {
+      monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
+      friday: 5, saturday: 6, sunday: 7,
+    };
 
     const calendarClient = await getCalendarClient(req.user._id);
 
@@ -274,38 +284,35 @@ const applyTemplate = async (req, res) => {
         plannedTime: templateTask.plannedTime,
       });
 
-      const targetWeekday = dayToWeekday[templateTask.day];
-
-      // Calculate offset from start date to target weekday
-      let dayOffset = targetWeekday - startDayOfWeek;
-      if (dayOffset < 0) {
-        dayOffset += 7; // Adjust for next week if target day is before start day
+      const targetLuxonWeekday = luxonWeekdayMap[templateTask.day];
+      if (targetLuxonWeekday === undefined) {
+        console.log(`Skipping task ${templateTask.name}: unknown day "${templateTask.day}"`);
+        continue;
       }
 
-      const dayOfMonth = startDay + dayOffset;
-
-      // Create date and format as YYYY-MM-DD for database
-      const taskDateObj = tz.createDateTime(
-        `${year}-${String(parseInt(month) + 1).padStart(2, "0")}-${String(dayOfMonth).padStart(2, "0")}`,
-        12, // Noon to avoid boundary issues
-        0,
-        timezone,
-      );
-
-      // Check if date is valid and in the same month
-      if (taskDateObj.getMonth() !== parseInt(month)) {
-        console.log(`Skipping template task ${templateTask.name} - outside target month:`, {
-          taskMonth: taskDateObj.getMonth(),
-          targetMonth: parseInt(month)
-        });
-        continue; // Skip if date would be in next/previous month
+      // Find the actual calendar date this weekday falls on within the week.
+      // We iterate from the week START (not effectiveStart) to correctly locate the day,
+      // then skip it if it's before today. This correctly handles weeks with 8-10 days
+      // (week 4 of months with 29-31 days).
+      let dayDt = startDtLuxon;
+      while (dayDt.weekday !== targetLuxonWeekday && dayDt <= endDtLuxon) {
+        dayDt = dayDt.plus({ days: 1 });
       }
 
-      const dateStr = tz.dateToString(taskDateObj, timezone);
+      if (dayDt > endDtLuxon) {
+        console.log(`Skipping ${templateTask.name}: day "${templateTask.day}" not in week range`);
+        continue;
+      }
+
+      // Skip days that are before today ("apply from today" behaviour)
+      if (dayDt < effectiveStartDt) {
+        console.log(`Skipping ${templateTask.name}: ${dayDt.toISODate()} is before today`);
+        continue;
+      }
+
+      const dateStr = dayDt.toFormat("yyyy-MM-dd");
       const targetDate = tz.parseDate(dateStr, timezone);
-      // Build a day-range filter to find any task stored for that calendar day,
-      // regardless of exact timestamp. This is immune to UTC-midnight vs IST-midnight
-      // mismatches that happen when different code paths create Date objects.
+      // Build a day-range filter immune to UTC/IST midnight mismatches
       const { startOfDay, endOfDay } = tz.getDayBounds(dateStr, timezone);
 
       // Check if task already exists (non-deleted) for this date
@@ -615,32 +622,28 @@ const applyTemplate = async (req, res) => {
     }
 
     for (const templateTodo of template.quickTodos || []) {
-      const targetWeekday = dayToWeekday[templateTodo.day];
-      if (targetWeekday === undefined) continue;
+      const targetLuxonWeekday = luxonWeekdayMap[templateTodo.day];
+      if (targetLuxonWeekday === undefined) continue;
 
-      let dayOffset = targetWeekday - startDayOfWeek;
-      if (dayOffset < 0) {
-        dayOffset += 7;
+      // Find the actual calendar date this weekday falls on within the week
+      let dayDt = startDtLuxon;
+      while (dayDt.weekday !== targetLuxonWeekday && dayDt <= endDtLuxon) {
+        dayDt = dayDt.plus({ days: 1 });
       }
 
-      const dayOfMonth = startDay + dayOffset;
-      const todoDateObj = tz.createDateTime(
-        `${year}-${String(parseInt(month) + 1).padStart(2, "0")}-${String(dayOfMonth).padStart(2, "0")}`,
-        12,
-        0,
-        timezone,
-      );
-      if (todoDateObj.getMonth() !== parseInt(month)) {
+      if (dayDt > endDtLuxon) continue;
+
+      // Skip days before today
+      if (dayDt < effectiveStartDt) {
+        console.log(`Skipping todo ${templateTodo.text}: ${dayDt.toISODate()} is before today`);
         continue;
       }
 
-      const todoDateStr = tz.dateToString(todoDateObj, timezone);
+      const todoDateStr = dayDt.toFormat("yyyy-MM-dd");
       const deadlineOffsetDays = Number(templateTodo.deadlineOffsetDays || 0);
-      
+
       // Calculate deadline using Luxon for accuracy
-      const deadlineDate = DateTime.fromJSDate(todoDateObj)
-        .plus({ days: deadlineOffsetDays })
-        .toJSDate();
+      const deadlineDate = dayDt.plus({ days: deadlineOffsetDays }).toJSDate();
       const deadlineDateStr = tz.dateToString(deadlineDate, timezone);
 
       const existingTodo = await Todo.findOne({
