@@ -290,23 +290,17 @@ const applyTemplate = async (req, res) => {
         continue;
       }
 
-      // Find the actual calendar date this weekday falls on within the week.
-      // We iterate from the week START (not effectiveStart) to correctly locate the day,
-      // then skip it if it's before today. This correctly handles weeks with 8-10 days
-      // (week 4 of months with 29-31 days).
-      let dayDt = startDtLuxon;
+      // Find the first calendar date ON OR AFTER today that matches this weekday,
+      // within the week range. Starting from effectiveStartDt (not startDtLuxon)
+      // ensures that for week 4 with repeated weekdays (e.g., two Mondays: June 22 & 29),
+      // we pick the one that falls on or after today, not the earlier one that was skipped.
+      let dayDt = effectiveStartDt;
       while (dayDt.weekday !== targetLuxonWeekday && dayDt <= endDtLuxon) {
         dayDt = dayDt.plus({ days: 1 });
       }
 
       if (dayDt > endDtLuxon) {
-        console.log(`Skipping ${templateTask.name}: day "${templateTask.day}" not in week range`);
-        continue;
-      }
-
-      // Skip days that are before today ("apply from today" behaviour)
-      if (dayDt < effectiveStartDt) {
-        console.log(`Skipping ${templateTask.name}: ${dayDt.toISODate()} is before today`);
+        console.log(`Skipping ${templateTask.name}: day "${templateTask.day}" not found on/after today in week range`);
         continue;
       }
 
@@ -625,19 +619,13 @@ const applyTemplate = async (req, res) => {
       const targetLuxonWeekday = luxonWeekdayMap[templateTodo.day];
       if (targetLuxonWeekday === undefined) continue;
 
-      // Find the actual calendar date this weekday falls on within the week
-      let dayDt = startDtLuxon;
+      // Find the first calendar date ON OR AFTER today that matches this weekday
+      let dayDt = effectiveStartDt;
       while (dayDt.weekday !== targetLuxonWeekday && dayDt <= endDtLuxon) {
         dayDt = dayDt.plus({ days: 1 });
       }
 
       if (dayDt > endDtLuxon) continue;
-
-      // Skip days before today
-      if (dayDt < effectiveStartDt) {
-        console.log(`Skipping todo ${templateTodo.text}: ${dayDt.toISODate()} is before today`);
-        continue;
-      }
 
       const todoDateStr = dayDt.toFormat("yyyy-MM-dd");
       const deadlineOffsetDays = Number(templateTodo.deadlineOffsetDays || 0);
