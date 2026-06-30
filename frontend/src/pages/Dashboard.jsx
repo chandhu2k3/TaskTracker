@@ -21,6 +21,7 @@ import keepAliveService from "../services/keepAliveService";
 import Onboarding from "../components/Onboarding";
 import Seo from "../components/Seo";
 import AssistantPanel from "../components/AssistantPanel";
+import LiveInsightBanner from "../components/LiveInsightBanner";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -1732,13 +1733,8 @@ const Dashboard = () => {
 
         {activeTab === "analytics" && (
           <div className="analytics-view">
-            <div className="analytics-view-header">
-              <div>
-                <h2 className="analytics-view-title">Analytics Overview</h2>
-                <p className="analytics-view-subtitle">Track your productivity, analyze time spent across categories, and measure completion rates over time.</p>
-              </div>
-            </div>
-            <div className="analytics-controls">
+          <LiveInsightBanner />
+          <div className="analytics-controls">
               <div className="analytics-type-selector">
                 <button
                   className={`type-btn ${
@@ -1903,6 +1899,9 @@ const Dashboard = () => {
                 type={analyticsType}
                 todos={todos}
                 missedTodos={todos.filter(t => t.missed && !t.completed)}
+                year={selectedAnalyticsYear}
+                month={selectedAnalyticsMonth}
+                week={selectedAnalyticsWeek}
               />
             ) : (
               <div className="empty-state-large">

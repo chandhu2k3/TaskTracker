@@ -1,9 +1,89 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import "./Analytics.css";
+import assistantService from "../services/assistantService";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const Analytics = ({ analytics, type, todos = [], missedTodos = [] }) => {
+const AnalyticsInsight = ({ fetchFn, cacheKey }) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const fetchedKey = useRef(null);
+
+  const handleToggle = useCallback(async () => {
+    const opening = !open;
+    setOpen(opening);
+    if (opening && fetchedKey.current !== cacheKey) {
+      fetchedKey.current = cacheKey;
+      setLoading(true);
+      setError(null);
+      setData(null);
+      try {
+        const result = await fetchFn();
+        setData(result);
+      } catch {
+        setError("Couldn't generate insight. Try again later.");
+        fetchedKey.current = null;
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [open, fetchFn, cacheKey]);
+
+  return (
+    <div className="analytics-insight-wrapper">
+      <button
+        className={`analytics-insight-toggle ${open ? "open" : ""}`}
+        onClick={handleToggle}
+      >
+        <span className="ai-insight-star">✦</span>
+        <span>AI Insight</span>
+        <span className="ai-insight-badge">Powered by Groq</span>
+        <span className="ai-insight-chevron">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="analytics-insight-panel">
+          {loading && (
+            <div className="analytics-insight-loading">
+              <span className="ai-spinner" />
+              <span>Analyzing your data...</span>
+            </div>
+          )}
+          {error && !loading && <p className="analytics-insight-error">{error}</p>}
+          {data && !loading && (
+            <>
+              {data.stats && (
+                <div className="analytics-insight-pills">
+                  <span className={`ai-pill ${
+                    data.stats.completionRate >= 80 ? "ai-pill-green"
+                    : data.stats.completionRate >= 50 ? "ai-pill-amber"
+                    : "ai-pill-red"
+                  }`}>
+                    {data.stats.completed}/{data.stats.total} done
+                  </span>
+                  {data.stats.completionRate !== undefined && (
+                    <span className="ai-pill ai-pill-neutral">{data.stats.completionRate}% rate</span>
+                  )}
+                  {data.stats.timeSpent && data.stats.timeSpent !== "0m" && (
+                    <span className="ai-pill ai-pill-blue">⏱ {data.stats.timeSpent} tracked</span>
+                  )}
+                  {data.stats.missed > 0 && (
+                    <span className="ai-pill ai-pill-red">⚠ {data.stats.missed} missed</span>
+                  )}
+                </div>
+              )}
+              <p className="analytics-insight-text">{data.insight}</p>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Analytics = ({ analytics, type, todos = [], missedTodos = [], year, month, week }) => {
   const formatTime = (milliseconds) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -424,6 +504,11 @@ const Analytics = ({ analytics, type, todos = [], missedTodos = [] }) => {
             </div>
           </div>
           <MissedReviewSection />
+          <AnalyticsInsight
+            key={`week-${year}-${month}-${week}`}
+            cacheKey={`week-${year}-${month}-${week}`}
+            fetchFn={() => assistantService.getWeeklyInsight(year, month, week)}
+          />
         </>
       )}
       
@@ -521,6 +606,11 @@ const Analytics = ({ analytics, type, todos = [], missedTodos = [] }) => {
               <div className="stat-label">Missed Tasks This Month</div>
             </div>
           </div>
+          <AnalyticsInsight
+            key={`month-${year}-${month}`}
+            cacheKey={`month-${year}-${month}`}
+            fetchFn={() => assistantService.getMonthlyInsight(year, month)}
+          />
         </>
       )}
 

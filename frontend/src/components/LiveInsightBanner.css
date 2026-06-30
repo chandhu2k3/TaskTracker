@@ -1,0 +1,152 @@
+/* ── LiveInsightBanner ─────────────────────────────── */
+.lib-wrapper {
+  margin-bottom: 20px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(99, 102, 241, 0.22);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.05) 0%,
+    rgba(168, 85, 247, 0.04) 60%,
+    rgba(236, 72, 153, 0.03) 100%
+  );
+  overflow: hidden;
+}
+
+/* Header */
+.lib-header {
+  padding: 16px 20px 10px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.lib-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.lib-star {
+  font-size: 1.1rem;
+  color: #6366f1;
+  animation: lib-star-glow 2.5s ease-in-out infinite;
+}
+@keyframes lib-star-glow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.lib-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #191c1d);
+  letter-spacing: -0.01em;
+}
+
+/* Focus for Today badge */
+.lib-today-badge {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+[data-theme="dark"] .lib-today-badge {
+  color: #fbbf24;
+  background: rgba(251,191,36,0.12);
+}
+
+.lib-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, #7f756e);
+  line-height: 1.4;
+}
+
+/* Body */
+.lib-body {
+  padding: 14px 20px 18px;
+}
+
+/* Skeleton loading */
+.lib-skeleton-wrap { display: flex; flex-direction: column; gap: 10px; }
+
+.lib-skeleton {
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    rgba(99,102,241,0.06) 25%,
+    rgba(99,102,241,0.12) 50%,
+    rgba(99,102,241,0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: lib-shimmer 1.6s infinite;
+}
+@keyframes lib-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.lib-sk-pills { height: 26px; width: 70%; }
+.lib-sk-line  { height: 14px; width: 100%; }
+.lib-sk-short { width: 60%; }
+
+/* Error */
+.lib-error {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin: 0;
+}
+
+/* Pills */
+.lib-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.lib-pill {
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lp-green  { background: rgba(34, 197, 94, 0.12);   color: #16a34a; }
+.lp-amber  { background: rgba(234, 179, 8, 0.12);   color: #b45309; }
+.lp-red    { background: rgba(239, 68, 68, 0.12);   color: #dc2626; }
+.lp-blue   { background: rgba(59, 130, 246, 0.12);  color: #2563eb; }
+.lp-neutral{ background: rgba(107, 114, 128, 0.1);  color: #4b5563; }
+
+/* Narrative */
+.lib-narrative {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.65;
+  color: var(--text-secondary, #374151);
+  white-space: pre-wrap;
+}
+
+/* Dark mode */
+[data-theme="dark"] .lib-wrapper {
+  border-color: rgba(129, 140, 248, 0.28);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.09) 0%,
+    rgba(168, 85, 247, 0.07) 60%,
+    rgba(236, 72, 153, 0.05) 100%
+  );
+}
+[data-theme="dark"] .lib-header  { border-bottom-color: rgba(129,140,248,0.15); }
+[data-theme="dark"] .lib-title   { color: var(--text-primary, #f3f4f6); }
+[data-theme="dark"] .lib-star    { color: #818cf8; }
+[data-theme="dark"] .lib-sub     { color: var(--text-muted, #9ca3af); }
+[data-theme="dark"] .lib-narrative{ color: #d1d5db; }
+[data-theme="dark"] .lp-green    { background: rgba(34,197,94,0.18);  color: #4ade80; }
+[data-theme="dark"] .lp-amber    { background: rgba(234,179,8,0.18);  color: #fbbf24; }
+[data-theme="dark"] .lp-red      { background: rgba(239,68,68,0.18);  color: #f87171; }
+[data-theme="dark"] .lp-blue     { background: rgba(59,130,246,0.18); color: #60a5fa; }
+[data-theme="dark"] .lp-neutral  { background: rgba(107,114,128,0.2); color: #9ca3af; }

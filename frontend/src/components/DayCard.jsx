@@ -1,5 +1,6 @@
 import React, { useState, forwardRef } from "react";
 import TaskItem from "./TaskItem";
+import DayInsight from "./DayInsight";
 import "./DayCard.css";
 
 const DayCard = forwardRef(
@@ -317,6 +318,7 @@ const DayCard = forwardRef(
             })
           )}
         </div>
+        <DayInsight date={date} taskCount={tasks.length} />
       </div>
     );
   }

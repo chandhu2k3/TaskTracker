@@ -1670,9 +1670,387 @@ const getAssistantStatus = async (req, res) => {
   });
 };
 
+const getDailyInsight = async (req, res) => {
+  try {
+    const { date } = req.params; // YYYY-MM-DD
+    const timezone = tz.getTimezoneFromRequest(req);
+    const userId = req.user._id;
+
+    // Fetch all tasks for the day (including missed/incomplete)
+    const { startOfDay, endOfDay } = tz.getDayBounds(date, timezone);
+    const tasks = await Task.find({
+      user: userId,
+      date: { $gte: startOfDay, $lte: endOfDay },
+      deleted: { $ne: true },
+    }).lean();
+
+    if (tasks.length === 0) {
+      return res.json({
+        insight: "No tasks were recorded for this day.",
+        stats: { total: 0, completed: 0, missed: 0, completionRate: 0 },
+      });
+    }
+
+    // Compute stats
+    const completed = tasks.filter((t) => !t.isActive && t.totalTime > 0);
+    const missed = tasks.filter((t) => t.missed);
+    const inProgress = tasks.filter((t) => t.isActive);
+    const totalTimeMs = tasks.reduce((sum, t) => {
+      let time = t.totalTime || 0;
+      if (t.isActive && t.startTime) time += Date.now() - new Date(t.startTime).getTime();
+      return sum + time;
+    }, 0);
+    const totalPlannedMs = tasks.reduce((sum, t) => sum + (t.plannedTime || 0), 0);
+    const completionRate = Math.round((completed.length / tasks.length) * 100);
+
+    // Group by category
+    const byCategory = {};
+    tasks.forEach((t) => {
+      const cat = t.category || "Uncategorized";
+      if (!byCategory[cat]) byCategory[cat] = { done: 0, total: 0 };
+      byCategory[cat].total++;
+      if (!t.isActive && t.totalTime > 0) byCategory[cat].done++;
+    });
+
+    const formatMs = (ms) => {
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    };
+
+    const dayName = DateTime.fromISO(date, { zone: timezone }).toFormat("cccc, MMMM d");
+
+    const stats = {
+      total: tasks.length,
+      completed: completed.length,
+      missed: missed.length,
+      inProgress: inProgress.length,
+      completionRate,
+      timeSpent: formatMs(totalTimeMs),
+      timePlanned: formatMs(totalPlannedMs),
+      byCategory,
+    };
+
+    // If no API key, return data-only summary
+    if (!ASSISTANT_API_KEY) {
+      const missedNames = missed.map((t) => t.name).join(", ");
+      const completedNames = completed.slice(0, 4).map((t) => t.name).join(", ");
+      return res.json({
+        insight: [
+          `📊 **${dayName}** — ${completed.length}/${tasks.length} tasks done (${completionRate}%)`,
+          completedNames ? `✅ Completed: ${completedNames}${completed.length > 4 ? ` +${completed.length - 4} more` : ""}` : "",
+          missedNames ? `⚠️ Missed: ${missedNames}` : "",
+          totalTimeMs > 0 ? `⏱ Time tracked: ${formatMs(totalTimeMs)}${totalPlannedMs > 0 ? ` / ${formatMs(totalPlannedMs)} planned` : ""}` : "",
+        ].filter(Boolean).join("\n"),
+        stats,
+      });
+    }
+
+    // Build focused prompt for AI
+    const categoryLines = Object.entries(byCategory)
+      .map(([cat, d]) => `${cat}: ${d.done}/${d.total}`)
+      .join(", ");
+    const missedList = missed.map((t) => t.name).join(", ") || "none";
+    const completedList = completed.map((t) => t.name).join(", ") || "none";
+
+    const userPrompt = [
+      `Analyze this day for the user: ${dayName}`,
+      `Tasks: ${completed.length}/${tasks.length} completed (${completionRate}% completion rate)`,
+      `Time: ${formatMs(totalTimeMs)} tracked vs ${formatMs(totalPlannedMs)} planned`,
+      `Completed: ${completedList}`,
+      `Missed: ${missedList}`,
+      `By category: ${categoryLines}`,
+      ``,
+      `Write a concise daily summary (3-5 sentences) with:`,
+      `1. Overall verdict on the day (good/average/tough)`,
+      `2. What was accomplished (highlight wins)`,
+      `3. What was missed and why it matters`,
+      `4. One specific, actionable improvement for tomorrow`,
+      `Keep it warm, honest, and data-driven. Use 1-2 emojis max.`,
+    ].join("\n");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ASSISTANT_REQUEST_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${ASSISTANT_BASE_URL}/chat/completions`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${ASSISTANT_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: ASSISTANT_MODEL,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a productivity coach. Analyze the user's day based on their task data. Be specific, honest, and encouraging. Focus on patterns and give one clear actionable tip.",
+            },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.5,
+          max_tokens: 300,
+        }),
+      });
+
+      const data = await response.json();
+      const insight = data?.choices?.[0]?.message?.content?.trim();
+
+      if (!response.ok || !insight) {
+        throw new Error(data?.error?.message || "AI insight generation failed");
+      }
+
+      return res.json({ insight, stats });
+    } catch (fetchErr) {
+      if (fetchErr.name === "AbortError") {
+        return res.json({
+          insight: `📊 ${dayName}: ${completed.length}/${tasks.length} tasks done (${completionRate}%). ${missed.length > 0 ? `Missed: ${missedList}.` : ""} Time tracked: ${formatMs(totalTimeMs)}.`,
+          stats,
+        });
+      }
+      throw fetchErr;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (error) {
+    console.error("Daily insight error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getWeeklyInsight = async (req, res) => {
+  try {
+    const { year, month, week } = req.params;
+    const timezone = tz.getTimezoneFromRequest(req);
+    const userId = req.user._id;
+
+    const { startDate, endDate } = tz.getWeekDates(
+      parseInt(year), parseInt(month), parseInt(week), timezone
+    );
+
+    const tasks = await Task.find({
+      user: userId,
+      date: { $gte: startDate, $lte: endDate },
+      deleted: { $ne: true },
+    }).lean();
+
+    if (tasks.length === 0) {
+      return res.json({ insight: "No tasks found for this week.", stats: null });
+    }
+
+    const completed = tasks.filter(t => !t.isActive && t.totalTime > 0);
+    const missed = tasks.filter(t => t.missed);
+    const completionRate = Math.round((completed.length / tasks.length) * 100);
+    const totalTimeMs = tasks.reduce((s, t) => s + (t.totalTime || 0), 0);
+    const totalPlannedMs = tasks.reduce((s, t) => s + (t.plannedTime || 0), 0);
+
+    const byDay = {};
+    tasks.forEach(t => {
+      const d = t.day || "unknown";
+      if (!byDay[d]) byDay[d] = { done: 0, total: 0, time: 0 };
+      byDay[d].total++;
+      byDay[d].time += t.totalTime || 0;
+      if (!t.isActive && t.totalTime > 0) byDay[d].done++;
+    });
+
+    const byCategory = {};
+    tasks.forEach(t => {
+      const c = t.category || "Uncategorized";
+      if (!byCategory[c]) byCategory[c] = { done: 0, total: 0 };
+      byCategory[c].total++;
+      if (!t.isActive && t.totalTime > 0) byCategory[c].done++;
+    });
+
+    const formatMs = ms => {
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    };
+
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const weekLabel = `Week ${week} of ${monthNames[parseInt(month)]} ${year}`;
+
+    const stats = { total: tasks.length, completed: completed.length, missed: missed.length, completionRate, timeSpent: formatMs(totalTimeMs), timePlanned: formatMs(totalPlannedMs), byDay, byCategory };
+
+    if (!ASSISTANT_API_KEY) {
+      return res.json({ insight: `📊 ${weekLabel}: ${completed.length}/${tasks.length} tasks done (${completionRate}%). Time tracked: ${formatMs(totalTimeMs)}.`, stats });
+    }
+
+    const bestDay = Object.entries(byDay).sort((a,b) => (b[1].done/Math.max(b[1].total,1)) - (a[1].done/Math.max(a[1].total,1)))[0];
+    const worstDay = Object.entries(byDay).sort((a,b) => (a[1].done/Math.max(a[1].total,1)) - (b[1].done/Math.max(b[1].total,1)))[0];
+    const categoryLines = Object.entries(byCategory).map(([c,d]) => `${c}: ${d.done}/${d.total}`).join(", ");
+    const missedList = missed.map(t => `${t.name} (${t.day})`).join(", ") || "none";
+
+    const prompt = [
+      `Analyze this week for the user: ${weekLabel}`,
+      `Completion: ${completed.length}/${tasks.length} tasks (${completionRate}%)`,
+      `Time tracked: ${formatMs(totalTimeMs)} vs ${formatMs(totalPlannedMs)} planned`,
+      `Best day: ${bestDay ? bestDay[0] : "N/A"} (${bestDay ? bestDay[1].done + "/" + bestDay[1].total : "-"})`,
+      `Worst day: ${worstDay ? worstDay[0] : "N/A"} (${worstDay ? worstDay[1].done + "/" + worstDay[1].total : "-"})`,
+      `By category: ${categoryLines}`,
+      `Missed: ${missedList}`,
+      ``,
+      `Write a weekly performance summary (4-6 sentences):`,
+      `1. Overall week verdict`,
+      `2. Strongest and weakest days with specifics`,
+      `3. Category performance — what got attention, what was neglected`,
+      `4. Pattern spotted (e.g. energy drops on certain days)`,
+      `5. One concrete focus area for next week`,
+      `Be specific, data-driven, warm but honest. Max 2 emojis.`,
+    ].join("\n");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ASSISTANT_REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${ASSISTANT_BASE_URL}/chat/completions`, {
+        method: "POST", signal: controller.signal,
+        headers: { Authorization: `Bearer ${ASSISTANT_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: ASSISTANT_MODEL,
+          messages: [
+            { role: "system", content: "You are a productivity coach. Analyze weekly task data and provide structured, honest, data-backed insights. Be specific and encouraging." },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.5, max_tokens: 400,
+        }),
+      });
+      const data = await response.json();
+      const insight = data?.choices?.[0]?.message?.content?.trim();
+      if (!response.ok || !insight) throw new Error(data?.error?.message || "AI failed");
+      return res.json({ insight, stats });
+    } catch (e) {
+      if (e.name === "AbortError") return res.json({ insight: `📊 ${weekLabel}: ${completed.length}/${tasks.length} done (${completionRate}%). Time: ${formatMs(totalTimeMs)}.`, stats });
+      throw e;
+    } finally { clearTimeout(timeoutId); }
+  } catch (error) {
+    console.error("Weekly insight error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getMonthlyInsight = async (req, res) => {
+  try {
+    const { year, month } = req.params;
+    const timezone = tz.getTimezoneFromRequest(req);
+    const userId = req.user._id;
+
+    const { DateTime } = require("luxon");
+    const monthStart = DateTime.fromObject({ year: parseInt(year), month: parseInt(month) + 1 }, { zone: timezone }).startOf("month");
+    const monthEnd = monthStart.endOf("month");
+
+    const tasks = await Task.find({
+      user: userId,
+      date: { $gte: monthStart.toJSDate(), $lte: monthEnd.toJSDate() },
+      deleted: { $ne: true },
+    }).lean();
+
+    if (tasks.length === 0) {
+      return res.json({ insight: "No tasks found for this month.", stats: null });
+    }
+
+    const completed = tasks.filter(t => !t.isActive && t.totalTime > 0);
+    const missed = tasks.filter(t => t.missed);
+    const completionRate = Math.round((completed.length / tasks.length) * 100);
+    const totalTimeMs = tasks.reduce((s, t) => s + (t.totalTime || 0), 0);
+    const totalPlannedMs = tasks.reduce((s, t) => s + (t.plannedTime || 0), 0);
+
+    const byWeek = { week1: {done:0,total:0}, week2: {done:0,total:0}, week3: {done:0,total:0}, week4: {done:0,total:0} };
+    tasks.forEach(t => {
+      if (!t.date) return;
+      const day = new Date(t.date).getDate();
+      const wk = `week${Math.min(Math.ceil(day / 7), 4)}`;
+      byWeek[wk].total++;
+      if (!t.isActive && t.totalTime > 0) byWeek[wk].done++;
+    });
+
+    const byCategory = {};
+    tasks.forEach(t => {
+      const c = t.category || "Uncategorized";
+      if (!byCategory[c]) byCategory[c] = { done: 0, total: 0, time: 0 };
+      byCategory[c].total++;
+      byCategory[c].time += t.totalTime || 0;
+      if (!t.isActive && t.totalTime > 0) byCategory[c].done++;
+    });
+
+    const formatMs = ms => {
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    };
+
+    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const monthLabel = `${monthNames[parseInt(month)]} ${year}`;
+
+    const stats = { total: tasks.length, completed: completed.length, missed: missed.length, completionRate, timeSpent: formatMs(totalTimeMs), timePlanned: formatMs(totalPlannedMs), byWeek, byCategory };
+
+    if (!ASSISTANT_API_KEY) {
+      return res.json({ insight: `📊 ${monthLabel}: ${completed.length}/${tasks.length} done (${completionRate}%). Total time: ${formatMs(totalTimeMs)}.`, stats });
+    }
+
+    const weekLines = Object.entries(byWeek).map(([w,d]) => `${w.replace("week","Week ")}: ${d.done}/${d.total}`).join(", ");
+    const catLines = Object.entries(byCategory).sort((a,b) => b[1].time - a[1].time).slice(0,5).map(([c,d]) => `${c}: ${d.done}/${d.total} (${formatMs(d.time)})`).join(", ");
+    const topCat = Object.entries(byCategory).sort((a,b) => b[1].time - a[1].time)[0];
+    const neglectedCat = Object.entries(byCategory).filter(([,d]) => d.total > 1).sort((a,b) => (a[1].done/a[1].total) - (b[1].done/b[1].total))[0];
+    const bestWeek = Object.entries(byWeek).filter(([,d]) => d.total > 0).sort((a,b) => (b[1].done/b[1].total) - (a[1].done/a[1].total))[0];
+
+    const prompt = [
+      `Monthly performance review: ${monthLabel}`,
+      `Overall: ${completed.length}/${tasks.length} tasks done (${completionRate}%)`,
+      `Time: ${formatMs(totalTimeMs)} tracked vs ${formatMs(totalPlannedMs)} planned`,
+      `Week breakdown: ${weekLines}`,
+      `Category breakdown: ${catLines}`,
+      `Most time spent: ${topCat ? topCat[0] : "N/A"}`,
+      `Most neglected: ${neglectedCat ? neglectedCat[0] : "N/A"}`,
+      `Best week: ${bestWeek ? bestWeek[0].replace("week","Week ") : "N/A"}`,
+      `Missed tasks: ${missed.length}`,
+      ``,
+      `Write a monthly performance report (5-7 sentences):`,
+      `1. Month verdict — was it productive?`,
+      `2. Weekly trend — was performance consistent, did it improve or drop?`,
+      `3. Category analysis — where did time go, what was neglected?`,
+      `4. Key wins this month`,
+      `5. Biggest gap or pattern to fix`,
+      `6. One strategic focus for next month`,
+      `Be specific, use the numbers, be honest but motivating. Max 2 emojis.`,
+    ].join("\n");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ASSISTANT_REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${ASSISTANT_BASE_URL}/chat/completions`, {
+        method: "POST", signal: controller.signal,
+        headers: { Authorization: `Bearer ${ASSISTANT_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: ASSISTANT_MODEL,
+          messages: [
+            { role: "system", content: "You are a productivity coach. Analyze monthly task data and write a strategic performance report. Be specific, use the actual numbers, and give one clear focus area for next month." },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.5, max_tokens: 500,
+        }),
+      });
+      const data = await response.json();
+      const insight = data?.choices?.[0]?.message?.content?.trim();
+      if (!response.ok || !insight) throw new Error(data?.error?.message || "AI failed");
+      return res.json({ insight, stats });
+    } catch (e) {
+      if (e.name === "AbortError") return res.json({ insight: `📊 ${monthLabel}: ${completed.length}/${tasks.length} done (${completionRate}%). Time: ${formatMs(totalTimeMs)}.`, stats });
+      throw e;
+    } finally { clearTimeout(timeoutId); }
+  } catch (error) {
+    console.error("Monthly insight error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   handleAssistantMessage,
   getAssistantHistory,
   clearAssistantHistory,
   getAssistantStatus,
+  getDailyInsight,
+  getWeeklyInsight,
+  getMonthlyInsight,
 };

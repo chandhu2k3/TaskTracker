@@ -524,7 +524,6 @@ body[data-theme="dark"] .date-details { color: var(--text-muted); }
   background: rgba(186,26,26,0.02);
 }
 
-/* Dark mode overrides for missed styles */
 body[data-theme="dark"] .stat-card-missed {
   background: rgba(186,26,26,0.06);
   border-color: rgba(186,26,26,0.25);
@@ -533,3 +532,136 @@ body[data-theme="dark"] .missed-review-section { background: rgba(186,26,26,0.05
 body[data-theme="dark"] .missed-item-row { background: var(--bg-tertiary); border-color: rgba(186,26,26,0.15); }
 body[data-theme="dark"] .missed-item-category { background: var(--bg-card); border-color: var(--border-light); }
 body[data-theme="dark"] .missed-item-name { color: var(--text-muted); }
+
+/* ─── AnalyticsInsight ─────────────────────────────── */
+.analytics-insight-wrapper {
+  margin-top: 20px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(99, 102, 241, 0.2);
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(99,102,241,0.03) 0%, rgba(168,85,247,0.03) 100%);
+}
+
+.analytics-insight-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 14px 18px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #6366f1;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+.analytics-insight-toggle:hover { background: rgba(99,102,241,0.06); }
+.analytics-insight-toggle.open  { background: rgba(99,102,241,0.08); border-bottom: 1px solid rgba(99,102,241,0.15); }
+
+.ai-insight-star {
+  font-size: 1rem;
+  animation: ai-star-pulse 2.5s ease-in-out infinite;
+}
+@keyframes ai-star-pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.6; transform:scale(0.9); }
+}
+
+.ai-insight-badge {
+  font-size: 0.67rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: #a855f7;
+  background: rgba(168,85,247,0.1);
+  padding: 2px 7px;
+  border-radius: 20px;
+  text-transform: none;
+}
+
+.ai-insight-chevron { margin-left: auto; font-size: 0.65rem; opacity: 0.6; }
+
+/* Panel */
+.analytics-insight-panel {
+  padding: 16px 18px 20px;
+  animation: ai-panel-in 0.2s ease;
+}
+@keyframes ai-panel-in {
+  from { opacity:0; transform:translateY(-6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Loading */
+.analytics-insight-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #6366f1;
+  padding: 6px 0;
+}
+.ai-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid rgba(99,102,241,0.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.analytics-insight-error {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin: 0;
+}
+
+/* Pills */
+.analytics-insight-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ai-pill {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ai-pill-green  { background: rgba(34,197,94,0.12);  color: #16a34a; }
+.ai-pill-amber  { background: rgba(234,179,8,0.12);  color: #b45309; }
+.ai-pill-red    { background: rgba(239,68,68,0.12);  color: #dc2626; }
+.ai-pill-blue   { background: rgba(59,130,246,0.12); color: #2563eb; }
+.ai-pill-neutral{ background: rgba(107,114,128,0.1); color: #4b5563; }
+
+/* AI narrative */
+.analytics-insight-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: #374151;
+  white-space: pre-wrap;
+}
+
+/* Dark mode */
+[data-theme="dark"] .analytics-insight-wrapper {
+  border-color: rgba(129,140,248,0.25);
+  background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(168,85,247,0.07) 100%);
+}
+[data-theme="dark"] .analytics-insight-toggle        { color: #818cf8; }
+[data-theme="dark"] .analytics-insight-toggle:hover  { background: rgba(99,102,241,0.1); }
+[data-theme="dark"] .analytics-insight-toggle.open   { background: rgba(99,102,241,0.12); }
+[data-theme="dark"] .ai-insight-badge                { color: #c084fc; background: rgba(168,85,247,0.15); }
+[data-theme="dark"] .ai-pill-green  { background: rgba(34,197,94,0.18);  color: #4ade80; }
+[data-theme="dark"] .ai-pill-amber  { background: rgba(234,179,8,0.18);  color: #fbbf24; }
+[data-theme="dark"] .ai-pill-red    { background: rgba(239,68,68,0.18);  color: #f87171; }
+[data-theme="dark"] .ai-pill-blue   { background: rgba(59,130,246,0.18); color: #60a5fa; }
+[data-theme="dark"] .ai-pill-neutral{ background: rgba(107,114,128,0.2); color: #9ca3af; }
+[data-theme="dark"] .analytics-insight-text { color: #d1d5db; }

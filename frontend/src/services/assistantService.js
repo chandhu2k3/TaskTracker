@@ -171,11 +171,29 @@ const getStatus = async () => {
   return response.data;
 };
 
+const getDailyInsight = async (date) => {
+  const response = await api.get(`/api/assistant/daily-insight/${date}`, getConfig());
+  return response.data;
+};
+
+const getWeeklyInsight = async (year, month, week) => {
+  const response = await api.get(`/api/assistant/weekly-insight/${year}/${month}/${week}`, getConfig());
+  return response.data;
+};
+
+const getMonthlyInsight = async (year, month) => {
+  const response = await api.get(`/api/assistant/monthly-insight/${year}/${month}`, getConfig());
+  return response.data;
+};
+
 const assistantService = {
   sendMessage,
   getHistory,
   clearHistory,
   getStatus,
+  getDailyInsight,
+  getWeeklyInsight,
+  getMonthlyInsight,
 };
 
 export default assistantService;
