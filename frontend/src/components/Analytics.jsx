@@ -4,51 +4,86 @@ import assistantService from "../services/assistantService";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const AnalyticsInsight = ({ fetchFn, cacheKey }) => {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const fetchedKey = useRef(null);
+const getYesterdayStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
 
-  const handleToggle = useCallback(async () => {
+const AnalyticsInsight = ({ year, month, week }) => {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("week"); // "day" | "week" | "month"
+  const [cache, setCache] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const loadingRef = useRef(false);
+
+  const fetchTab = useCallback(async (t) => {
+    if (cache[t] || loadingRef.current) return;
+    loadingRef.current = true;
+    setLoading(true);
+    setError(null);
+    try {
+      let result;
+      if (t === "day")   result = await assistantService.getDailyInsight(getYesterdayStr());
+      else if (t === "week")  result = await assistantService.getWeeklyInsight(year, month, week);
+      else                    result = await assistantService.getMonthlyInsight(year, month);
+      setCache(prev => ({ ...prev, [t]: result }));
+    } catch {
+      setError("Couldn't generate insight. Try again later.");
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  }, [cache, year, month, week]);
+
+  const handleToggle = () => {
     const opening = !open;
     setOpen(opening);
-    if (opening && fetchedKey.current !== cacheKey) {
-      fetchedKey.current = cacheKey;
-      setLoading(true);
-      setError(null);
-      setData(null);
-      try {
-        const result = await fetchFn();
-        setData(result);
-      } catch {
-        setError("Couldn't generate insight. Try again later.");
-        fetchedKey.current = null;
-      } finally {
-        setLoading(false);
-      }
-    }
-  }, [open, fetchFn, cacheKey]);
+    if (opening) fetchTab(tab);
+  };
+
+  const handleTab = (t) => {
+    setTab(t);
+    setError(null);
+    if (open) fetchTab(t);
+  };
+
+  const data = cache[tab];
+
+  const tabLabels = { day: "Yesterday", week: "This Week", month: "This Month" };
 
   return (
     <div className="analytics-insight-wrapper">
-      <button
-        className={`analytics-insight-toggle ${open ? "open" : ""}`}
-        onClick={handleToggle}
-      >
-        <span className="ai-insight-star">✦</span>
-        <span>AI Insight</span>
-        <span className="ai-insight-badge">Powered by Groq</span>
-        <span className="ai-insight-chevron">{open ? "▲" : "▼"}</span>
-      </button>
+      <div className="analytics-insight-toggle-row">
+        <button
+          className={`analytics-insight-toggle ${open ? "open" : ""}`}
+          onClick={handleToggle}
+        >
+          <span className="ai-insight-star">✦</span>
+          <span>AI Insight</span>
+          <span className="ai-insight-badge">Powered by Groq</span>
+        </button>
+        <div className="ai-tab-group">
+          {["day", "week", "month"].map(t => (
+            <button
+              key={t}
+              className={`ai-tab-btn ${tab === t ? "active" : ""}`}
+              onClick={() => handleTab(t)}
+            >
+              {tabLabels[t]}
+            </button>
+          ))}
+        </div>
+        <span className="ai-insight-chevron" onClick={handleToggle}>{open ? "▲" : "▼"}</span>
+      </div>
 
       {open && (
         <div className="analytics-insight-panel">
           {loading && (
             <div className="analytics-insight-loading">
               <span className="ai-spinner" />
-              <span>Analyzing your data...</span>
+              <span>Analyzing {tabLabels[tab].toLowerCase()} data...</span>
             </div>
           )}
           {error && !loading && <p className="analytics-insight-error">{error}</p>}
@@ -76,6 +111,11 @@ const AnalyticsInsight = ({ fetchFn, cacheKey }) => {
               )}
               <p className="analytics-insight-text">{data.insight}</p>
             </>
+          )}
+          {!data && !loading && !error && (
+            <p className="analytics-insight-loading" style={{color:'var(--text-muted)'}}>
+              Select a tab above and open to generate insight.
+            </p>
           )}
         </div>
       )}
@@ -504,11 +544,7 @@ const Analytics = ({ analytics, type, todos = [], missedTodos = [], year, month,
             </div>
           </div>
           <MissedReviewSection />
-          <AnalyticsInsight
-            key={`week-${year}-${month}-${week}`}
-            cacheKey={`week-${year}-${month}-${week}`}
-            fetchFn={() => assistantService.getWeeklyInsight(year, month, week)}
-          />
+          <AnalyticsInsight year={year} month={month} week={week} />
         </>
       )}
       
@@ -534,6 +570,10 @@ const Analytics = ({ analytics, type, todos = [], missedTodos = [], year, month,
             <div className="stat-card">
               <div className="stat-value">{analytics.completedTasks}</div>
               <div className="stat-label">Completed</div>
+            </div>
+            <div className="stat-card stat-card-missed">
+              <div className="stat-value missed-stat-value">{analytics.missedTasks || 0}</div>
+              <div className="stat-label">Missed Tasks</div>
             </div>
           </div>
 
@@ -601,16 +641,8 @@ const Analytics = ({ analytics, type, todos = [], missedTodos = [], year, month,
             </div>
           </div>
           <div className="analytics-section missed-summary-month">
-            <div className="stat-card stat-card-missed" style={{ display: 'inline-flex', marginRight: 12 }}>
-              <div className="stat-value missed-stat-value">{analytics.missedTasks || 0}</div>
-              <div className="stat-label">Missed Tasks This Month</div>
-            </div>
           </div>
-          <AnalyticsInsight
-            key={`month-${year}-${month}`}
-            cacheKey={`month-${year}-${month}`}
-            fetchFn={() => assistantService.getMonthlyInsight(year, month)}
-          />
+          <AnalyticsInsight year={year} month={month} week={week} />
         </>
       )}
 
