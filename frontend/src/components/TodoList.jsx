@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { toast } from "react-toastify";
 import { getTodayString } from "../utils/timezone";
 import "./TodoList.css";
 import TodoAssistant from "./TodoAssistant";
 import calendarService from "../services/calendarService";
+import todoService from "../services/todoService";
 
 const TodoList = ({
   todos,
@@ -27,14 +28,125 @@ const TodoList = ({
   const [newTodoCalForm, setNewTodoCalForm] = useState({ date: "", time: "09:00", reminderMinutes: 0 });
   const [calendarStatuses, setCalendarStatuses] = useState({});
   const [showPickerForTodo, setShowPickerForTodo] = useState(null);
-  const [calendarForm, setCalendarForm] = useState({
-    date: "",
-    time: "14:00",
-    reminderMinutes: 15,
-  });
+  const [calendarForm, setCalendarForm] = useState({ date: "", time: "14:00", reminderMinutes: 15 });
+
+  // Drag-and-drop state
+  const [orderedTodos, setOrderedTodos] = useState(null); // null = use prop sort
+  const [dragOverId, setDragOverId] = useState(null);
+  const [dragAbove, setDragAbove] = useState(true);
+  const dragIdRef = useRef(null);
+  const reorderTimerRef = useRef(null);
+  const prevTodosLenRef = useRef(todos.length);
+
+  // Inline edit state
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const editInputRef = useRef(null);
+
+  // Reset local drag order when todos are added/deleted
+  if (todos.length !== prevTodosLenRef.current) {
+    prevTodosLenRef.current = todos.length;
+    if (orderedTodos !== null) setOrderedTodos(null);
+  }
 
   // Compute today string for overdue comparison (YYYY-MM-DD) - use local timezone
   const todayStr = getTodayString();
+
+  // Build display list: prefer user-dragged order, else sort by sortOrder or date
+  const sortedTodos = orderedTodos ?? [...todos].sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    const anyHasOrder = todos.some(t => t.sortOrder && t.sortOrder !== 0);
+    if (anyHasOrder) return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    if (!a.completed && !b.completed) {
+      const aDate = a.deadline || todayStr;
+      const bDate = b.deadline || todayStr;
+      const aIsToday = aDate === todayStr, bIsToday = bDate === todayStr;
+      const aIsOverdue = aDate < todayStr, bIsOverdue = bDate < todayStr;
+      if (aIsToday && !bIsToday) return -1;
+      if (!aIsToday && bIsToday) return 1;
+      if (aIsOverdue && bIsOverdue) return aDate < bDate ? -1 : 1;
+      if (aIsOverdue) return -1;
+      if (bIsOverdue) return 1;
+      return aDate < bDate ? -1 : 1;
+    }
+    return 0;
+  });
+
+  // DnD handlers
+  const handleDragStart = useCallback((e, id) => {
+    dragIdRef.current = id;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+    setTimeout(() => { const el = document.querySelector(`[data-todoid='${id}']`); if (el) el.classList.add("dragging"); }, 0);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    if (dragIdRef.current) {
+      const el = document.querySelector(`[data-todoid='${dragIdRef.current}']`);
+      if (el) el.classList.remove("dragging");
+    }
+    dragIdRef.current = null;
+    setDragOverId(null);
+  }, []);
+
+  const handleDragOver = useCallback((e, id) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragAbove(e.clientY < rect.top + rect.height / 2);
+    setDragOverId(id);
+  }, []);
+
+  const handleDrop = useCallback((e, targetId) => {
+    e.preventDefault();
+    const sourceId = dragIdRef.current;
+    if (!sourceId || sourceId === targetId) { setDragOverId(null); return; }
+    const base = orderedTodos ?? sortedTodos;
+    const from = base.findIndex(t => t._id === sourceId);
+    let to = base.findIndex(t => t._id === targetId);
+    if (from === -1 || to === -1) { setDragOverId(null); return; }
+    const reordered = [...base];
+    const [moved] = reordered.splice(from, 1);
+    // recalculate `to` after splice
+    to = reordered.findIndex(t => t._id === targetId);
+    const insertAt = dragAbove ? to : to + 1;
+    reordered.splice(Math.max(0, insertAt), 0, moved);
+    const withOrder = reordered.map((t, i) => ({ ...t, sortOrder: i + 1 }));
+    setOrderedTodos(withOrder);
+    setDragOverId(null);
+    clearTimeout(reorderTimerRef.current);
+    reorderTimerRef.current = setTimeout(() => {
+      todoService.reorderTodos(withOrder.map(t => ({ id: t._id, sortOrder: t.sortOrder })))
+        .catch(() => toast.error("Couldn't save order"));
+    }, 600);
+  }, [orderedTodos, sortedTodos, dragAbove]);
+
+  // Inline edit handlers
+  const handleEditStart = useCallback((todo) => {
+    setEditingId(todo._id);
+    setEditText(todo.text);
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  }, []);
+
+  const handleEditSave = useCallback(async (todo) => {
+    const trimmed = editText.trim();
+    if (!trimmed || trimmed === todo.text) { setEditingId(null); return; }
+    setEditingId(null);
+    try {
+      await todoService.updateTodo(todo._id, { text: trimmed });
+      // Patch text in local drag order so it doesn't revert
+      setOrderedTodos(prev =>
+        prev ? prev.map(t => t._id === todo._id ? { ...t, text: trimmed } : t) : null
+      );
+    } catch {
+      toast.error("Couldn't save edit — try again");
+    }
+  }, [editText]);
+
+  const handleEditKeyDown = useCallback((e, todo) => {
+    if (e.key === "Enter") { e.preventDefault(); handleEditSave(todo); }
+    if (e.key === "Escape") { setEditingId(null); }
+  }, [handleEditSave]);
 
   // Close picker with Escape
   React.useEffect(() => {
@@ -367,45 +479,30 @@ const TodoList = ({
             <p>No todos yet. Add one above!</p>
           </div>
         ) : (
-          [...todos]
-            .sort((a, b) => {
-              // Completed always at bottom
-              if (a.completed !== b.completed) return a.completed ? 1 : -1;
-              // Among pending: today first, then overdue (past dates), then future
-              if (!a.completed && !b.completed) {
-                const aDate = a.deadline || todayStr;
-                const bDate = b.deadline || todayStr;
-                const aIsToday = aDate === todayStr;
-                const bIsToday = bDate === todayStr;
-                const aIsOverdue = aDate < todayStr;
-                const bIsOverdue = bDate < todayStr;
-                // Today beats everything else
-                if (aIsToday && !bIsToday) return -1;
-                if (!aIsToday && bIsToday) return 1;
-                // Both overdue — sort by date ascending (earliest overdue first)
-                if (aIsOverdue && bIsOverdue) return aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
-                // One overdue, one future
-                if (aIsOverdue && !bIsOverdue) return -1;
-                if (!aIsOverdue && bIsOverdue) return 1;
-                // Both future — sort by date ascending
-                return aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
-              }
-              return 0;
-            })
+          sortedTodos
             .map((todo) => {
               const todoTagDate = todo.deadline || todo.date || todayStr;
               const isTodayTag = todoTagDate === todayStr;
-              // Compute overdue locally: use deadline if available, else isOverdue from server
               const isOverdue =
                 !todo.completed &&
                 (todo.deadline
-                  ? todo.deadline < todayStr // Overdue = deadline date passed
-                  : todo.isOverdue); // Fallback: server-set overdue
+                  ? todo.deadline < todayStr
+                  : todo.isOverdue);
+              const isDragTarget = dragOverId === todo._id;
               return (
                 <div
                   key={todo._id}
-                  className={`todo-item ${todo.completed ? "completed" : ""} ${isTodayTag && !todo.completed ? "today-item" : ""} ${isOverdue ? "overdue-item" : ""} ${todo.missed ? "missed-item" : ""}`}
+                  data-todoid={todo._id}
+                  className={`todo-item ${todo.completed ? "completed" : ""} ${isTodayTag && !todo.completed ? "today-item" : ""} ${isOverdue ? "overdue-item" : ""} ${todo.missed ? "missed-item" : ""} ${isDragTarget && dragAbove ? "drag-over-above" : ""} ${isDragTarget && !dragAbove ? "drag-over-below" : ""}`}
+                  draggable={!todo.completed}
+                  onDragStart={(e) => handleDragStart(e, todo._id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, todo._id)}
+                  onDrop={(e) => handleDrop(e, todo._id)}
                 >
+                  {!todo.completed && (
+                    <span className="todo-drag-handle" title="Drag to reorder">⠿</span>
+                  )}
                   <input
                     type="checkbox"
                     checked={todo.completed}
@@ -416,28 +513,39 @@ const TodoList = ({
                   <span className="todo-text">
                     {isOverdue && <span className="overdue-tag">OVERDUE</span>}
                     {todo.missed && !todo.completed && <span className="missed-todo-tag">MISSED</span>}
-                    {todo.text}
-                    {todoTagDate && (
-                      <span
-                        className={`todo-deadline-badge ${isTodayTag ? "deadline-today" : ""} ${isOverdue ? "deadline-overdue" : ""}`}
-                        title={todo.deadline ? "Deadline" : "Todo day"}
-                      >
-                        {isTodayTag
-                          ? "Today"
-                          : new Date(
-                              todoTagDate + "T00:00:00",
-                            ).toLocaleDateString("en-US", {
-                              weekday: "short",
-                            })}{" "}
-                        •{" "}
-                        {new Date(todoTagDate + "T00:00:00").toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                          },
+                    {editingId === todo._id ? (
+                      <input
+                        ref={editInputRef}
+                        className="todo-inline-edit"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={() => handleEditSave(todo)}
+                        onKeyDown={(e) => handleEditKeyDown(e, todo)}
+                        maxLength={200}
+                      />
+                    ) : (
+                      <>
+                        {todo.text}
+                        {todoTagDate && (
+                          <span
+                            className={`todo-deadline-badge ${isTodayTag ? "deadline-today" : ""} ${isOverdue ? "deadline-overdue" : ""}`}
+                            title={todo.deadline ? "Deadline" : "Todo day"}
+                          >
+                            {isTodayTag
+                              ? "Today"
+                              : new Date(
+                                  todoTagDate + "T00:00:00",
+                                ).toLocaleDateString("en-US", {
+                                  weekday: "short",
+                                })}{" "}
+                            •{" "}
+                            {new Date(todoTagDate + "T00:00:00").toLocaleDateString(
+                              "en-US",
+                              { month: "short", day: "numeric" },
+                            )}
+                          </span>
                         )}
-                      </span>
+                      </>
                     )}
                   </span>
                   <div className="todo-actions">
@@ -590,6 +698,16 @@ const TodoList = ({
                           document.body,
                         )}
                     </div>
+                    {/* Edit button */}
+                    {!todo.completed && editingId !== todo._id && (
+                      <button
+                        onClick={() => handleEditStart(todo)}
+                        className="todo-edit-btn"
+                        title="Edit todo text"
+                      >
+                        ✎
+                      </button>
+                    )}
                     {/* Mark Missed Button */}
                     {!todo.completed && (
                       <button

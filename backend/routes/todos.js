@@ -12,6 +12,7 @@ const {
   restoreTodo,
   markTodoMissed,
   getMissedTodos,
+  reorderTodos,
 } = require("../controllers/todoController");
 
 // All routes protected                      
@@ -24,6 +25,7 @@ router.delete("/clear-completed", clearCompleted);
 router.delete("/delete-all", deleteAllTodos);
 router.get("/deleted", getDeletedTodos);
 router.get("/missed", getMissedTodos);
+router.put("/reorder", reorderTodos);
 
 router.route("/:id").put(updateTodo).delete(deleteTodo);
 router.put("/:id/restore", restoreTodo);

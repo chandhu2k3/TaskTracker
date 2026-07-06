@@ -33,6 +33,12 @@ const toggleTodo = async (id, completed) => {
   return response.data;
 };
 
+// Update todo fields (text, etc.)
+const updateTodo = async (id, updates) => {
+  const response = await api.put(`/api/todos/${id}`, updates, getConfig());
+  return response.data;
+};
+
 // Delete todo
 const deleteTodo = async (id) => {
   const response = await api.delete(
@@ -55,6 +61,7 @@ const todoService = {
   getTodos,
   createTodo,
   toggleTodo,
+  updateTodo,
   deleteTodo,
   clearCompleted,
   deleteAll: async () => {
@@ -75,6 +82,11 @@ const todoService = {
   },
   getMissedTodos: async () => {
     const response = await api.get(`/api/todos/missed`, getConfig());
+    return response.data;
+  },
+  reorderTodos: async (order) => {
+    // order = [{ id, sortOrder }, ...]
+    const response = await api.put(`/api/todos/reorder`, { order }, getConfig());
     return response.data;
   },
 };

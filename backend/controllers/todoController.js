@@ -49,15 +49,21 @@ const getTodos = async (req, res) => {
       }),
     );
 
+    // Sort: user-defined sortOrder first (when set), else existing date/overdue logic
     updatedTodos.sort((a, b) => {
+      // If either has a non-zero sortOrder, use it
+      const aHasOrder = typeof a.sortOrder === 'number' && a.sortOrder !== 0;
+      const bHasOrder = typeof b.sortOrder === 'number' && b.sortOrder !== 0;
+      if (aHasOrder || bHasOrder) {
+        return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+      }
+      // Fallback: overdue first, then deadline, then createdAt
       if (a.isOverdue && !b.isOverdue) return -1;
       if (!a.isOverdue && b.isOverdue) return 1;
-      
       if (a.deadline && b.deadline) {
         if (a.deadline < b.deadline) return -1;
         if (a.deadline > b.deadline) return 1;
       }
-      
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
@@ -268,6 +274,29 @@ const getMissedTodos = async (req, res) => {
   }
 };
 
+// @desc    Reorder todos (drag and drop)
+// @route   PUT /api/todos/reorder
+// @access  Private
+const reorderTodos = async (req, res) => {
+  try {
+    const { order } = req.body; // [{ id, sortOrder }, ...]
+    if (!Array.isArray(order) || order.length === 0)
+      return res.status(400).json({ message: "order array is required" });
+
+    await Promise.all(
+      order.map(({ id, sortOrder }) =>
+        Todo.updateOne(
+          { _id: id, user: req.user._id },
+          { $set: { sortOrder } },
+        ),
+      ),
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTodos,
   createTodo,
@@ -279,4 +308,5 @@ module.exports = {
   restoreTodo,
   markTodoMissed,
   getMissedTodos,
+  reorderTodos,
 };

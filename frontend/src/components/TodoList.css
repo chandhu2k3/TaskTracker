@@ -580,3 +580,87 @@ body[data-theme="dark"] .todo-item.overdue-item {
   background: rgba(186, 26, 26, 0.04);
 }
 body[data-theme="dark"] .todo-item.overdue-item:hover { background: rgba(186, 26, 26, 0.08); }
+
+/* ─── Drag and Drop ─────────────────────────────────── */
+.todo-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #c8bfbb;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+  user-select: none;
+  padding-right: 2px;
+  letter-spacing: -2px;
+}
+.todo-item:hover .todo-drag-handle,
+.todo-item:focus-within .todo-drag-handle {
+  opacity: 0.55;
+}
+.todo-drag-handle:hover { opacity: 1 !important; color: #6366f1; }
+.todo-drag-handle:active { cursor: grabbing; }
+
+/* Ghost while dragging */
+.todo-item.dragging {
+  opacity: 0.35;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.18);
+}
+
+/* Drop indicator — blue line above or below */
+.todo-item.drag-over-above {
+  box-shadow: 0 -2.5px 0 0 #6366f1, 0 0 0 1px rgba(99,102,241,0.15);
+}
+.todo-item.drag-over-below {
+  box-shadow: 0 2.5px 0 0 #6366f1, 0 0 0 1px rgba(99,102,241,0.15);
+}
+
+/* Dark mode */
+[data-theme="dark"] .todo-drag-handle { color: #6b5e58; }
+[data-theme="dark"] .todo-drag-handle:hover { color: #818cf8; }
+[data-theme="dark"] .todo-item.drag-over-above { box-shadow: 0 -2.5px 0 0 #818cf8, 0 0 0 1px rgba(129,140,248,0.2); }
+[data-theme="dark"] .todo-item.drag-over-below { box-shadow: 0 2.5px 0 0 #818cf8, 0 0 0 1px rgba(129,140,248,0.2); }
+
+/* ─── Inline Edit ───────────────────────────────────── */
+.todo-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #a8a29e;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.todo-item:hover .todo-edit-btn { opacity: 1; }
+.todo-edit-btn:hover { color: #6366f1; background: rgba(99,102,241,0.08); opacity: 1; }
+
+.todo-inline-edit {
+  flex: 1;
+  border: none;
+  border-bottom: 2px solid #6366f1;
+  background: transparent;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+  padding: 0 2px;
+  min-width: 0;
+  width: 100%;
+}
+
+[data-theme="dark"] .todo-edit-btn { color: #57534e; }
+[data-theme="dark"] .todo-edit-btn:hover { color: #818cf8; background: rgba(99,102,241,0.12); }
+[data-theme="dark"] .todo-inline-edit {
+  color: var(--text-primary, #f3f4f6);
+  border-bottom-color: #818cf8;
+}
+
+
