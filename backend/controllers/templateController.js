@@ -20,7 +20,7 @@ const getCalendarClient = async (userId) => {
   );
 
   if (!user.googleCalendar?.connected || !user.googleCalendar?.accessToken) {
-    return null; // Not connected — skip calendar silently
+    return null; // Not connected - skip calendar silently
   }
 
   const oauth2Client = new google.auth.OAuth2(
@@ -187,14 +187,16 @@ const updateTemplate = async (req, res) => {
       quickTodos: req.body.todos || req.body.quickTodos || template.quickTodos, // Handle both names
     };
 
-    const savedTemplate = await TaskTemplate.findByIdAndUpdate(
-      req.params.id,
+    const savedTemplate = await TaskTemplate.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
       updatedTemplate,
       { new: true },
     );
 
     // Invalidate caches on template update
     await invalidateCache(`user:${req.user._id}:templates*`);
+    const { deleteCache, cacheKey: buildKey } = require("../config/redis");
+    await deleteCache(buildKey(req.user._id, `templates:${req.params.id}`));
     res.json(savedTemplate);
   } catch (error) {
     console.error("updateTemplate ERROR:", error);
@@ -218,6 +220,8 @@ const deleteTemplate = async (req, res) => {
 
     await template.deleteOne();
     await invalidateCache(`user:${req.user._id}:templates*`);
+    const { deleteCache: delCache, cacheKey: buildKey2 } = require("../config/redis");
+    await delCache(buildKey2(req.user._id, `templates:${req.params.id}`));
     res.json({ message: "Template deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -230,6 +234,10 @@ const deleteTemplate = async (req, res) => {
 const applyTemplate = async (req, res) => {
   try {
     const { id, year, month, weekNumber } = req.params;
+    const w = parseInt(weekNumber, 10);
+    if (!Number.isFinite(w) || w < 1 || w > 4) {
+      return res.status(400).json({ message: "Invalid weekNumber. Must be 1-4." });
+    }
     const timezone = tz.getTimezoneFromRequest(req);
     console.log("Applying template with timezone:", timezone);
 
@@ -260,12 +268,12 @@ const applyTemplate = async (req, res) => {
     const startDtLuxon = DateTime.fromJSDate(startDate).setZone(timezone).startOf("day");
     const endDtLuxon = DateTime.fromJSDate(endDate).setZone(timezone).endOf("day");
 
-    // "Apply from today" — if we're mid-week, only create tasks for today onwards.
+    // "Apply from today" - if we're mid-week, only create tasks for today onwards.
     // If the week hasn't started yet (future week), apply from the week start.
     const todayDt = DateTime.now().setZone(timezone).startOf("day");
     const effectiveStartDt = todayDt > startDtLuxon ? todayDt : startDtLuxon;
 
-    // Map Luxon weekday numbers (1=Mon…7=Sun) to template day names for fast lookup
+    // Map Luxon weekday numbers (1=Mon..7=Sun) to template day names for fast lookup
     const luxonWeekdayMap = {
       monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
       friday: 5, saturday: 6, sunday: 7,
@@ -453,7 +461,7 @@ const applyTemplate = async (req, res) => {
             category: templateTask.category,
             // IMPORTANT: use the same parsed Date object used by findOne / createTask.
             // Passing `dateStr` (a raw string) causes Mongoose to call new Date(string)
-            // which gives UTC midnight — a different value from tz.parseDate() IST midnight,
+            // which gives UTC midnight - a different value from tz.parseDate() IST midnight,
             // causing a guaranteed E11000 duplicate key error on the unique index.
             date: targetDate,
             day: templateTask.day,
@@ -471,7 +479,7 @@ const applyTemplate = async (req, res) => {
           // unique key exists. Find it (including deleted ones) and restore + update it.
           if (err.code === 11000) {
             console.log(
-              "Duplicate key on create — finding task by day range to restore/handle...",
+              "Duplicate key on create - finding task by day range to restore/handle...",
             );
             // Use day-range to be immune to timestamp mismatches
             const anyExisting = await Task.findOne({
@@ -748,6 +756,154 @@ const applyTemplate = async (req, res) => {
   }
 };
 
+// --- Schedule Image Extraction (OpenRouter Vision) ---
+//
+// Uses OpenRouter's free vision models via OpenAI-compatible API.
+// Default: qwen/qwen-2.5-vl-72b-instruct:free  (very capable, handles blur/handwriting)
+// Fallback: meta-llama/llama-3.2-11b-vision-instruct:free
+//
+// Required env: OPENROUTER_API_KEY  (get free key at openrouter.ai)
+// Optional env: SCHEDULE_VISION_MODEL
+
+const VISION_API_KEY  = process.env.OPENROUTER_API_KEY;
+const VISION_MODEL    = process.env.SCHEDULE_VISION_MODEL || "qwen/qwen-2.5-vl-72b-instruct:free";
+const VISION_BASE_URL = "https://openrouter.ai/api/v1";
+
+const VALID_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+const VISION_SYSTEM_PROMPT = `You are a schedule extraction assistant. Your ONLY job is to analyse the provided schedule image and return a JSON array of tasks/activities.
+
+Rules:
+- Return ONLY a valid JSON array - no markdown, no explanation, no extra text, no code fences.
+- Each item must have exactly these fields:
+  { "name": string, "day": string, "scheduledStartTime": string|null, "scheduledEndTime": string|null, "plannedTime": number }
+- "day" must be one of: monday, tuesday, wednesday, thursday, friday, saturday, sunday (lowercase).
+- "scheduledStartTime" and "scheduledEndTime" must be "HH:MM" 24-hour format or null.
+- "plannedTime" is duration in milliseconds (e.g. 60 min = 3600000). Infer from start/end times; use 0 if unknown.
+- If the image shows a repeating weekly timetable, expand entries across all applicable days.
+- If day cannot be determined, default to "monday".
+- If no schedule is found, return: []
+- Do NOT include a category field.`;
+
+// @desc    Extract schedule tasks from an uploaded image via OpenRouter Vision
+// @route   POST /api/templates/extract-schedule
+// @access  Private
+const extractScheduleFromImage = async (req, res) => {
+  const { imageBase64, mimeType } = req.body;
+
+  if (!imageBase64) {
+    return res.status(400).json({ message: "No image data provided." });
+  }
+  if (!VISION_API_KEY) {
+    return res.status(503).json({
+      message: "OPENROUTER_API_KEY not configured. Get a free key at openrouter.ai and add it to .env.",
+    });
+  }
+
+  const supportedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const resolvedMime = supportedTypes.includes(mimeType) ? mimeType : "image/jpeg";
+
+  try {
+    console.log(`[extractSchedule] Calling OpenRouter vision model: ${VISION_MODEL}`);
+
+    const apiResponse = await fetch(`${VISION_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VISION_API_KEY}`,
+        "HTTP-Referer": "https://tasktracker.app",
+        "X-Title": "TaskTracker Schedule Import",
+      },
+      body: JSON.stringify({
+        model: VISION_MODEL,
+        messages: [
+          { role: "system", content: VISION_SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: { url: `data:${resolvedMime};base64,${imageBase64}` },
+              },
+              {
+                type: "text",
+                text: "Extract all schedule tasks from this image and return the JSON array.",
+              },
+            ],
+          },
+        ],
+        max_tokens: 4096,
+        temperature: 0.1,
+      }),
+    });
+
+    if (!apiResponse.ok) {
+      const errBody = await apiResponse.text();
+      console.error("[extractSchedule] OpenRouter error:", apiResponse.status, errBody);
+      return res.status(502).json({
+        message: `Vision API returned ${apiResponse.status}. Check OPENROUTER_API_KEY in .env.`,
+        detail: errBody,
+      });
+    }
+
+    const data = await apiResponse.json();
+    const rawContent = data?.choices?.[0]?.message?.content || "[]";
+    console.log(`[extractSchedule] Raw model response:\n${rawContent}`);
+
+    // Strip markdown code fences if model wraps JSON in them
+    const cleaned = rawContent
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/gi, "")
+      .trim();
+
+    let tasks;
+    try {
+      tasks = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error("[extractSchedule] JSON parse error. Raw:", rawContent);
+      return res.status(422).json({
+        message: "AI returned a response that could not be parsed. Try a clearer image.",
+      });
+    }
+
+    if (!Array.isArray(tasks)) {
+      return res.status(422).json({
+        message: "AI did not return a task list. Try a clearer schedule image.",
+      });
+    }
+
+    // Sanitise and normalise
+    const sanitised = tasks
+      .filter((t) => t && typeof t.name === "string" && t.name.trim())
+      .map((t) => ({
+        name: String(t.name).trim().slice(0, 100),
+        day: VALID_DAYS.includes(String(t.day).toLowerCase())
+          ? String(t.day).toLowerCase()
+          : "monday",
+        scheduledStartTime:
+          typeof t.scheduledStartTime === "string" && /^\d{2}:\d{2}$/.test(t.scheduledStartTime)
+            ? t.scheduledStartTime
+            : null,
+        scheduledEndTime:
+          typeof t.scheduledEndTime === "string" && /^\d{2}:\d{2}$/.test(t.scheduledEndTime)
+            ? t.scheduledEndTime
+            : null,
+        plannedTime: Number.isFinite(Number(t.plannedTime)) ? Math.max(0, Number(t.plannedTime)) : 0,
+        isAutomated: false,
+        completionCount: 0,
+        addToCalendar: false,
+        reminderMinutes: 0,
+      }));
+
+    console.log(`[extractSchedule] Extracted ${sanitised.length} tasks via ${VISION_MODEL}`);
+    return res.json({ tasks: sanitised, count: sanitised.length });
+
+  } catch (err) {
+    console.error("[extractSchedule] Unexpected error:", err);
+    return res.status(500).json({ message: "Failed to extract schedule: " + err.message });
+  }
+};
+
 module.exports = {
   getTemplates,
   getTemplate,
@@ -755,4 +911,5 @@ module.exports = {
   updateTemplate,
   deleteTemplate,
   applyTemplate,
+  extractScheduleFromImage,
 };

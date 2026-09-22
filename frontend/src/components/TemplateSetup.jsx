@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import "./TemplateSetup.css";
+import templateService from "../services/templateService";
 
 const TemplateSetup = ({
   categories,
@@ -21,10 +22,14 @@ const TemplateSetup = ({
   const [templateTodos, setTemplateTodos] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [draggedTaskIndex, setDraggedTaskIndex] = useState(null);
-  const [selectedEditDay, setSelectedEditDay] = useState("monday"); // Track which day is being edited
-  const [importTemplateId, setImportTemplateId] = useState(""); // Track which template to import from
+  const [selectedEditDay, setSelectedEditDay] = useState("monday");
+  const [importTemplateId, setImportTemplateId] = useState("");
   const [editingTodoReminderIndex, setEditingTodoReminderIndex] = useState(null);
   const [reminderModalForm, setReminderModalForm] = useState({ time: "09:00", reminderMinutes: 0 });
+  // Schedule image extraction state
+  const [isExtractingSchedule, setIsExtractingSchedule] = useState(false);
+  const [extractionMessage, setExtractionMessage] = useState(null); // { type: 'success'|'error', text: string }
+  const scheduleImageInputRef = useRef(null);
 
   const days = [
     "monday",
@@ -95,6 +100,98 @@ const TemplateSetup = ({
     setTemplateTodos([...templateTodos, ...uniqueImportedTodos]);
     setImportTemplateId(""); // Reset selection
   };
+
+  // ─── Schedule Image Extraction ────────────────────────────────────────────────
+
+  /**
+   * Compresses an image File to a canvas-scaled JPEG (max 1200px wide)
+   * and returns { base64, mimeType }.
+   */
+  const compressImage = (file) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.onload = () => {
+          const MAX = 1200;
+          let { width, height } = img;
+          if (width > MAX) {
+            height = Math.round((height * MAX) / width);
+            width = MAX;
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          // Export as JPEG at 85% quality
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          const base64 = dataUrl.split(",")[1];
+          resolve({ base64, mimeType: "image/jpeg" });
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handleScheduleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = "";
+
+    if (!file.type.startsWith("image/")) {
+      setExtractionMessage({ type: "error", text: "Please upload an image file (JPEG, PNG, WEBP, etc.)" });
+      return;
+    }
+
+    setIsExtractingSchedule(true);
+    setExtractionMessage(null);
+
+    try {
+      const { base64, mimeType } = await compressImage(file);
+      const result = await templateService.extractScheduleFromImage(base64, mimeType);
+
+      const extracted = result.tasks || [];
+      if (extracted.length === 0) {
+        setExtractionMessage({ type: "error", text: "No schedule found in that image. Try a clearer photo of a timetable or schedule." });
+        return;
+      }
+
+      // Assign default category and merge (deduplicate by name+day)
+      const defaultCategory = categories.length > 0 ? categories[0].name : "General";
+      const withCategory = extracted.map((t) => ({
+        ...t,
+        category: defaultCategory,
+      }));
+
+      const existingKeys = new Set(templateTasks.map((t) => `${t.name.toLowerCase()}|${t.day}`));
+      const newTasks = withCategory.filter((t) => !existingKeys.has(`${t.name.toLowerCase()}|${t.day}`));
+      const skipped = withCategory.length - newTasks.length;
+
+      setTemplateTasks((prev) => [...prev, ...newTasks]);
+
+      const msg = skipped > 0
+        ? `✅ Added ${newTasks.length} task${newTasks.length !== 1 ? "s" : ""} (${skipped} duplicate${skipped !== 1 ? "s" : ""} skipped). Review and adjust categories below!`
+        : `✅ Extracted ${newTasks.length} task${newTasks.length !== 1 ? "s" : ""} from your schedule! Review and adjust categories below.`;
+      setExtractionMessage({ type: "success", text: msg });
+
+      // Auto-switch to the day that has the most newly extracted tasks
+      if (newTasks.length > 0) {
+        const dayCounts = {};
+        newTasks.forEach((t) => { dayCounts[t.day] = (dayCounts[t.day] || 0) + 1; });
+        const topDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0][0];
+        setSelectedEditDay(topDay);
+      }
+    } catch (err) {
+      const serverMsg = err?.response?.data?.message || err.message || "Unknown error";
+      setExtractionMessage({ type: "error", text: `❌ Extraction failed: ${serverMsg}` });
+    } finally {
+      setIsExtractingSchedule(false);
+    }
+  };
+
 
   const openEditTemplate = (template) => {
     setEditingTemplate(template);
@@ -515,6 +612,45 @@ const TemplateSetup = ({
                     </p>
                   </div>
                 )}
+
+                {/* ─── Schedule Image Extraction ─── */}
+                <div className="schedule-image-upload-section">
+                  <div className="schedule-upload-row">
+                    <span className="schedule-upload-label">📷 Import from Schedule Photo</span>
+                    <button
+                      type="button"
+                      className={`btn-upload-schedule${isExtractingSchedule ? " extracting" : ""}`}
+                      onClick={() => scheduleImageInputRef.current?.click()}
+                      disabled={isExtractingSchedule}
+                      title="Upload a photo of your timetable or schedule and AI will extract all tasks automatically"
+                    >
+                      {isExtractingSchedule ? (
+                        <><span className="extract-spinner" />Extracting…</>
+                      ) : (
+                        <>🔍 Scan Schedule Image</>
+                      )}
+                    </button>
+                    <input
+                      ref={scheduleImageInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={handleScheduleImageUpload}
+                    />
+                  </div>
+                  {extractionMessage && (
+                    <div className={`extraction-message extraction-message--${extractionMessage.type}`}>
+                      {extractionMessage.text}
+                      <button
+                        type="button"
+                        className="extraction-message-close"
+                        onClick={() => setExtractionMessage(null)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="modal-body">

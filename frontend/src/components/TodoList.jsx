@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { toast } from "react-toastify";
 import { getTodayString } from "../utils/timezone";
@@ -43,11 +43,31 @@ const TodoList = ({
   const [editText, setEditText] = useState("");
   const editInputRef = useRef(null);
 
-  // Reset local drag order when todos are added/deleted
-  if (todos.length !== prevTodosLenRef.current) {
+  // Reset local drag order when todos are added/deleted, and patch
+  // completed/text changes so the dragged view doesn't go stale
+  const prevTodosSigRef = useRef("");
+  const todosSig = todos.map((t) => `${t._id}:${t.completed ? 1 : 0}:${t.text}:${t.sortOrder ?? 0}`).join("|");
+  if (todosSig !== prevTodosSigRef.current) {
+    prevTodosSigRef.current = todosSig;
+    if (orderedTodos !== null) {
+      const byId = new Map(todos.map((t) => [t._id, t]));
+      // Drop deleted, patch updated fields, keep drag order for the rest
+      const patched = orderedTodos
+        .filter((t) => byId.has(t._id))
+        .map((t) => ({ ...t, ...byId.get(t._id), sortOrder: t.sortOrder }));
+      // Append newly added todos
+      const known = new Set(patched.map((t) => t._id));
+      todos.forEach((t) => {
+        if (!known.has(t._id)) patched.push(t);
+      });
+      if (patched.length !== orderedTodos.length || JSON.stringify(patched) !== JSON.stringify(orderedTodos)) {
+        setOrderedTodos(patched.length === todos.length ? patched : null);
+      }
+    }
     prevTodosLenRef.current = todos.length;
-    if (orderedTodos !== null) setOrderedTodos(null);
   }
+
+  useEffect(() => () => clearTimeout(reorderTimerRef.current), []);
 
   // Compute today string for overdue comparison (YYYY-MM-DD) - use local timezone
   const todayStr = getTodayString();

@@ -223,7 +223,12 @@ const AssistantPanel = ({
 
   useEffect(() => {
     storageKeyRef.current = getAssistantHistoryKey();
-  }, []);
+    try {
+      setMessages(getStoredAssistantMessages());
+    } catch {
+      // keep current thread on storage failure
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     try {
@@ -237,12 +242,17 @@ const AssistantPanel = ({
     }
   }, [messages]);
 
-  const updateMessageAtIndex = (index, text) => {
-    setMessages((prev) =>
-      prev.map((message, currentIndex) =>
-        currentIndex === index ? { ...message, text } : message,
-      ),
-    );
+  const updateLastAssistantMessage = (text) => {
+    setMessages((prev) => {
+      const next = [...prev];
+      for (let i = next.length - 1; i >= 0; i -= 1) {
+        if (next[i].role === "assistant") {
+          next[i] = { ...next[i], text };
+          break;
+        }
+      }
+      return next;
+    });
   };
 
   const trimConversation = (conversation) =>
@@ -279,7 +289,6 @@ const AssistantPanel = ({
     }
 
     const conversation = buildConversation(message);
-    const assistantIndex = messages.length + 1;
 
     setMessages((prev) => [
       ...trimConversation(prev),
@@ -296,20 +305,23 @@ const AssistantPanel = ({
         {
           stream: true,
           onChunk: (replyText) => {
-            updateMessageAtIndex(assistantIndex, replyText || "Thinking...");
+            updateLastAssistantMessage(replyText || "Thinking...");
           },
         },
       );
-      updateMessageAtIndex(assistantIndex, result.reply || "Done.");
+      updateLastAssistantMessage(result.reply || "Done.");
       setPrompt("");
 
-      if (result.refresh && typeof onRefresh === "function") {
+      const looksMutating =
+        result.streamed &&
+        /created|added|updated|deleted|applied|finished|saved|marked/i.test(result.reply || "");
+      if ((result.refresh || looksMutating) && typeof onRefresh === "function") {
         await onRefresh(result);
       }
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || "Assistant request failed";
-      updateMessageAtIndex(assistantIndex, errorMessage);
+      updateLastAssistantMessage(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsSending(false);

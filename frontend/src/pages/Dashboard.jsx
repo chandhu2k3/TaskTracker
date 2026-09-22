@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useContext } from "react";
 import ReactDOM from "react-dom";
 import {
   formatLocalDate,
 } from "../utils/timezone";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import CategoryManager from "../components/CategoryManager";
 import TemplateSetup from "../components/TemplateSetup";
@@ -26,6 +27,7 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { logout: contextLogout } = useContext(AuthContext);
 
   // Helper function to get local date string (not UTC)
   const getLocalDateString = (dateInput) => {
@@ -227,9 +229,14 @@ const Dashboard = () => {
         "Google Calendar Authorization",
         `width=${width},height=${height},left=${left},top=${top}`,
       );
+      if (!popup) {
+        toast.error("Popup blocked. Allow popups to connect calendar.");
+        return;
+      }
 
       // Listen for OAuth callback
       const handleMessage = async (event) => {
+        if (event.origin !== window.location.origin) return;
         if (event.data?.type === "GOOGLE_CALENDAR_CALLBACK") {
           window.removeEventListener("message", handleMessage);
           popup?.close();
@@ -913,7 +920,11 @@ const Dashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    try {
+      contextLogout();
+    } catch {
+      localStorage.removeItem("user");
+    }
     navigate("/login");
     toast.success("Logged out successfully");
   };

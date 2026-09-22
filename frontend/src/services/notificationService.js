@@ -88,15 +88,14 @@ class NotificationService {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
     }
+    if (!this.notifiedTasks) this.notifiedTasks = new Set();
 
     // Check every 30 seconds
     this.checkInterval = setInterval(() => {
-      const notifiedTasks = new Set();
-      
       tasks.forEach((task) => {
         const taskKey = `${task._id}-${task.date}`;
         
-        if (this.shouldNotify(task) && !notifiedTasks.has(taskKey)) {
+        if (this.shouldNotify(task) && !this.notifiedTasks.has(taskKey)) {
           const [hours, minutes] = task.scheduledStartTime.split(":");
           const timeStr = `${hours}:${minutes}`;
           
@@ -106,13 +105,18 @@ class NotificationService {
             requireInteraction: false,
           });
 
-          notifiedTasks.add(taskKey);
+          this.notifiedTasks.add(taskKey);
           
           if (onNotify) {
             onNotify(task);
           }
         }
       });
+      // Prevent unbounded growth; keep last 200 keys
+      if (this.notifiedTasks.size > 200) {
+        const keys = Array.from(this.notifiedTasks).slice(-200);
+        this.notifiedTasks = new Set(keys);
+      }
     }, 30000); // Check every 30 seconds
   }
 

@@ -83,7 +83,11 @@ const getDayBounds = (dateString, timezone = DEFAULT_TIMEZONE) => {
  * @returns {Object} - { startDate: Date, endDate: Date }
  */
 const getWeekDates = (year, month, weekNumber, timezone = DEFAULT_TIMEZONE) => {
-  const startDay = 1 + (weekNumber - 1) * 7;
+  const w = parseInt(weekNumber, 10);
+  if (!Number.isFinite(w) || w < 1 || w > 4) {
+    throw new Error("Invalid weekNumber. Must be 1-4.");
+  }
+  const startDay = 1 + (w - 1) * 7;
   
   // Create start date at beginning of day
   const startDt = DateTime.fromObject(

@@ -1402,7 +1402,7 @@ const createTaskFromPrompt = async ({
   const task = await Task.create({
     user: userId,
     name: title,
-    category: category._id.toString(),
+    category: category?.name || "General",
     date: taskDate,
     day: dayNameFromDate(taskDate, timezone),
     plannedTime: parsedDuration * 60000,

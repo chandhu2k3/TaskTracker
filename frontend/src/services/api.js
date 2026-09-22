@@ -33,9 +33,14 @@ const isRetryable = (error) => {
 // Request interceptor - attach auth token
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user?.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
+    try {
+      const stored = localStorage.getItem("user");
+      const user = stored ? JSON.parse(stored) : null;
+      if (user?.token) {
+        config.headers.Authorization = `Bearer ${user.token}`;
+      }
+    } catch {
+      localStorage.removeItem("user");
     }
     // Automatically attach timezone header to all requests
     config.headers["X-Timezone"] = getUserTimezone();
@@ -55,6 +60,7 @@ api.interceptors.response.use(
   },
   async (error) => {
     const config = error.config;
+    if (!config) return Promise.reject(error);
 
     // Log detailed error info
     console.error(`[API Error] ${config?.method?.toUpperCase()} ${config?.url}`, {

@@ -37,6 +37,7 @@ const getActiveSleep = async () => {
     const response = await api.get(`/api/sleep/active`, getConfig());
     return response.data;
   } catch (error) {
+    if (error.response?.status === 401) throw error;
     // Return null if no active session or API is unavailable
     return null;
   }

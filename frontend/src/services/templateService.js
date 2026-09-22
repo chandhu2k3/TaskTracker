@@ -61,6 +61,16 @@ const applyTemplate = async (id, year, month, weekNumber) => {
   return response.data;
 };
 
+// Extract schedule tasks from a schedule photo via AI vision
+const extractScheduleFromImage = async (imageBase64, mimeType) => {
+  const response = await api.post(
+    `/api/templates/extract-schedule`,
+    { imageBase64, mimeType },
+    getConfig()
+  );
+  return response.data;
+};
+
 const templateService = {
   getTemplates,
   getTemplate,
@@ -68,6 +78,7 @@ const templateService = {
   updateTemplate,
   deleteTemplate,
   applyTemplate,
+  extractScheduleFromImage,
 };
 
 export default templateService;

@@ -3,8 +3,8 @@ import ReactDOM from "react-dom";
 import { toast } from "react-toastify";
 import "./TaskItem.css";
 import calendarService from "../services/calendarService";
-import { getTodayString } from "../utils/timezone";
-
+import { formatLocalDate, getTodayString } from "../utils/timezone";
+import taskService from "../services/taskService";
 import { manualFinishTask } from "../services/taskService";
 
 const TaskItem = ({
@@ -25,6 +25,46 @@ const TaskItem = ({
 }) => {
   const [isFinishing, setIsFinishing] = useState(false);
   const [isMarkingMissed, setIsMarkingMissed] = useState(false);
+
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editSpentH, setEditSpentH] = useState(0);
+  const [editSpentM, setEditSpentM] = useState(0);
+  const [editPlannedH, setEditPlannedH] = useState(0);
+  const [editPlannedM, setEditPlannedM] = useState(0);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Open edit modal pre-filled with current values
+  const handleEditOpen = () => {
+    const spentMs = task.totalTime || 0;
+    const plannedMs = task.plannedTime || 0;
+    setEditName(task.name);
+    setEditSpentH(Math.floor(spentMs / 3600000));
+    setEditSpentM(Math.floor((spentMs % 3600000) / 60000));
+    setEditPlannedH(Math.floor(plannedMs / 3600000));
+    setEditPlannedM(Math.floor((plannedMs % 3600000) / 60000));
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = async () => {
+    const spentMs  = (Number(editSpentH)   * 3600 + Number(editSpentM)   * 60) * 1000;
+    const plannedMs= (Number(editPlannedH) * 3600 + Number(editPlannedM) * 60) * 1000;
+    const nameVal  = editName.trim();
+    if (!nameVal) { toast.warn("Task name can't be empty"); return; }
+    setIsSavingEdit(true);
+    try {
+      await taskService.updateTask(task._id, { name: nameVal, totalTime: spentMs, plannedTime: plannedMs });
+      setShowEditModal(false);
+      toast.success("✅ Task updated");
+      // Refresh-only nudge: third arg true avoids triggering a real start/stop toggle
+      if (typeof onToggle === "function") await onToggle(task._id, task.isActive, true);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to save changes");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   // Handler for manual finish
   const handleManualFinish = async () => {
@@ -96,15 +136,13 @@ const TaskItem = ({
     }
   };
 
-  // Check if task is for today
+  // Check if task is for today (timezone-aware; avoids UTC-midnight shift)
   const isToday = () => {
-    const taskDate = new Date(task.date);
-    const today = new Date();
-    return (
-      taskDate.getFullYear() === today.getFullYear() &&
-      taskDate.getMonth() === today.getMonth() &&
-      taskDate.getDate() === today.getDate()
-    );
+    try {
+      return formatLocalDate(task.date) === getTodayString();
+    } catch {
+      return false;
+    }
   };
 
   const canToggle = isToday();
@@ -456,6 +494,17 @@ const TaskItem = ({
               Finishing...
             </button>
           )}
+          {/* Edit Button */}
+          {!task.isActive && (
+            <button
+              className="btn-edit-task"
+              onClick={handleEditOpen}
+              title="Edit task (fix name or time)"
+              draggable="false"
+            >
+              ✎
+            </button>
+          )}
           {/* Mark Missed Button: show if not active and not manually completed */}
           {!task.isActive && !isFinishing && (
             <button
@@ -661,6 +710,65 @@ const TaskItem = ({
           </span>
         </div>
       </div>
+
+      {/* ── Edit Modal ─────────────────────────────────── */}
+      {showEditModal && ReactDOM.createPortal(
+        <div className="task-edit-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="task-edit-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="task-edit-header">
+              <h3>✎ Edit Task</h3>
+              <button className="task-edit-close" onClick={() => setShowEditModal(false)}>✕</button>
+            </div>
+            <div className="task-edit-body">
+              <label className="task-edit-field">
+                <span>Task name</span>
+                <input
+                  className="task-edit-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  maxLength={120}
+                  autoFocus
+                />
+              </label>
+
+              <label className="task-edit-field">
+                <span>Time spent <small>(correct if timer ran too long)</small></span>
+                <div className="task-edit-time-row">
+                  <input type="number" min="0" max="23" value={editSpentH}
+                    onChange={(e) => setEditSpentH(Math.max(0, Number(e.target.value)))}
+                    className="task-edit-time-input" />
+                  <span>h</span>
+                  <input type="number" min="0" max="59" value={editSpentM}
+                    onChange={(e) => setEditSpentM(Math.max(0, Math.min(59, Number(e.target.value))))}
+                    className="task-edit-time-input" />
+                  <span>m</span>
+                </div>
+              </label>
+
+              <label className="task-edit-field">
+                <span>Planned time</span>
+                <div className="task-edit-time-row">
+                  <input type="number" min="0" max="23" value={editPlannedH}
+                    onChange={(e) => setEditPlannedH(Math.max(0, Number(e.target.value)))}
+                    className="task-edit-time-input" />
+                  <span>h</span>
+                  <input type="number" min="0" max="59" value={editPlannedM}
+                    onChange={(e) => setEditPlannedM(Math.max(0, Math.min(59, Number(e.target.value))))}
+                    className="task-edit-time-input" />
+                  <span>m</span>
+                </div>
+              </label>
+            </div>
+            <div className="task-edit-actions">
+              <button className="task-edit-cancel" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button className="task-edit-save" onClick={handleEditSave} disabled={isSavingEdit}>
+                {isSavingEdit ? "Saving..." : "Save changes"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

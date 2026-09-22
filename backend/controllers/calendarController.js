@@ -59,13 +59,16 @@ exports.handleCallback = async (req, res) => {
     const oauth2Client = getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
 
-    // Update user with Google tokens
-    await User.findByIdAndUpdate(req.user._id, {
+    // Update user with Google tokens - preserve refreshToken if Google doesn't resend it
+    const update = {
       "googleCalendar.connected": true,
       "googleCalendar.accessToken": tokens.access_token,
-      "googleCalendar.refreshToken": tokens.refresh_token,
       "googleCalendar.tokenExpiry": new Date(tokens.expiry_date),
-    });
+    };
+    if (tokens.refresh_token) {
+      update["googleCalendar.refreshToken"] = tokens.refresh_token;
+    }
+    await User.findByIdAndUpdate(req.user._id, update);
 
     await invalidateCache(`user:${req.user._id}:calendar*`);
     res.json({
@@ -116,6 +119,7 @@ exports.disconnect = async (req, res) => {
       "googleCalendar.tokenExpiry": null,
     });
 
+    await invalidateCache(`user:${req.user._id}:calendar*`);
     res.json({ success: true, message: "Google Calendar disconnected" });
   } catch (error) {
     console.error("Error disconnecting:", error);
@@ -169,8 +173,8 @@ exports.createEvent = async (req, res) => {
       taskId,
       todoId,
     } = req.body;
-    // Use user's timezone from header, fallback to UTC
-    const userTimeZone = req.headers["x-timezone"] || "UTC";
+    // Use user's timezone from header, fallback to app default
+    const userTimeZone = tz.getTimezoneFromRequest(req);
 
     if (!title) {
       return res.status(400).json({ message: "Title is required" });
@@ -254,13 +258,15 @@ exports.createEvent = async (req, res) => {
         dateTime: endISO,
         timeZone: userTimeZone,
       },
-      reminders:
-        reminderMinutes && reminderMinutes > 0
-          ? {
-              useDefault: false,
-              overrides: [{ method: "popup", minutes: reminderMinutes }],
-            }
-          : { useDefault: true },
+      // Always set an explicit popup reminder so Google Calendar reliably
+      // fires phone notifications. Never use useDefault:true because the
+      // user's Google Calendar default might be set to "no reminders".
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "popup", minutes: reminderMinutes && reminderMinutes > 0 ? reminderMinutes : 30 },
+        ],
+      },
     };
 
     let response;
@@ -281,14 +287,16 @@ exports.createEvent = async (req, res) => {
 
     // Store the calendar event ID on the task/todo to prevent duplicates
     if (taskId && !req.isUpdate) {
-      await Task.findByIdAndUpdate(taskId, {
-        calendarEventId: response.data.id,
-      });
+      await Task.findOneAndUpdate(
+        { _id: taskId, user: req.user._id },
+        { calendarEventId: response.data.id }
+      );
     }
     if (todoId && !req.isUpdate) {
-      await Todo.findByIdAndUpdate(todoId, {
-        calendarEventId: response.data.id,
-      });
+      await Todo.findOneAndUpdate(
+        { _id: todoId, user: req.user._id },
+        { calendarEventId: response.data.id }
+      );
     }
 
     res.json({
@@ -370,6 +378,27 @@ exports.deleteEvent = async (req, res) => {
     res.json({ success: true, message: "Event deleted from calendar" });
   } catch (error) {
     console.error("Error deleting event:", error);
+    const errMsg = error.message || "";
+    const errCode = error.code || error.status || error.response?.status;
+    if (
+      errCode === 401 ||
+      errMsg.includes("invalid_grant") ||
+      errMsg.includes("Invalid Credentials") ||
+      errMsg.includes("revoked")
+    ) {
+      try {
+        await User.findByIdAndUpdate(req.user._id, {
+          "googleCalendar.connected": false,
+          "googleCalendar.accessToken": null,
+          "googleCalendar.refreshToken": null,
+        });
+      } catch (_) {}
+      await invalidateCache(`user:${req.user._id}:calendar*`);
+      return res.status(401).json({
+        message: "Google Calendar session expired. Please reconnect.",
+        needsConnection: true,
+      });
+    }
     res.status(500).json({ message: "Failed to delete calendar event" });
   }
 };

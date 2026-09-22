@@ -25,12 +25,12 @@ export const getTimezoneHeader = () => {
  * @returns {string} - YYYY-MM-DD
  */
 export const formatLocalDate = (date) => {
-  if (!date) return DateTime.now().setZone(getUserTimezone()).toFormat("yyyy-MM-dd");
+  if (!date) return "";
   
   if (typeof date === "string") {
     // Handle both ISO strings and simple YYYY-MM-DD
     if (date.includes("T")) {
-      return DateTime.fromISO(date).setZone(getUserTimezone()).toFormat("yyyy-MM-dd");
+      return DateTime.fromISO(date, { zone: "utc" }).setZone(getUserTimezone()).toFormat("yyyy-MM-dd");
     }
     return date;
   }

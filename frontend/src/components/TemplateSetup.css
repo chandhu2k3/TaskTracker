@@ -561,3 +561,153 @@ body[data-theme="dark"] .btn-apply-template { background: var(--bg-card); border
 body[data-theme="dark"] .import-template-select { background: var(--bg-card); border-color: var(--border-light); color: var(--text-primary); }
 body[data-theme="dark"] .copy-day-select { background: var(--bg-card); border-color: var(--border-light); color: var(--text-muted); }
 body[data-theme="dark"] .copy-day-select:hover { color: var(--text-primary); }
+
+/* ─── Schedule Image Upload Section ─────────────────────────────────────────── */
+
+.schedule-image-upload-section {
+  border: 1.5px dashed var(--border-light, #d1d5db);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  background: rgba(99, 102, 241, 0.03);
+  transition: border-color 0.2s;
+}
+
+.schedule-image-upload-section:hover {
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.schedule-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.schedule-upload-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary, #555);
+  flex: 1;
+  min-width: 160px;
+}
+
+/* The scan/upload button */
+.btn-upload-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 15px;
+  border-radius: 8px;
+  border: 1.5px solid var(--accent-primary, #6366f1);
+  background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(139,92,246,0.12) 100%);
+  color: var(--accent-primary, #6366f1);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.btn-upload-schedule:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.22) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(99,102,241,0.2);
+}
+
+.btn-upload-schedule:disabled,
+.btn-upload-schedule.extracting {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinner animation inside the button */
+@keyframes spin-extract {
+  to { transform: rotate(360deg); }
+}
+
+.extract-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin-extract 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Extraction result message banner */
+.extraction-message {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 9px 13px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+  animation: fadeInDown 0.25s ease;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.extraction-message--success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #166534;
+}
+
+.extraction-message--error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #991b1b;
+}
+
+.extraction-message-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 2px;
+  color: inherit;
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.extraction-message-close:hover { opacity: 1; }
+
+/* Dark mode overrides */
+body[data-theme="dark"] .schedule-image-upload-section {
+  background: rgba(99,102,241,0.05);
+  border-color: rgba(99,102,241,0.2);
+}
+
+body[data-theme="dark"] .schedule-upload-label { color: var(--text-muted); }
+
+body[data-theme="dark"] .btn-upload-schedule {
+  border-color: var(--accent-primary, #818cf8);
+  color: var(--accent-primary, #818cf8);
+  background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.1) 100%);
+}
+
+body[data-theme="dark"] .extraction-message--success {
+  background: rgba(34,197,94,0.08);
+  border-color: rgba(34,197,94,0.2);
+  color: #4ade80;
+}
+
+body[data-theme="dark"] .extraction-message--error {
+  background: rgba(239,68,68,0.07);
+  border-color: rgba(239,68,68,0.18);
+  color: #f87171;
+}

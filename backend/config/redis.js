@@ -121,6 +121,10 @@ const invalidateCache = async (pattern) => {
       keysToDelete.push(`user:${userId}:templates`);
     } else if (pattern.includes(':todos*')) {
       keysToDelete.push(`user:${userId}:todos`);
+    } else if (pattern.includes(':sleep*')) {
+      keysToDelete.push(`user:${userId}:sleep:active`);
+    } else if (pattern.includes(':calendar*')) {
+      keysToDelete.push(`user:${userId}:calendar:status`);
     }
 
     if (keysToDelete.length > 0) {

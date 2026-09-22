@@ -68,9 +68,9 @@ const userSchema = new mongoose.Schema({
 // No need for explicit index({ email: 1 }) to avoid duplicate index warning
 
 // Hash password before saving (skip for Google OAuth users)
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   if (!this.isModified("password") || !this.password) {
-    return next();
+    return;
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

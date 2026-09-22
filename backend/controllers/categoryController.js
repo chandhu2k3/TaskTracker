@@ -62,7 +62,7 @@ const createCategory = async (req, res) => {
     res.status(201).json(category);
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ message: "Category already exists" });
+      return res.status(409).json({ message: "Category already exists" });
     }
     res.status(500).json({ message: error.message });
   }
@@ -83,14 +83,24 @@ const updateCategory = async (req, res) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
+    const oldName = category.name;
     if (req.body.name) category.name = req.body.name.trim();
     if (req.body.color) category.color = req.body.color;
     if (req.body.icon) category.icon = req.body.icon;
 
     await category.save();
+    if (req.body.name && req.body.name.trim() !== oldName) {
+      await Task.updateMany(
+        { user: req.user._id, category: oldName },
+        { $set: { category: category.name } }
+      );
+    }
     await invalidateCache(`user:${req.user._id}:categories*`);
     res.json(category);
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "Category already exists" });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -108,6 +118,11 @@ const deleteCategory = async (req, res) => {
 
     if (category.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const inUse = await Task.countDocuments({ user: req.user._id, category: category.name, deleted: { $ne: true } });
+    if (inUse > 0) {
+      return res.status(400).json({ message: `Category is used by ${inUse} task(s). Rename or reassign them first.` });
     }
 
     await category.deleteOne();

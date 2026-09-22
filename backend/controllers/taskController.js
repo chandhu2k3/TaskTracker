@@ -102,6 +102,10 @@ const getTasksByDateRange = async (req, res) => {
 const getTasksByWeek = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
+    const w = parseInt(weekNumber, 10);
+    if (!Number.isFinite(w) || w < 1 || w > 4) {
+      return res.status(400).json({ message: "Invalid weekNumber. Must be 1-4." });
+    }
     const timezone = tz.getTimezoneFromRequest(req);
 
     const { startDate, endDate } = tz.getWeekDates(
@@ -301,10 +305,14 @@ const createTask = async (req, res) => {
 // @access  Private
 const updateTask = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
+    }
+
+    if (task.deleted) {
+      return res.status(410).json({ message: "Task was deleted. Restore it first." });
     }
 
     if (task.user.toString() !== req.user._id.toString()) {
@@ -351,7 +359,22 @@ const updateTask = async (req, res) => {
 
     // Update other fields if provided
     if (req.body.name) task.name = req.body.name;
-    if (req.body.category) task.category = req.body.category;
+    if (req.body.category) {
+      // Accept either a Category ID (frontend) or a name string; always store the name
+      const catInput = req.body.category;
+      const catDoc =
+        (await Category.findOne({ _id: catInput, user: req.user._id }).catch(() => null)) ||
+        (await Category.findOne({ name: catInput, user: req.user._id }));
+      if (catDoc) task.category = catDoc.name;
+      else if (typeof catInput === "string" && catInput.trim()) task.category = catInput.trim();
+    }
+    // Manual time corrections (fix accidental timer overruns)
+    if (req.body.hasOwnProperty("totalTime") && typeof req.body.totalTime === "number" && req.body.totalTime >= 0) {
+      task.totalTime = req.body.totalTime;
+    }
+    if (req.body.hasOwnProperty("plannedTime") && typeof req.body.plannedTime === "number" && req.body.plannedTime >= 0) {
+      task.plannedTime = req.body.plannedTime;
+    }
 
     await task.save();
     // Invalidate caches on task update
@@ -359,6 +382,9 @@ const updateTask = async (req, res) => {
     await invalidateCache(`user:${req.user._id}:analytics*`);
     res.json(task);
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "A task with this name and category already exists for this day." });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -426,6 +452,10 @@ const deleteTasksByDay = async (req, res) => {
 const deleteTasksByWeek = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
+    const w = parseInt(weekNumber, 10);
+    if (!Number.isFinite(w) || w < 1 || w > 4) {
+      return res.status(400).json({ message: "Invalid weekNumber. Must be 1-4." });
+    }
     const timezone = tz.getTimezoneFromRequest(req);
 
     const { startDate, endDate } = tz.getWeekDates(
@@ -460,6 +490,10 @@ const deleteTasksByWeek = async (req, res) => {
 const getWeeklyAnalytics = async (req, res) => {
   try {
     const { year, month, weekNumber } = req.params;
+    const w = parseInt(weekNumber, 10);
+    if (!Number.isFinite(w) || w < 1 || w > 4) {
+      return res.status(400).json({ message: "Invalid weekNumber. Must be 1-4." });
+    }
     const timezone = tz.getTimezoneFromRequest(req);
 
     // Check cache first
