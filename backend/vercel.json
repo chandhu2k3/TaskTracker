@@ -5,7 +5,27 @@
       "maxDuration": 60,
       "memory": 1024
     },
-    "api/[...all].js": {
+    "api/[a].js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/[a]/[b].js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/[a]/[b]/[c].js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/[a]/[b]/[c]/[d].js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/[a]/[b]/[c]/[d]/[e].js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/[a]/[b]/[c]/[d]/[e]/[f].js": {
       "maxDuration": 60,
       "memory": 1024
     }
