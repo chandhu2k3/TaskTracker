@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useContext } from "rea
 import ReactDOM from "react-dom";
 import {
   formatLocalDate,
+  getTodayString,
 } from "../utils/timezone";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
@@ -48,9 +49,9 @@ const Dashboard = () => {
     return { year, month, week };
   };
 
-  // Get today's date string for the date input
+  // Get today's date string for the date input (always a real date, never "")
   const getTodayDateString = () => {
-    return getLocalDateString();
+    return getTodayString();
   };
 
   // Convert date object to week selection
@@ -127,8 +128,13 @@ const Dashboard = () => {
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [user] = useState(() => {
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      const storedUser = localStorage.getItem("user");
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+      localStorage.removeItem("user");
+      return null;
+    }
   });
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("theme") || "light";
@@ -136,7 +142,12 @@ const Dashboard = () => {
 
   // Check if user needs onboarding (first time) - using database value
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    let user = null;
+    try {
+      user = JSON.parse(localStorage.getItem("user"));
+    } catch {
+      localStorage.removeItem("user");
+    }
     const isNewUser = sessionStorage.getItem("isNewRegistration");
 
     // Show onboarding for new registrations or if never completed (from database)
