@@ -126,6 +126,7 @@ app.get("/", (req, res) => {
     message: "Tracku API is running",
     status: "healthy",
     timestamp: new Date().toISOString(),
+    deployment: process.env.VERCEL_GIT_COMMIT_SHA || null,
   });
 });
 
@@ -194,6 +195,18 @@ app.get("/api/health", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   }
+});
+
+// API 404 must be JSON (never Express HTML). It must be registered AFTER all
+// /api/* routes (ping/health included) so it only catches unknown paths.
+// If clients ever see an HTML "Cannot GET /server.js", the platform rewrite
+// is swallowing the original URL again — check backend/vercel.json routing.
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    message: `API route not found: ${req.method} ${req.originalUrl}`,
+    hint: "If this persists for valid routes, backend routing (vercel.json) is misconfigured.",
+    deployment: process.env.VERCEL_GIT_COMMIT_SHA || null,
+  });
 });
 
 // Error handler
