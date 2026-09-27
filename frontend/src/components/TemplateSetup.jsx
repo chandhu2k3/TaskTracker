@@ -813,6 +813,14 @@ const TemplateSetup = ({
                               <option value={60}>1 hour</option>
                             </select>
                           )}
+                          {!task.scheduledStartTime && task.addToCalendar && (
+                            <span
+                              className="template-cal-fallback-hint"
+                              title="No start time set — on apply, the calendar event defaults to 09:00"
+                            >
+                              ⏰→09:00
+                            </span>
+                          )}
                           <input
                             type="time"
                             value={task.scheduledStartTime || ""}

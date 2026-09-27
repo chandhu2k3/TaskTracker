@@ -375,6 +375,27 @@ const updateTask = async (req, res) => {
     if (req.body.hasOwnProperty("plannedTime") && typeof req.body.plannedTime === "number" && req.body.plannedTime >= 0) {
       task.plannedTime = req.body.plannedTime;
     }
+    // Drag-reorder persistence (was silently dropped before)
+    if (req.body.hasOwnProperty("order") && Number.isFinite(Number(req.body.order))) {
+      task.order = Number(req.body.order);
+    }
+    // In-app browser notification preferences (was silently dropped before)
+    if (req.body.hasOwnProperty("notificationsEnabled")) {
+      task.notificationsEnabled = Boolean(req.body.notificationsEnabled);
+    }
+    if (req.body.hasOwnProperty("notificationTime") && Number.isFinite(Number(req.body.notificationTime))) {
+      task.notificationTime = Math.max(1, Math.min(1440, Number(req.body.notificationTime)));
+    }
+    // Scheduled time-slot corrections (HH:MM or null)
+    const slotRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (req.body.hasOwnProperty("scheduledStartTime")) {
+      const v = req.body.scheduledStartTime;
+      task.scheduledStartTime = typeof v === "string" && slotRe.test(v) ? v : null;
+    }
+    if (req.body.hasOwnProperty("scheduledEndTime")) {
+      const v = req.body.scheduledEndTime;
+      task.scheduledEndTime = typeof v === "string" && slotRe.test(v) ? v : null;
+    }
 
     await task.save();
     // Invalidate caches on task update

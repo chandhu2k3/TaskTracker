@@ -284,6 +284,8 @@ const applyTemplate = async (req, res) => {
     const createdTasks = [];
     const createdTodos = [];
     let calendarEventsCreated = 0;
+    const calendarSkipped = [];
+    const calendarConnected = Boolean(calendarClient);
 
     for (const templateTask of template.tasks || []) {
       console.log("Processing template task:", {
@@ -373,15 +375,16 @@ const applyTemplate = async (req, res) => {
         createdTasks.push(existing);
         console.log("Task updated from template");
 
-        // Auto-add to Google Calendar if enabled (skip if already has event)
-        if (
-          templateTask.addToCalendar &&
-          calendarClient &&
-          existing.scheduledStartTime &&
-          !existing.calendarEventId
-        ) {
+        // Auto-add to Google Calendar if enabled (skip if already has event).
+        // Falls back to 09:00 when the template task has no scheduled start
+        // time, so a reminder set in the template is never silently dropped.
+        if (templateTask.addToCalendar && !existing.calendarEventId) {
+          if (!calendarClient) {
+            calendarSkipped.push({ name: existing.name, reason: "calendar_not_connected" });
+          } else {
+            const fallbackStart = existing.scheduledStartTime || "09:00";
           try {
-            const startDt = tz.createDateTimeFromSlot(dateStr, existing.scheduledStartTime, timezone);
+            const startDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
             const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
             
             let endDt;
@@ -426,13 +429,14 @@ const applyTemplate = async (req, res) => {
                   dateTime: endISO,
                   timeZone: timezone,
                 },
-                reminders:
-                  reminderMins > 0
-                    ? {
-                        useDefault: false,
-                        overrides: [{ method: "popup", minutes: reminderMins }],
-                      }
-                    : { useDefault: true },
+                // Always explicit popup (never useDefault) so the phone
+                // notification reliably fires even with reminderMinutes 0.
+                reminders: {
+                  useDefault: false,
+                  overrides: [
+                    { method: "popup", minutes: reminderMins > 0 ? reminderMins : 30 },
+                  ],
+                },
               },
             });
             existing.calendarEventId = calResponse.data.id;
@@ -443,7 +447,9 @@ const applyTemplate = async (req, res) => {
               "Calendar event create failed for updated task:",
               calErr.message,
             );
+            calendarSkipped.push({ name: existing.name, reason: "calendar_error" });
           }
+          } // end else (calendar connected)
         }
       } else {
         console.log("Creating task from template:", {
@@ -515,6 +521,42 @@ const applyTemplate = async (req, res) => {
               await anyExisting.save();
               createdTasks.push(anyExisting);
               console.log("Task found via day-range and handled:", anyExisting._id);
+              // Restored tasks also need their calendar event (previously skipped by `continue`)
+              if (templateTask.addToCalendar && !anyExisting.calendarEventId) {
+                if (!calendarClient) {
+                  calendarSkipped.push({ name: anyExisting.name, reason: "calendar_not_connected" });
+                } else {
+                  try {
+                    const fallbackStart = anyExisting.scheduledStartTime || "09:00";
+                    const rStartDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
+                    const rStartISO = DateTime.fromJSDate(rStartDt).setZone(timezone).toISO();
+                    const rEndDt = anyExisting.scheduledEndTime
+                      ? tz.createDateTimeFromSlot(dateStr, anyExisting.scheduledEndTime, timezone)
+                      : new Date(rStartDt.getTime() + (anyExisting.plannedTime || 30 * 60000));
+                    const rEndISO = DateTime.fromJSDate(rEndDt).setZone(timezone).toISO();
+                    const rMins = templateTask.reminderMinutes || 0;
+                    const rResp = await calendarClient.events.insert({
+                      calendarId: "primary",
+                      resource: {
+                        summary: `📋 ${anyExisting.name}`,
+                        description: `Task from Tracku template: ${template.name}`,
+                        start: { dateTime: rStartISO, timeZone: timezone },
+                        end: { dateTime: rEndISO, timeZone: timezone },
+                        reminders: {
+                          useDefault: false,
+                          overrides: [{ method: "popup", minutes: rMins > 0 ? rMins : 30 }],
+                        },
+                      },
+                    });
+                    anyExisting.calendarEventId = rResp.data.id;
+                    await anyExisting.save();
+                    calendarEventsCreated++;
+                  } catch (calErr) {
+                    console.error("Calendar event create failed for restored task:", calErr.message);
+                    calendarSkipped.push({ name: anyExisting.name, reason: "calendar_error" });
+                  }
+                }
+              }
               continue; // Move to next template task
             }
           }
@@ -564,15 +606,16 @@ const applyTemplate = async (req, res) => {
 
         createdTasks.push(newTask);
 
-        // Auto-add to Google Calendar if enabled (skip if already has event)
-        if (
-          templateTask.addToCalendar &&
-          calendarClient &&
-          newTask.scheduledStartTime &&
-          !newTask.calendarEventId
-        ) {
+        // Auto-add to Google Calendar if enabled (skip if already has event).
+        // Falls back to 09:00 when no scheduled start time, so a template
+        // reminder is never silently dropped.
+        if (templateTask.addToCalendar && !newTask.calendarEventId) {
+          if (!calendarClient) {
+            calendarSkipped.push({ name: newTask.name, reason: "calendar_not_connected" });
+          } else {
           try {
-            const startDt = tz.createDateTimeFromSlot(dateStr, newTask.scheduledStartTime, timezone);
+            const fallbackStart = newTask.scheduledStartTime || "09:00";
+            const startDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
             const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
             
             let endDt;
@@ -599,15 +642,14 @@ const applyTemplate = async (req, res) => {
                   dateTime: endISO,
                   timeZone: timezone,
                 },
-                reminders:
-                  reminderMins > 0
-                    ? {
-                        useDefault: false,
-                        overrides: [
-                          { method: "popup", minutes: reminderMins },
-                        ],
-                      }
-                    : { useDefault: true },
+                // Always explicit popup (never useDefault) so the phone
+                // notification reliably fires even with reminderMinutes 0.
+                reminders: {
+                  useDefault: false,
+                  overrides: [
+                    { method: "popup", minutes: reminderMins > 0 ? reminderMins : 30 },
+                  ],
+                },
               },
             });
             newTask.calendarEventId = calResponse.data.id;
@@ -618,7 +660,9 @@ const applyTemplate = async (req, res) => {
               "Calendar event create failed for new task:",
               calErr.message,
             );
+            calendarSkipped.push({ name: newTask.name, reason: "calendar_error" });
           }
+          } // end else (calendar connected)
         }
       }
     }
@@ -656,7 +700,10 @@ const applyTemplate = async (req, res) => {
         await existingTodo.save();
         createdTodos.push(existingTodo);
         // Add calendar reminder if configured and not already in calendar
-        if (templateTodo.reminderMinutes > 0 && calendarClient && !existingTodo.calendarEventId) {
+        if (templateTodo.reminderMinutes > 0 && !existingTodo.calendarEventId) {
+          if (!calendarClient) {
+            calendarSkipped.push({ name: existingTodo.text, reason: "calendar_not_connected" });
+          } else {
           try {
             const timeStr = templateTodo.reminderTime || "09:00";
             const startDt = tz.createDateTimeFromSlot(deadlineDateStr, timeStr, timezone);
@@ -688,7 +735,9 @@ const applyTemplate = async (req, res) => {
             calendarEventsCreated++;
           } catch (calErr) {
             console.error("Calendar reminder create failed for existing todo:", calErr.message);
+            calendarSkipped.push({ name: existingTodo.text, reason: "calendar_error" });
           }
+          } // end else (calendar connected)
         }
         continue;
       }
@@ -703,7 +752,10 @@ const applyTemplate = async (req, res) => {
       });
 
       // Add calendar reminder if configured
-      if (templateTodo.reminderMinutes > 0 && calendarClient) {
+      if (templateTodo.reminderMinutes > 0) {
+        if (!calendarClient) {
+          calendarSkipped.push({ name: newTodo.text, reason: "calendar_not_connected" });
+        } else {
         try {
           const timeStr = templateTodo.reminderTime || "09:00";
           const startDt = tz.createDateTimeFromSlot(deadlineDateStr, timeStr, timezone);
@@ -735,7 +787,9 @@ const applyTemplate = async (req, res) => {
           calendarEventsCreated++;
         } catch (calErr) {
           console.error("Calendar reminder create failed for new todo:", calErr.message);
+          calendarSkipped.push({ name: newTodo.text, reason: "calendar_error" });
         }
+        } // end else (calendar connected)
       }
 
       createdTodos.push(newTodo);
@@ -746,10 +800,12 @@ const applyTemplate = async (req, res) => {
     await invalidateCache(`user:${req.user._id}:analytics*`);
 
     res.json({
-      message: `Applied template with ${createdTasks.length} tasks and ${createdTodos.length} quick todos${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ""}`,
+      message: `Applied template with ${createdTasks.length} tasks and ${createdTodos.length} quick todos${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ""}${calendarSkipped.length > 0 ? ` (${calendarSkipped.length} reminders skipped: ${!calendarConnected ? "calendar not connected" : "see details"})` : ""}`,
       tasks: createdTasks,
       todos: createdTodos,
       calendarEventsCreated,
+      calendarConnected,
+      calendarSkipped,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

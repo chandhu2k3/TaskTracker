@@ -17,6 +17,7 @@ const DayCard = forwardRef(
       onToggleNotification,
       onReorderTasks,
       onMarkMissed,
+      onCalendarChange,
       onHeaderClick,
       isAddingTask = false,
       deletingTask = {},
@@ -138,7 +139,11 @@ const DayCard = forwardRef(
     };
 
     const getCategoryInfo = (categoryId) => {
-      const category = categories.find((c) => c._id === categoryId);
+      // Task.category stores the category NAME string (not the ObjectId),
+      // so match by _id first then fall back to name.
+      const category =
+        categories.find((c) => c._id === categoryId) ||
+        categories.find((c) => c.name === categoryId);
       return category || { color: "#6366f1", icon: "📋" };
     };
 
@@ -306,6 +311,7 @@ const DayCard = forwardRef(
                   onDelete={onDeleteTask}
                   onToggleNotification={onToggleNotification}
                   onMarkMissed={onMarkMissed}
+                  onCalendarChange={onCalendarChange}
                   onDragStart={handleDragStart}
                   onDragOver={handleDragOver}
                   onDragEnter={handleDragEnter}

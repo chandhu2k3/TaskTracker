@@ -214,6 +214,31 @@ exports.createEvent = async (req, res) => {
       }
     }
 
+    // Same duplicate check for todos (previously missing — every click created a duplicate event)
+    if (todoId) {
+      const existingTodo = await Todo.findOne({
+        _id: todoId,
+        user: req.user._id,
+      });
+
+      if (existingTodo && existingTodo.calendarEventId) {
+        try {
+          const calendar = await getCalendarClient(req.user._id);
+          await calendar.events.get({
+            calendarId: "primary",
+            eventId: existingTodo.calendarEventId,
+          });
+          req.isUpdate = true;
+          req.existingEventId = existingTodo.calendarEventId;
+          console.log(`[Calendar Debug] Found existing todo event ${req.existingEventId}, will update instead of insert.`);
+        } catch (checkErr) {
+          console.log("Previous todo calendar event not found or inaccessible, creating new one");
+          existingTodo.calendarEventId = null;
+          await existingTodo.save();
+        }
+      }
+    }
+
     const calendar = await getCalendarClient(req.user._id);
     
     // Use timezone utilities to create accurate date-times

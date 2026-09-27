@@ -13,6 +13,7 @@ const TaskItem = ({
   onDelete,
   onToggleNotification,
   onMarkMissed,
+  onCalendarChange,
   categoryColor,
   categoryIcon,
   onDragStart,
@@ -298,7 +299,8 @@ const TaskItem = ({
     setCalendarStatus("adding");
     try {
       await calendarService.deleteEvent(task.calendarEventId);
-      task.calendarEventId = null; // Update local reference
+      if (typeof onCalendarChange === "function") onCalendarChange(task._id, null);
+      else task.calendarEventId = null; // fallback local reference
       setCalendarStatus(null);
       toast.success("🗑 Removed from Google Calendar");
     } catch (err) {
@@ -330,7 +332,13 @@ const TaskItem = ({
   const createCalendarEvent = async (reminderMinutes, startTime, endTime) => {
     setCalendarStatus("adding");
     const plannedMinutes = Math.round((task.plannedTime || 1800000) / 60000);
-    const eventDate = task.date ? new Date(task.date).toISOString().split("T")[0] : getTodayString();
+    // Timezone-safe date (toISOString shifts IST midnight to the previous day)
+    const eventDate = task.date ? formatLocalDate(task.date) : getTodayString();
+    const notifyParent = (eventId, extra = {}) => {
+      if (typeof onCalendarChange === "function") {
+        onCalendarChange(task._id, eventId, extra);
+      }
+    };
 
     try {
       const result = await calendarService.smartAddToCalendar(
@@ -379,6 +387,7 @@ const TaskItem = ({
 
             if (retryResult.success) {
               setCalendarStatus("added");
+              notifyParent(retryResult.eventId || task.calendarEventId || null);
               toast.success("✅ Reminder set successfully!");
               setTimeout(() => setCalendarStatus(null), 3000);
             }
@@ -388,6 +397,7 @@ const TaskItem = ({
         } else {
           // Successfully created new event
           setCalendarStatus("added");
+          notifyParent(result.eventId || null);
           toast.success("✅ Reminder set successfully!");
           setTimeout(() => setCalendarStatus(null), 3000);
         }
@@ -403,7 +413,7 @@ const TaskItem = ({
   };
 
   // Handle time picker submission
-  const handleTimePickerSubmit = () => {
+  const handleTimePickerSubmit = async () => {
     if (!selectedStartTime || !selectedEndTime) {
       toast.warning("⚠️ Please select both start and end times");
       return;
@@ -421,6 +431,24 @@ const TaskItem = ({
     }
 
     setShowTimePicker(false);
+    // Persist the picked slot on the task so future reminders and the
+    // time badge work without re-picking (best-effort, calendar still first-class)
+    if (!task.scheduledStartTime || !task.scheduledEndTime) {
+      try {
+        await taskService.updateTask(task._id, {
+          scheduledStartTime: selectedStartTime,
+          scheduledEndTime: selectedEndTime,
+        });
+        if (typeof onCalendarChange === "function") {
+          onCalendarChange(task._id, task.calendarEventId || null, {
+            scheduledStartTime: selectedStartTime,
+            scheduledEndTime: selectedEndTime,
+          });
+        }
+      } catch {
+        // Non-fatal: calendar event creation below still proceeds
+      }
+    }
     createCalendarEvent(
       pendingReminderMinutes,
       selectedStartTime,

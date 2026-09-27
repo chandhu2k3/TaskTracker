@@ -810,13 +810,29 @@ const Dashboard = () => {
 
     setLoading(true);
     try {
-      await templateService.applyTemplate(
+      const result = await templateService.applyTemplate(
         templateIdToApply,
         selectedDate.year,
         selectedDate.month,
         selectedDate.week,
       );
-      toast.success("Template applied successfully!");
+      const created = result?.calendarEventsCreated || 0;
+      const skipped = result?.calendarSkipped || [];
+      toast.success(
+        `Template applied successfully!${created > 0 ? ` 📅 ${created} reminder${created !== 1 ? "s" : ""} added to Google Calendar.` : ""}`,
+      );
+      if (skipped.length > 0) {
+        if (result?.calendarConnected === false) {
+          toast.warn(
+            "⚠️ Google Calendar not connected — reminders were skipped. Connect from the profile menu and re-apply.",
+            { autoClose: 8000 },
+          );
+        } else {
+          toast.warn(
+            `⚠️ ${skipped.length} reminder${skipped.length !== 1 ? "s" : ""} skipped (${skipped.slice(0, 3).map((s) => s.name).join(", ")}${skipped.length > 3 ? ", …" : ""})`,
+          );
+        }
+      }
       setShowTemplateModal(false);
       setSelectedTemplateForApply("");
       await loadTasks();
@@ -1147,8 +1163,38 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteTodo = async (id) => {
-    if (deletingTodo[id]) return;
+  const handleEditTodo = async (id, text) => {
+    const trimmed = (text || "").trim();
+    if (!trimmed) {
+      toast.warn("Todo text can't be empty");
+      return;
+    }
+    try {
+      const updated = await todoService.updateTodo(id, { text: trimmed });
+      setTodos((prev) => prev.map((t) => (t._id === id ? updated : t)));
+      toast.success("Todo updated");
+    } catch (error) {
+      toast.error("Failed to update todo");
+      await loadTodos();
+      throw error;
+    }
+  };
+
+  const handleTaskCalendarChange = (taskId, eventId, extra = {}) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t._id === taskId ? { ...t, calendarEventId: eventId, ...extra } : t,
+      ),
+    );
+  };
+
+  const handleTodoCalendarChange = (todoId, eventId) => {
+    setTodos((prev) =>
+      prev.map((t) => (t._id === todoId ? { ...t, calendarEventId: eventId } : t)),
+    );
+  };
+
+  const handleDeleteTodo = async (id) => {    if (deletingTodo[id]) return;
     setDeletingTodo((prev) => ({ ...prev, [id]: true }));
     // Capture the todo snapshot before the async call for undo support
     const deletedTodo = todos.find((t) => t._id === id);
@@ -1646,6 +1692,7 @@ const Dashboard = () => {
                             onDeleteDayTasks={handleDeleteDayTasks}
                             onToggleNotification={handleToggleNotification}
                             onMarkMissed={handleMarkTaskMissed}
+                            onCalendarChange={handleTaskCalendarChange}
                             onReorderTasks={handleReorderTasks}
                             isToday={selectedTask.date === todayStr}
                           />
@@ -1684,6 +1731,8 @@ const Dashboard = () => {
                         onMarkTodoMissed={handleMarkTodoMissed}
                         onDeleteAll={handleDeleteAllTodos}
                         onClearCompleted={handleClearCompletedTodos}
+                        onEditTodo={handleEditTodo}
+                        onTodoCalendarChange={handleTodoCalendarChange}
                         isAddingTodo={addingTodo}
                         togglingTodo={togglingTodo}
                         deletingTodo={deletingTodo}
@@ -1707,6 +1756,7 @@ const Dashboard = () => {
                         onDeleteDayTasks={handleDeleteDayTasks}
                         onReorderTasks={handleReorderTasks}
                         onMarkMissed={handleMarkTaskMissed}
+                        onCalendarChange={handleTaskCalendarChange}
                         isAddingTask={addingTask}
                         deletingTask={deletingTask}
                         onHeaderClick={() => {

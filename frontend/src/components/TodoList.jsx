@@ -15,6 +15,8 @@ const TodoList = ({
   onMarkTodoMissed,
   onDeleteAll,
   onClearCompleted,
+  onEditTodo,
+  onTodoCalendarChange,
   isAddingTodo = false,
   togglingTodo = {},
   deletingTodo = {},
@@ -152,6 +154,16 @@ const TodoList = ({
     const trimmed = editText.trim();
     if (!trimmed || trimmed === todo.text) { setEditingId(null); return; }
     setEditingId(null);
+    // Prefer the parent updater (keeps server + list in sync). Fall back to
+    // the local drag-order patch when no parent handler is wired.
+    if (typeof onEditTodo === "function") {
+      try {
+        await onEditTodo(todo._id, trimmed);
+      } catch {
+        toast.error("Couldn't save edit — try again");
+      }
+      return;
+    }
     try {
       await todoService.updateTodo(todo._id, { text: trimmed });
       // Patch text in local drag order so it doesn't revert
@@ -161,7 +173,7 @@ const TodoList = ({
     } catch {
       toast.error("Couldn't save edit — try again");
     }
-  }, [editText]);
+  }, [editText, onEditTodo]);
 
   const handleEditKeyDown = useCallback((e, todo) => {
     if (e.key === "Enter") { e.preventDefault(); handleEditSave(todo); }
@@ -204,6 +216,15 @@ const TodoList = ({
     setShowPickerForTodo(todoId);
   };
 
+  // Warn when the reminder datetime is already in the past — Google never
+  // fires notifications for past events, which looked like "reminder not working".
+  const isReminderInPast = (dateStr, timeStr) => {
+    if (!/^\d{2}:\d{2}$/.test(timeStr || "")) return false;
+    const eventDate = new Date(`${dateStr}T${timeStr}:00`);
+    if (Number.isNaN(eventDate.getTime())) return false;
+    return eventDate.getTime() < Date.now() - 60000;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newTodo.trim()) return;
@@ -220,6 +241,10 @@ const TodoList = ({
     const created = await onAddTodo(todoText, todoDeadline);
     // If a reminder was requested and a todo was returned, add to calendar
     if (capturedReminderMinutes > 0 && created && created._id) {
+      if (isReminderInPast(todoDeadline, capturedReminderTime || "09:00")) {
+        toast.warn("⚠️ That reminder time is already past — Google won't notify for past events. Pick a future time.");
+        return;
+      }
       try {
         const result = await calendarService.smartAddToCalendar(
           {
@@ -263,6 +288,9 @@ const TodoList = ({
           },
         );
         if (result?.success) {
+          if (typeof onTodoCalendarChange === "function" && result.eventId) {
+            onTodoCalendarChange(created._id, result.eventId);
+          }
           toast.success(`📅 Reminder added to Google Calendar at ${capturedReminderTime}`);
         }
       } catch {
@@ -277,6 +305,11 @@ const TodoList = ({
 
     if (!/^\d{2}:\d{2}$/.test(selectedTime)) {
       toast.warn("Please pick a valid time.");
+      return;
+    }
+
+    if (isReminderInPast(selectedDate, selectedTime)) {
+      toast.warn("⚠️ That time is already past — Google won't notify for past events. Pick a future time.");
       return;
     }
 
@@ -348,6 +381,9 @@ const TodoList = ({
       );
 
       if (result.success) {
+        if (typeof onTodoCalendarChange === "function" && result.eventId) {
+          onTodoCalendarChange(todo._id, result.eventId);
+        }
         setCalendarStatuses((prev) => ({ ...prev, [todo._id]: "added" }));
         setTimeout(
           () => setCalendarStatuses((prev) => ({ ...prev, [todo._id]: null })),
@@ -372,7 +408,8 @@ const TodoList = ({
     setCalendarStatuses((prev) => ({ ...prev, [todo._id]: "adding" }));
     try {
       await calendarService.deleteEvent(todo.calendarEventId);
-      todo.calendarEventId = null;
+      if (typeof onTodoCalendarChange === "function") onTodoCalendarChange(todo._id, null);
+      else todo.calendarEventId = null;
       setCalendarStatuses((prev) => ({ ...prev, [todo._id]: null }));
       toast.success("🗑 Removed from Google Calendar");
     } catch (err) {
