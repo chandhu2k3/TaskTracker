@@ -816,11 +816,22 @@ const Dashboard = () => {
         selectedDate.month,
         selectedDate.week,
       );
+      const appliedTasks = result?.tasks || [];
+      const appliedTodos = result?.todos || [];
       const created = result?.calendarEventsCreated || 0;
       const skipped = result?.calendarSkipped || [];
+      const dateSkipped = result?.dateSkipped || [];
+      const skipLabel = (s) =>
+        s.day ? `${s.name} (${s.day.slice(0, 3)})` : s.name;
       toast.success(
-        `Template applied successfully!${created > 0 ? ` 📅 ${created} reminder${created !== 1 ? "s" : ""} added to Google Calendar.` : ""}`,
+        `Template applied: ${appliedTasks.length} task(s), ${appliedTodos.length} todo(s)${created > 0 ? ` • 📅 ${created} reminder${created !== 1 ? "s" : ""} added` : ""}`,
       );
+      if (dateSkipped.length > 0) {
+        toast.info(
+          `⏭️ No dates left this week for: ${dateSkipped.slice(0, 4).map(skipLabel).join(", ")}${dateSkipped.length > 4 ? ", …" : ""} — apply earlier in the week for full coverage.`,
+          { autoClose: 9000 },
+        );
+      }
       if (skipped.length > 0) {
         if (result?.calendarConnected === false) {
           toast.warn(
@@ -829,7 +840,7 @@ const Dashboard = () => {
           );
         } else {
           toast.warn(
-            `⚠️ ${skipped.length} reminder${skipped.length !== 1 ? "s" : ""} skipped (${skipped.slice(0, 3).map((s) => s.name).join(", ")}${skipped.length > 3 ? ", …" : ""})`,
+            `⚠️ ${skipped.length} reminder${skipped.length !== 1 ? "s" : ""} skipped (${skipped.slice(0, 3).map(skipLabel).join(", ")}${skipped.length > 3 ? ", …" : ""})`,
           );
         }
       }
@@ -837,6 +848,26 @@ const Dashboard = () => {
       setSelectedTemplateForApply("");
       await loadTasks();
       await loadTodos();
+      // In day view, if the current day got nothing but later days did
+      // (e.g. applying on Sunday), jump to the first day with new tasks
+      // instead of leaving an empty "No tasks" screen.
+      if (viewMode === "day" && appliedTasks.length > 0) {
+        const createdDates = [
+          ...new Set(
+            appliedTasks
+              .map((t) => formatLocalDate(t.date))
+              .filter(Boolean),
+          ),
+        ].sort();
+        if (
+          createdDates.length > 0 &&
+          !createdDates.includes(selectedDayDate)
+        ) {
+          setDisplayDate(createdDates[0]);
+          setSelectedDayDate(createdDates[0]);
+          setScrollToDate(createdDates[0]);
+        }
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to apply template");
     } finally {

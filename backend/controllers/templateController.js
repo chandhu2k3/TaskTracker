@@ -273,6 +273,14 @@ const applyTemplate = async (req, res) => {
     const todayDt = DateTime.now().setZone(timezone).startOf("day");
     const effectiveStartDt = todayDt > startDtLuxon ? todayDt : startDtLuxon;
 
+    // Entire selected week is in the past — nothing can be created. Fail
+    // loudly instead of returning a misleading "0 tasks" success.
+    if (effectiveStartDt > endDtLuxon) {
+      return res.status(400).json({
+        message: "That week is entirely in the past. Pick the current or a future week to apply this template.",
+      });
+    }
+
     // Map Luxon weekday numbers (1=Mon..7=Sun) to template day names for fast lookup
     const luxonWeekdayMap = {
       monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
@@ -285,7 +293,34 @@ const applyTemplate = async (req, res) => {
     const createdTodos = [];
     let calendarEventsCreated = 0;
     const calendarSkipped = [];
-    const calendarConnected = Boolean(calendarClient);
+    const dateSkipped = [];
+    let calendarConnected = Boolean(calendarClient);
+
+    // Google auth failure inside apply means stored tokens are dead. Detect
+    // it once, wipe them, and report "not connected" instead of cryptic errors.
+    const isCalendarAuthError = (err) => {
+      const msg = err?.message || "";
+      const code = err?.code || err?.status || err?.response?.status;
+      return (
+        code === 401 ||
+        msg.includes("invalid_grant") ||
+        msg.includes("Invalid Credentials") ||
+        msg.includes("Token has been expired") ||
+        msg.includes("revoked")
+      );
+    };
+    const handleCalendarAuthFailure = async () => {
+      if (!calendarConnected) return;
+      calendarConnected = false;
+      try {
+        await User.findByIdAndUpdate(req.user._id, {
+          "googleCalendar.connected": false,
+          "googleCalendar.accessToken": null,
+          "googleCalendar.refreshToken": null,
+        });
+      } catch (_) {}
+      await invalidateCache(`user:${req.user._id}:calendar*`);
+    };
 
     for (const templateTask of template.tasks || []) {
       console.log("Processing template task:", {
@@ -311,6 +346,7 @@ const applyTemplate = async (req, res) => {
 
       if (dayDt > endDtLuxon) {
         console.log(`Skipping ${templateTask.name}: day "${templateTask.day}" not found on/after today in week range`);
+        dateSkipped.push({ name: templateTask.name, day: templateTask.day, reason: "no_date_left_in_week" });
         continue;
       }
 
@@ -380,7 +416,7 @@ const applyTemplate = async (req, res) => {
         // time, so a reminder set in the template is never silently dropped.
         if (templateTask.addToCalendar && !existing.calendarEventId) {
           if (!calendarClient) {
-            calendarSkipped.push({ name: existing.name, reason: "calendar_not_connected" });
+            calendarSkipped.push({ name: existing.name, day: templateTask.day, reason: "calendar_not_connected" });
           } else {
             const fallbackStart = existing.scheduledStartTime || "09:00";
           try {
@@ -447,7 +483,8 @@ const applyTemplate = async (req, res) => {
               "Calendar event create failed for updated task:",
               calErr.message,
             );
-            calendarSkipped.push({ name: existing.name, reason: "calendar_error" });
+            if (isCalendarAuthError(calErr)) await handleCalendarAuthFailure();
+            calendarSkipped.push({ name: existing.name, day: templateTask.day, reason: calendarConnected ? "calendar_error" : "calendar_not_connected", detail: String(calErr.message || "").slice(0, 160) });
           }
           } // end else (calendar connected)
         }
@@ -524,7 +561,7 @@ const applyTemplate = async (req, res) => {
               // Restored tasks also need their calendar event (previously skipped by `continue`)
               if (templateTask.addToCalendar && !anyExisting.calendarEventId) {
                 if (!calendarClient) {
-                  calendarSkipped.push({ name: anyExisting.name, reason: "calendar_not_connected" });
+                  calendarSkipped.push({ name: anyExisting.name, day: templateTask.day, reason: "calendar_not_connected" });
                 } else {
                   try {
                     const fallbackStart = anyExisting.scheduledStartTime || "09:00";
@@ -553,7 +590,8 @@ const applyTemplate = async (req, res) => {
                     calendarEventsCreated++;
                   } catch (calErr) {
                     console.error("Calendar event create failed for restored task:", calErr.message);
-                    calendarSkipped.push({ name: anyExisting.name, reason: "calendar_error" });
+                    if (isCalendarAuthError(calErr)) await handleCalendarAuthFailure();
+                    calendarSkipped.push({ name: anyExisting.name, day: templateTask.day, reason: calendarConnected ? "calendar_error" : "calendar_not_connected", detail: String(calErr.message || "").slice(0, 160) });
                   }
                 }
               }
@@ -611,7 +649,7 @@ const applyTemplate = async (req, res) => {
         // reminder is never silently dropped.
         if (templateTask.addToCalendar && !newTask.calendarEventId) {
           if (!calendarClient) {
-            calendarSkipped.push({ name: newTask.name, reason: "calendar_not_connected" });
+            calendarSkipped.push({ name: newTask.name, day: templateTask.day, reason: "calendar_not_connected" });
           } else {
           try {
             const fallbackStart = newTask.scheduledStartTime || "09:00";
@@ -660,7 +698,8 @@ const applyTemplate = async (req, res) => {
               "Calendar event create failed for new task:",
               calErr.message,
             );
-            calendarSkipped.push({ name: newTask.name, reason: "calendar_error" });
+            if (isCalendarAuthError(calErr)) await handleCalendarAuthFailure();
+            calendarSkipped.push({ name: newTask.name, day: templateTask.day, reason: calendarConnected ? "calendar_error" : "calendar_not_connected", detail: String(calErr.message || "").slice(0, 160) });
           }
           } // end else (calendar connected)
         }
@@ -677,7 +716,10 @@ const applyTemplate = async (req, res) => {
         dayDt = dayDt.plus({ days: 1 });
       }
 
-      if (dayDt > endDtLuxon) continue;
+      if (dayDt > endDtLuxon) {
+        dateSkipped.push({ name: templateTodo.text, day: templateTodo.day, reason: "no_date_left_in_week" });
+        continue;
+      }
 
       const todoDateStr = dayDt.toFormat("yyyy-MM-dd");
       const deadlineOffsetDays = Number(templateTodo.deadlineOffsetDays || 0);
@@ -702,7 +744,7 @@ const applyTemplate = async (req, res) => {
         // Add calendar reminder if configured and not already in calendar
         if (templateTodo.reminderMinutes > 0 && !existingTodo.calendarEventId) {
           if (!calendarClient) {
-            calendarSkipped.push({ name: existingTodo.text, reason: "calendar_not_connected" });
+            calendarSkipped.push({ name: existingTodo.text, day: templateTodo.day, reason: "calendar_not_connected" });
           } else {
           try {
             const timeStr = templateTodo.reminderTime || "09:00";
@@ -735,7 +777,8 @@ const applyTemplate = async (req, res) => {
             calendarEventsCreated++;
           } catch (calErr) {
             console.error("Calendar reminder create failed for existing todo:", calErr.message);
-            calendarSkipped.push({ name: existingTodo.text, reason: "calendar_error" });
+            if (isCalendarAuthError(calErr)) await handleCalendarAuthFailure();
+            calendarSkipped.push({ name: existingTodo.text, day: templateTodo.day, reason: calendarConnected ? "calendar_error" : "calendar_not_connected", detail: String(calErr.message || "").slice(0, 160) });
           }
           } // end else (calendar connected)
         }
@@ -754,7 +797,7 @@ const applyTemplate = async (req, res) => {
       // Add calendar reminder if configured
       if (templateTodo.reminderMinutes > 0) {
         if (!calendarClient) {
-          calendarSkipped.push({ name: newTodo.text, reason: "calendar_not_connected" });
+          calendarSkipped.push({ name: newTodo.text, day: templateTodo.day, reason: "calendar_not_connected" });
         } else {
         try {
           const timeStr = templateTodo.reminderTime || "09:00";
@@ -787,7 +830,8 @@ const applyTemplate = async (req, res) => {
           calendarEventsCreated++;
         } catch (calErr) {
           console.error("Calendar reminder create failed for new todo:", calErr.message);
-          calendarSkipped.push({ name: newTodo.text, reason: "calendar_error" });
+          if (isCalendarAuthError(calErr)) await handleCalendarAuthFailure();
+          calendarSkipped.push({ name: newTodo.text, day: templateTodo.day, reason: calendarConnected ? "calendar_error" : "calendar_not_connected", detail: String(calErr.message || "").slice(0, 160) });
         }
         } // end else (calendar connected)
       }
@@ -800,12 +844,13 @@ const applyTemplate = async (req, res) => {
     await invalidateCache(`user:${req.user._id}:analytics*`);
 
     res.json({
-      message: `Applied template with ${createdTasks.length} tasks and ${createdTodos.length} quick todos${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ""}${calendarSkipped.length > 0 ? ` (${calendarSkipped.length} reminders skipped: ${!calendarConnected ? "calendar not connected" : "see details"})` : ""}`,
+      message: `Applied template with ${createdTasks.length} tasks and ${createdTodos.length} quick todos${calendarEventsCreated > 0 ? ` (${calendarEventsCreated} calendar events created)` : ""}${calendarSkipped.length > 0 ? ` (${calendarSkipped.length} reminders skipped: ${!calendarConnected ? "calendar not connected" : "see details"})` : ""}${dateSkipped.length > 0 ? ` (${dateSkipped.length} had no date left in this week)` : ""}`,
       tasks: createdTasks,
       todos: createdTodos,
       calendarEventsCreated,
       calendarConnected,
       calendarSkipped,
+      dateSkipped,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
