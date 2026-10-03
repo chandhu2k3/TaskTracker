@@ -34,7 +34,20 @@ const TaskItem = ({
   const [editSpentM, setEditSpentM] = useState(0);
   const [editPlannedH, setEditPlannedH] = useState(0);
   const [editPlannedM, setEditPlannedM] = useState(0);
+  const [editSessions, setEditSessions] = useState([]);
+  const [newSessStart, setNewSessStart] = useState("");
+  const [newSessEnd, setNewSessEnd] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const editSpentMs = (Number(editSpentH) * 3600 + Number(editSpentM) * 60) * 1000;
+  const editPlannedMs = (Number(editPlannedH) * 3600 + Number(editPlannedM) * 60) * 1000;
+  const editSliderMax = Math.max(editPlannedMs, editSpentMs, 30 * 60000);
+
+  const setSpentMs = (ms) => {
+    const clamped = Math.max(0, Math.round(ms));
+    setEditSpentH(Math.floor(clamped / 3600000));
+    setEditSpentM(Math.floor((clamped % 3600000) / 60000));
+  };
 
   // Open edit modal pre-filled with current values
   const handleEditOpen = () => {
@@ -45,17 +58,59 @@ const TaskItem = ({
     setEditSpentM(Math.floor((spentMs % 3600000) / 60000));
     setEditPlannedH(Math.floor(plannedMs / 3600000));
     setEditPlannedM(Math.floor((plannedMs % 3600000) / 60000));
+    setEditSessions(
+      (task.sessions || []).map((s) => ({
+        startTime: s.startTime ? new Date(s.startTime).toISOString() : null,
+        endTime: s.endTime ? new Date(s.endTime).toISOString() : null,
+        duration: s.duration || 0,
+      })),
+    );
+    setNewSessStart("");
+    setNewSessEnd("");
     setShowEditModal(true);
   };
 
+  const handleDeleteSession = (index) => {
+    const removed = editSessions[index];
+    setEditSessions((prev) => prev.filter((_, i) => i !== index));
+    if (removed) setSpentMs(editSpentMs - (removed.duration || 0));
+  };
+
+  const handleAddSession = () => {
+    if (!newSessStart || !newSessEnd) {
+      toast.warn("Pick both start and end time for the session");
+      return;
+    }
+    const dayStr = formatLocalDate(task.date) || getTodayString();
+    const start = new Date(`${dayStr}T${newSessStart}:00`);
+    const end = new Date(`${dayStr}T${newSessEnd}:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+      toast.warn("End time must be after start time");
+      return;
+    }
+    const duration = end - start;
+    setEditSessions((prev) => [
+      ...prev,
+      { startTime: start.toISOString(), endTime: end.toISOString(), duration },
+    ]);
+    setSpentMs(editSpentMs + duration);
+    setNewSessStart("");
+    setNewSessEnd("");
+  };
+
   const handleEditSave = async () => {
-    const spentMs  = (Number(editSpentH)   * 3600 + Number(editSpentM)   * 60) * 1000;
-    const plannedMs= (Number(editPlannedH) * 3600 + Number(editPlannedM) * 60) * 1000;
+    const spentMs = editSpentMs;
+    const plannedMs = editPlannedMs;
     const nameVal  = editName.trim();
     if (!nameVal) { toast.warn("Task name can't be empty"); return; }
     setIsSavingEdit(true);
     try {
-      await taskService.updateTask(task._id, { name: nameVal, totalTime: spentMs, plannedTime: plannedMs });
+      await taskService.updateTask(task._id, {
+        name: nameVal,
+        totalTime: spentMs,
+        plannedTime: plannedMs,
+        sessions: editSessions.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
+      });
       setShowEditModal(false);
       toast.success("✅ Task updated");
       // Refresh-only nudge: third arg true avoids triggering a real start/stop toggle
@@ -722,7 +777,15 @@ const TaskItem = ({
             {task.isActive ? "" : ""}
             {formatTime(calculateTime())}
           </span>
-          <div className="progress-bar-wrapper">
+          <div
+            className={`progress-bar-wrapper${!task.isActive ? " clickable" : ""}`}
+            onClick={(e) => {
+              if (task.isActive) return;
+              e.stopPropagation();
+              handleEditOpen();
+            }}
+            title={task.isActive ? undefined : "Click to adjust time"}
+          >
             <div
               className="progress-bar-fill"
               style={{
@@ -760,7 +823,22 @@ const TaskItem = ({
               </label>
 
               <label className="task-edit-field">
-                <span>Time spent <small>(correct if timer ran too long)</small></span>
+                <span>Time spent <small>(drag the bar or type — fixes missed on/off)</small></span>
+                <input
+                  type="range"
+                  className="task-edit-slider"
+                  min={0}
+                  max={editSliderMax}
+                  step={60000}
+                  value={Math.min(editSpentMs, editSliderMax)}
+                  onChange={(e) => setSpentMs(Number(e.target.value))}
+                  aria-label="Adjust time spent"
+                />
+                <div className="task-edit-slider-labels">
+                  <span>0m</span>
+                  <span className="task-edit-slider-value">{formatTime(editSpentMs)}</span>
+                  <span>{formatTime(editSliderMax)}</span>
+                </div>
                 <div className="task-edit-time-row">
                   <input type="number" min="0" max="23" value={editSpentH}
                     onChange={(e) => setEditSpentH(Math.max(0, Number(e.target.value)))}
@@ -770,8 +848,57 @@ const TaskItem = ({
                     onChange={(e) => setEditSpentM(Math.max(0, Math.min(59, Number(e.target.value))))}
                     className="task-edit-time-input" />
                   <span>m</span>
+                  <div className="task-edit-quick-row">
+                    <button type="button" className="task-edit-quick-btn" onClick={() => setSpentMs(editSpentMs - 15 * 60000)}>−15m</button>
+                    <button type="button" className="task-edit-quick-btn" onClick={() => setSpentMs(editSpentMs + 15 * 60000)}>+15m</button>
+                    <button type="button" className="task-edit-quick-btn" onClick={() => setSpentMs(editPlannedMs)}>Match plan</button>
+                  </div>
                 </div>
               </label>
+
+              <div className="task-edit-field">
+                <span>Sessions <small>({editSessions.length} — delete a bad run or add one you forgot to track)</small></span>
+                {editSessions.length > 0 && (
+                  <div className="task-edit-session-list">
+                    {editSessions.map((s, i) => (
+                      <div key={i} className="task-edit-session-row">
+                        <span className="task-edit-session-time">
+                          {s.startTime ? new Date(s.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
+                          {" → "}
+                          {s.endTime ? new Date(s.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "open"}
+                        </span>
+                        <span className="task-edit-session-dur">{formatTime(s.duration || 0)}</span>
+                        <button
+                          type="button"
+                          className="task-edit-session-del"
+                          title="Delete this session (subtracts its time)"
+                          onClick={() => handleDeleteSession(i)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="task-edit-add-row">
+                  <input
+                    type="time"
+                    className="task-edit-time-input"
+                    value={newSessStart}
+                    onChange={(e) => setNewSessStart(e.target.value)}
+                    title="Session start"
+                  />
+                  <span>→</span>
+                  <input
+                    type="time"
+                    className="task-edit-time-input"
+                    value={newSessEnd}
+                    onChange={(e) => setNewSessEnd(e.target.value)}
+                    title="Session end"
+                  />
+                  <button type="button" className="task-edit-quick-btn" onClick={handleAddSession}>+ Add</button>
+                </div>
+              </div>
 
               <label className="task-edit-field">
                 <span>Planned time</span>

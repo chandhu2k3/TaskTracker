@@ -747,3 +747,85 @@
 [data-theme="dark"] .btn-edit-task { color: #57534e; }
 [data-theme="dark"] .btn-edit-task:hover { color: #818cf8; background: rgba(99,102,241,0.12); }
 
+/* Clickable progress bar (opens time editor) */
+.progress-bar-wrapper.clickable { cursor: pointer; }
+
+/* ─── Task Edit Slider (drag to set time) ──────────── */
+.task-edit-slider {
+  width: 100%;
+  accent-color: #6366f1;
+  cursor: pointer;
+  margin: 2px 0 0;
+}
+.task-edit-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #6b7280);
+  margin-bottom: 8px;
+}
+.task-edit-slider-value {
+  font-weight: 700;
+  color: #6366f1;
+  font-size: 0.85rem;
+}
+.task-edit-quick-row {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.task-edit-quick-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-color, #e5e7eb);
+  background: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.task-edit-quick-btn:hover { border-color: #6366f1; color: #6366f1; }
+
+/* ─── Task Edit Sessions ───────────────────────────── */
+.task-edit-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.task-edit-session-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  background: var(--bg-input, #f9fafb);
+}
+.task-edit-session-time { flex: 1; color: var(--text-primary, #111827); }
+.task-edit-session-dur { font-weight: 600; color: var(--text-secondary, #6b7280); }
+.task-edit-session-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #ef4444;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.task-edit-session-del:hover { background: rgba(239,68,68,0.1); }
+.task-edit-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.task-edit-add-row span { font-size: 0.85rem; color: var(--text-secondary, #6b7280); }
+[data-theme="dark"] .task-edit-session-row { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .task-edit-quick-btn:hover { border-color: #818cf8; color: #818cf8; }
+

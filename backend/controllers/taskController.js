@@ -277,7 +277,31 @@ const createTask = async (req, res) => {
         });
         task.totalTime = task.plannedTime;
         task.completionCount = 1;
-        await task.save();
+    // Full session list replacement (edit modal: fix missed on/off,
+    // trim overruns, add forgotten sessions). Durations recomputed server-side.
+    if (req.body.hasOwnProperty("sessions") && Array.isArray(req.body.sessions)) {
+      if (req.body.sessions.length > 100) {
+        return res.status(400).json({ message: "Too many sessions (max 100)." });
+      }
+      const clean = [];
+      for (const s of req.body.sessions) {
+        const st = new Date(s.startTime);
+        const en = s.endTime ? new Date(s.endTime) : null;
+        if (Number.isNaN(st.getTime())) {
+          return res.status(400).json({ message: "Invalid session start time." });
+        }
+        if (en && Number.isNaN(en.getTime())) {
+          return res.status(400).json({ message: "Invalid session end time." });
+        }
+        if (en && en < st) {
+          return res.status(400).json({ message: "Session end must be after start." });
+        }
+        clean.push({ startTime: st, endTime: en, duration: en ? en - st : 0 });
+      }
+      task.sessions = clean;
+    }
+
+    await task.save();
       }
     }
 
