@@ -401,6 +401,21 @@ const TemplateSetup = ({
       return;
     }
 
+    // Google rejects events whose end is not after start ("time range is
+    // empty"). Catch the typo at save time and name the task.
+    const badRange = validTasks.find(
+      (t) =>
+        t.scheduledStartTime &&
+        t.scheduledEndTime &&
+        t.scheduledEndTime <= t.scheduledStartTime,
+    );
+    if (badRange) {
+      alert(
+        `"${badRange.name}" (${badRange.day}): end time (${badRange.scheduledEndTime}) must be after start time (${badRange.scheduledStartTime}). Google Calendar rejects empty time ranges.`,
+      );
+      return;
+    }
+
     console.log("Frontend - Saving template with tasks:", validTasks);
     console.log(
       "Frontend - isAutomated values:",

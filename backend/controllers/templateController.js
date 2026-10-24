@@ -301,6 +301,14 @@ const applyTemplate = async (req, res) => {
     const dateSkipped = [];
     let calendarConnected = Boolean(calendarClient);
 
+    // Google rejects empty/inverted ranges ("The specified time range is
+    // empty", e.g. template end <= start). Fall back to start + planned/30m.
+    const ensureEventEnd = (startDt, endDt, plannedMs) => {
+      if (!endDt || endDt <= startDt) {
+        return new Date(startDt.getTime() + (plannedMs || 30 * 60000));
+      }
+      return endDt;
+    };
     // Google auth failure inside apply means stored tokens are dead. Detect
     // it once, wipe them, and report "not connected" instead of cryptic errors.
     const isCalendarAuthError = (err) => {
@@ -426,16 +434,14 @@ const applyTemplate = async (req, res) => {
             const fallbackStart = existing.scheduledStartTime || "09:00";
           try {
             const startDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
-            const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
             
             let endDt;
             if (existing.scheduledEndTime) {
               endDt = tz.createDateTimeFromSlot(dateStr, existing.scheduledEndTime, timezone);
-            } else {
-              endDt = new Date(
-                startDt.getTime() + (existing.plannedTime || 30 * 60000),
-              );
             }
+            // Guard against end <= start (template typo) — Google rejects those.
+            endDt = ensureEventEnd(startDt, endDt, existing.plannedTime);
+            const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
             const endISO = DateTime.fromJSDate(endDt).setZone(timezone).toISO();
 
             console.log(`[Calendar Debug] Creating template event for ${existing.name}:`, {
@@ -571,10 +577,14 @@ const applyTemplate = async (req, res) => {
                   try {
                     const fallbackStart = anyExisting.scheduledStartTime || "09:00";
                     const rStartDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
+                    const rEndDt = ensureEventEnd(
+                      rStartDt,
+                      anyExisting.scheduledEndTime
+                        ? tz.createDateTimeFromSlot(dateStr, anyExisting.scheduledEndTime, timezone)
+                        : null,
+                      anyExisting.plannedTime,
+                    );
                     const rStartISO = DateTime.fromJSDate(rStartDt).setZone(timezone).toISO();
-                    const rEndDt = anyExisting.scheduledEndTime
-                      ? tz.createDateTimeFromSlot(dateStr, anyExisting.scheduledEndTime, timezone)
-                      : new Date(rStartDt.getTime() + (anyExisting.plannedTime || 30 * 60000));
                     const rEndISO = DateTime.fromJSDate(rEndDt).setZone(timezone).toISO();
                     const rMins = templateTask.reminderMinutes || 0;
                     const rResp = await calendarClient.events.insert({
@@ -659,16 +669,15 @@ const applyTemplate = async (req, res) => {
           try {
             const fallbackStart = newTask.scheduledStartTime || "09:00";
             const startDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
+            // Guard against end <= start (template typo) — Google rejects those.
+            const endDt = ensureEventEnd(
+              startDt,
+              newTask.scheduledEndTime
+                ? tz.createDateTimeFromSlot(dateStr, newTask.scheduledEndTime, timezone)
+                : null,
+              newTask.plannedTime,
+            );
             const startISO = DateTime.fromJSDate(startDt).setZone(timezone).toISO();
-            
-            let endDt;
-            if (newTask.scheduledEndTime) {
-              endDt = tz.createDateTimeFromSlot(dateStr, newTask.scheduledEndTime, timezone);
-            } else {
-              endDt = new Date(
-                startDt.getTime() + (newTask.plannedTime || 30 * 60000),
-              );
-            }
             const endISO = DateTime.fromJSDate(endDt).setZone(timezone).toISO();
 
             const reminderMins = templateTask.reminderMinutes || 0;

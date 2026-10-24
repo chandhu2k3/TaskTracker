@@ -259,6 +259,12 @@ exports.createEvent = async (req, res) => {
       endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
     }
 
+    // Google rejects empty/inverted ranges ("The specified time range is
+    // empty"). Fall back to start + duration instead of failing the event.
+    if (!endDateTime || endDateTime <= startDateTime) {
+      endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+    }
+
     const startISO = DateTime.fromJSDate(startDateTime).setZone(userTimeZone).toISO();
     const endISO = DateTime.fromJSDate(endDateTime).setZone(userTimeZone).toISO();
 
