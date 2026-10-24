@@ -287,7 +287,12 @@ const applyTemplate = async (req, res) => {
       friday: 5, saturday: 6, sunday: 7,
     };
 
-    const calendarClient = await getCalendarClient(req.user._id);
+    let calendarClient = null;
+    try {
+      calendarClient = await getCalendarClient(req.user._id);
+    } catch (calErr) {
+      console.error("Calendar client init failed in applyTemplate:", calErr.message);
+    }
 
     const createdTasks = [];
     const createdTodos = [];

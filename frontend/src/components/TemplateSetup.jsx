@@ -29,6 +29,7 @@ const TemplateSetup = ({
   // Schedule image extraction state
   const [isExtractingSchedule, setIsExtractingSchedule] = useState(false);
   const [extractionMessage, setExtractionMessage] = useState(null); // { type: 'success'|'error', text: string }
+  const [modalDirty, setModalDirty] = useState(false); // unsaved edits in the template modal
   const scheduleImageInputRef = useRef(null);
 
   const days = [
@@ -55,6 +56,7 @@ const TemplateSetup = ({
     setTemplateTasks([]);
     setTemplateTodos([]);
     setImportTemplateId("");
+    setModalDirty(false);
     setShowModal(true);
   };
 
@@ -96,6 +98,7 @@ const TemplateSetup = ({
     }
 
     // Add imported unique tasks to existing tasks
+    setModalDirty(true);
     setTemplateTasks([...templateTasks, ...uniqueImportedTasks]);
     setTemplateTodos([...templateTodos, ...uniqueImportedTodos]);
     setImportTemplateId(""); // Reset selection
@@ -171,6 +174,7 @@ const TemplateSetup = ({
       const skipped = withCategory.length - newTasks.length;
 
       setTemplateTasks((prev) => [...prev, ...newTasks]);
+      setModalDirty(true);
 
       const msg = skipped > 0
         ? `✅ Added ${newTasks.length} task${newTasks.length !== 1 ? "s" : ""} (${skipped} duplicate${skipped !== 1 ? "s" : ""} skipped). Review and adjust categories below!`
@@ -214,6 +218,7 @@ const TemplateSetup = ({
         _tempId: todo._id || `todo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       })),
     );
+    setModalDirty(false);
     setShowModal(true);
   };
 
@@ -222,6 +227,7 @@ const TemplateSetup = ({
       alert("Please create at least one category first!");
       return;
     }
+    setModalDirty(true);
     setTemplateTasks([
       ...templateTasks,
       {
@@ -239,6 +245,7 @@ const TemplateSetup = ({
   };
 
   const addTodo = () => {
+    setModalDirty(true);
     setTemplateTodos([
       ...templateTodos,
       {
@@ -279,6 +286,7 @@ const TemplateSetup = ({
       return;
     }
 
+    setModalDirty(true);
     setTemplateTasks([...templateTasks, ...uniqueCopiedTasks]);
   };
 
@@ -312,36 +320,37 @@ const TemplateSetup = ({
       return;
     }
 
+    setModalDirty(true);
     setTemplateTodos([...templateTodos, ...uniqueCopiedTodos]);
   };
 
+  // Functional updates: consecutive calls in one handler (e.g. reminder
+  // modal Save sets time AND minutes) must not clobber each other.
   const updateTask = (index, field, value) => {
-    console.log("Frontend - updateTask called:", {
-      index,
-      field,
-      value,
-      currentValue: templateTasks[index]?.[field],
-    });
-    const updated = [...templateTasks];
-    updated[index][field] = value;
-    setTemplateTasks(updated);
-    console.log("Frontend - Task updated:", {
-      field,
-      newValue: updated[index][field],
+    setModalDirty(true);
+    setTemplateTasks((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
     });
   };
 
   const removeTask = (index) => {
+    setModalDirty(true);
     setTemplateTasks(templateTasks.filter((_, i) => i !== index));
   };
 
   const updateTodo = (index, field, value) => {
-    const updated = [...templateTodos];
-    updated[index][field] = value;
-    setTemplateTodos(updated);
+    setModalDirty(true);
+    setTemplateTodos((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const removeTodo = (index) => {
+    setModalDirty(true);
     setTemplateTodos(templateTodos.filter((_, i) => i !== index));
   };
 
@@ -407,9 +416,11 @@ const TemplateSetup = ({
     try {
       if (editingTemplate) {
         await onUpdateTemplate(editingTemplate._id, templateData);
+        setModalDirty(false);
         setShowModal(false);
       } else {
         await onCreateTemplate(templateData);
+        setModalDirty(false);
         setShowModal(false);
       }
     } catch (err) {
@@ -523,16 +534,28 @@ const TemplateSetup = ({
                             style={{
                               borderColor: getCategoryColor(task.category),
                             }}
+                            title={`${task.name}${task.scheduledStartTime ? ` • ${task.scheduledStartTime}${task.scheduledEndTime ? "-" + task.scheduledEndTime : ""}` : ""}${task.addToCalendar ? ` • 📅 calendar${task.reminderMinutes > 0 ? `, ⏰ ${task.reminderMinutes}m before` : ""}` : " • no calendar reminder"}`}
                           >
                             {getCategoryIcon(task.category)} {task.name}
+                            {task.addToCalendar && (
+                              <span className="template-badge-cal" title={task.reminderMinutes > 0 ? `Reminder ${task.reminderMinutes} min before` : "Added to calendar, default reminder"}>
+                                {" "}📅{task.reminderMinutes > 0 ? `${task.reminderMinutes}m` : ""}
+                              </span>
+                            )}
                           </span>
                         ))}
                         {quickTodos.map((todo, idx) => (
                           <span
                             key={`todo-${idx}`}
                             className="template-todo-badge"
+                            title={`${todo.text}${todo.reminderMinutes > 0 ? ` • ⏰ ${todo.reminderMinutes}m before at ${todo.reminderTime || "09:00"}` : " • no reminder"}`}
                           >
                             ✓ {todo.text}
+                            {todo.reminderMinutes > 0 && (
+                              <span className="template-badge-cal">
+                                {" "}⏰{todo.reminderMinutes}m
+                              </span>
+                            )}
                           </span>
                         ))}
                       </div>
@@ -560,6 +583,11 @@ const TemplateSetup = ({
               <div className="modal-header">
                 <h3>
                   {editingTemplate ? "Edit Template" : "Create New Template"}
+                  {modalDirty && (
+                    <span className="template-dirty-dot" title="Unsaved changes — hit Update/Create to keep them">
+                      {" "}• Unsaved
+                    </span>
+                  )}
                 </h3>
                 <p className="modal-description">
                   Define your fixed weekly schedule. You can apply this template

@@ -132,6 +132,19 @@
   font-weight: 600;
 }
 
+.template-badge-cal {
+  color: #16a34a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.template-dirty-dot {
+  color: #d97706;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .template-todo-badge {
   display: inline-block;
   padding: 4px 10px;

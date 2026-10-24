@@ -229,14 +229,18 @@ const TodoList = ({
     e.preventDefault();
     if (!newTodo.trim()) return;
     const todoText = newTodo.trim();
-    const todoDeadline = deadline || todayStr;
+    // If the reminder popup is still open (e.g. user hit Enter instead of
+    // the popup's Add button), commit its values now instead of dropping them.
+    const popupOpen = showNewTodoCal;
+    const todoDeadline = (popupOpen ? (newTodoCalForm.date || todayStr) : null) || deadline || todayStr;
     // Capture reminder details before clearing state
-    const capturedReminderMinutes = reminderMinutes;
-    const capturedReminderTime = reminderTime;
+    const capturedReminderMinutes = popupOpen ? Number(newTodoCalForm.reminderMinutes || 0) : reminderMinutes;
+    const capturedReminderTime = popupOpen ? (newTodoCalForm.time || "09:00") : reminderTime;
     setNewTodo("");
     setDeadline("");
     setReminderMinutes(0);
     setReminderTime("09:00");
+    setShowNewTodoCal(false);
     // Create the todo
     const created = await onAddTodo(todoText, todoDeadline);
     // If a reminder was requested and a todo was returned, add to calendar

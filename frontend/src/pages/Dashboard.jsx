@@ -826,6 +826,24 @@ const Dashboard = () => {
       toast.success(
         `Template applied: ${appliedTasks.length} task(s), ${appliedTodos.length} todo(s)${created > 0 ? ` • 📅 ${created} reminder${created !== 1 ? "s" : ""} added` : ""}`,
       );
+      // Sanity check: reminders were requested but none landed in Google.
+      const expectedReminders =
+        (selectedTemplateForApply &&
+          templates.find((t) => t._id === selectedTemplateForApply)
+          ? (() => {
+              const st = templates.find((t) => t._id === selectedTemplateForApply);
+              return (
+                (st.tasks || []).filter((t) => t.addToCalendar).length +
+                (st.quickTodos || []).filter((t) => (t.reminderMinutes || 0) > 0).length
+              );
+            })()
+          : skipped.length + created);
+      if (expectedReminders > 0 && created === 0 && skipped.length === 0) {
+        toast.error(
+          "⚠️ Reminders were requested but none reached Google Calendar. Reconnect calendar from the profile menu and re-apply.",
+          { autoClose: 9000 },
+        );
+      }
       if (dateSkipped.length > 0) {
         toast.info(
           `⏭️ No dates left this week for: ${dateSkipped.slice(0, 4).map(skipLabel).join(", ")}${dateSkipped.length > 4 ? ", …" : ""} — apply earlier in the week for full coverage.`,
@@ -833,6 +851,7 @@ const Dashboard = () => {
         );
       }
       if (skipped.length > 0) {
+        const firstErr = skipped.find((s) => s.reason !== "calendar_not_connected" && s.detail);
         if (result?.calendarConnected === false) {
           toast.warn(
             "⚠️ Google Calendar not connected — reminders were skipped. Connect from the profile menu and re-apply.",
@@ -840,7 +859,8 @@ const Dashboard = () => {
           );
         } else {
           toast.warn(
-            `⚠️ ${skipped.length} reminder${skipped.length !== 1 ? "s" : ""} skipped (${skipped.slice(0, 3).map(skipLabel).join(", ")}${skipped.length > 3 ? ", …" : ""})`,
+            `⚠️ ${skipped.length} reminder${skipped.length !== 1 ? "s" : ""} skipped (${skipped.slice(0, 3).map(skipLabel).join(", ")}${skipped.length > 3 ? ", …" : ""})${firstErr?.detail ? ` — Google said: ${firstErr.detail}` : ""}`,
+            { autoClose: 9000 },
           );
         }
       }
