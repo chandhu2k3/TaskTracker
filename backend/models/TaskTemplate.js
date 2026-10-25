@@ -45,6 +45,10 @@ const templateTaskSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  endsNextDay: {
+    type: Boolean,
+    default: false, // end time belongs to the following day (overnight shifts)
+  },
   addToCalendar: {
     type: Boolean,
     default: false,

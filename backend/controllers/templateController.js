@@ -309,6 +309,14 @@ const applyTemplate = async (req, res) => {
       }
       return endDt;
     };
+    // Overnight shifts: when the template marks +1d and end <= start
+    // (e.g. 22:00 → 06:00), the end belongs to the following day.
+    const eventEndDateStr = (dayDtObj, startHM, endHM, endsNextDayFlag) => {
+      if (endsNextDayFlag && startHM && endHM && endHM <= startHM) {
+        return dayDtObj.plus({ days: 1 }).toFormat("yyyy-MM-dd");
+      }
+      return dayDtObj.toFormat("yyyy-MM-dd");
+    };
     // Google auth failure inside apply means stored tokens are dead. Detect
     // it once, wipe them, and report "not connected" instead of cryptic errors.
     const isCalendarAuthError = (err) => {
@@ -434,10 +442,13 @@ const applyTemplate = async (req, res) => {
             const fallbackStart = existing.scheduledStartTime || "09:00";
           try {
             const startDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
-            
+
+            // Overnight (+1d) ends land on the next day; typos still fall
+            // back to start + planned via ensureEventEnd.
+            const existingEndDateStr = eventEndDateStr(dayDt, fallbackStart, existing.scheduledEndTime, templateTask.endsNextDay);
             let endDt;
             if (existing.scheduledEndTime) {
-              endDt = tz.createDateTimeFromSlot(dateStr, existing.scheduledEndTime, timezone);
+              endDt = tz.createDateTimeFromSlot(existingEndDateStr, existing.scheduledEndTime, timezone);
             }
             // Guard against end <= start (template typo) — Google rejects those.
             endDt = ensureEventEnd(startDt, endDt, existing.plannedTime);
@@ -577,10 +588,11 @@ const applyTemplate = async (req, res) => {
                   try {
                     const fallbackStart = anyExisting.scheduledStartTime || "09:00";
                     const rStartDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
+                    const rEndDateStr = eventEndDateStr(dayDt, fallbackStart, anyExisting.scheduledEndTime, templateTask.endsNextDay);
                     const rEndDt = ensureEventEnd(
                       rStartDt,
                       anyExisting.scheduledEndTime
-                        ? tz.createDateTimeFromSlot(dateStr, anyExisting.scheduledEndTime, timezone)
+                        ? tz.createDateTimeFromSlot(rEndDateStr, anyExisting.scheduledEndTime, timezone)
                         : null,
                       anyExisting.plannedTime,
                     );
@@ -669,11 +681,14 @@ const applyTemplate = async (req, res) => {
           try {
             const fallbackStart = newTask.scheduledStartTime || "09:00";
             const startDt = tz.createDateTimeFromSlot(dateStr, fallbackStart, timezone);
+            // Overnight (+1d) ends land on the next day; typos still fall
+            // back to start + planned via ensureEventEnd.
+            const newEndDateStr = eventEndDateStr(dayDt, fallbackStart, newTask.scheduledEndTime, templateTask.endsNextDay);
             // Guard against end <= start (template typo) — Google rejects those.
             const endDt = ensureEventEnd(
               startDt,
               newTask.scheduledEndTime
-                ? tz.createDateTimeFromSlot(dateStr, newTask.scheduledEndTime, timezone)
+                ? tz.createDateTimeFromSlot(newEndDateStr, newTask.scheduledEndTime, timezone)
                 : null,
               newTask.plannedTime,
             );

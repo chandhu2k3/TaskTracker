@@ -73,6 +73,7 @@ const TemplateSetup = ({
       completionCount: task.completionCount || 0,
       addToCalendar: task.addToCalendar || false,
       reminderMinutes: task.reminderMinutes || 0,
+      endsNextDay: task.endsNextDay || false,
     }));
 
     const importedTodos = (templateToImport.quickTodos || []).map(({ _id, ...todo }) => ({
@@ -167,6 +168,7 @@ const TemplateSetup = ({
       const withCategory = extracted.map((t) => ({
         ...t,
         category: defaultCategory,
+        endsNextDay: false,
       }));
 
       const existingKeys = new Set(templateTasks.map((t) => `${t.name.toLowerCase()}|${t.day}`));
@@ -207,6 +209,7 @@ const TemplateSetup = ({
       completionCount: task.completionCount || 0,
       addToCalendar: task.addToCalendar || false,
       reminderMinutes: task.reminderMinutes || 0,
+      endsNextDay: task.endsNextDay || false,
     }));
     setTemplateTasks(tasksWithDefaults);
     setTemplateTodos(
@@ -238,6 +241,7 @@ const TemplateSetup = ({
         isAutomated: false,
         scheduledStartTime: null,
         scheduledEndTime: null,
+        endsNextDay: false,
         addToCalendar: false,
         reminderMinutes: 0,
       },
@@ -402,16 +406,18 @@ const TemplateSetup = ({
     }
 
     // Google rejects events whose end is not after start ("time range is
-    // empty"). Catch the typo at save time and name the task.
+    // empty"). Catch the typo at save time and name the task — unless the
+    // task is explicitly marked as ending next day (overnight shift).
     const badRange = validTasks.find(
       (t) =>
         t.scheduledStartTime &&
         t.scheduledEndTime &&
-        t.scheduledEndTime <= t.scheduledStartTime,
+        t.scheduledEndTime <= t.scheduledStartTime &&
+        !t.endsNextDay,
     );
     if (badRange) {
       alert(
-        `"${badRange.name}" (${badRange.day}): end time (${badRange.scheduledEndTime}) must be after start time (${badRange.scheduledStartTime}). Google Calendar rejects empty time ranges.`,
+        `"${badRange.name}" (${badRange.day}): end time (${badRange.scheduledEndTime}) must be after start time (${badRange.scheduledStartTime}). Google Calendar rejects empty time ranges — or tick +1d if it truly ends the next day.`,
       );
       return;
     }
@@ -549,9 +555,14 @@ const TemplateSetup = ({
                             style={{
                               borderColor: getCategoryColor(task.category),
                             }}
-                            title={`${task.name}${task.scheduledStartTime ? ` • ${task.scheduledStartTime}${task.scheduledEndTime ? "-" + task.scheduledEndTime : ""}` : ""}${task.addToCalendar ? ` • 📅 calendar${task.reminderMinutes > 0 ? `, ⏰ ${task.reminderMinutes}m before` : ""}` : " • no calendar reminder"}`}
+                            title={`${task.name}${task.scheduledStartTime ? ` • ${task.scheduledStartTime}${task.scheduledEndTime ? "-" + task.scheduledEndTime + (task.endsNextDay ? " (+1d)" : "") : ""}` : ""}${task.addToCalendar ? ` • 📅 calendar${task.reminderMinutes > 0 ? `, ⏰ ${task.reminderMinutes}m before` : ""}` : " • no calendar reminder"}`}
                           >
                             {getCategoryIcon(task.category)} {task.name}
+                            {task.endsNextDay && task.scheduledEndTime && (
+                              <span className="template-badge-cal" title="Ends next day">
+                                {" "}+1d
+                              </span>
+                            )}
                             {task.addToCalendar && (
                               <span className="template-badge-cal" title={task.reminderMinutes > 0 ? `Reminder ${task.reminderMinutes} min before` : "Added to calendar, default reminder"}>
                                 {" "}📅{task.reminderMinutes > 0 ? `${task.reminderMinutes}m` : ""}
@@ -893,6 +904,23 @@ const TemplateSetup = ({
                             className="task-time-slot-input"
                             title="End time (optional)"
                           />
+                          <label
+                            className="automated-checkbox-template next-day-toggle"
+                            title="End time is on the next day (overnight shift, e.g. 22:00 → 06:00)"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={task.endsNextDay || false}
+                              onChange={(e) =>
+                                updateTask(
+                                  index,
+                                  "endsNextDay",
+                                  e.target.checked,
+                                )
+                              }
+                            />
+                            <span>+1d</span>
+                          </label>
                           <button
                             onClick={() => removeTask(index)}
                             className="btn-remove-task"
