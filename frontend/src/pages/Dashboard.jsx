@@ -555,11 +555,13 @@ const Dashboard = () => {
     }
   };
 
-  const handleToggleTask = async (taskId, isActive, manualFinish = false) => {
+  const handleToggleTask = async (taskId, isActive, refreshOnly = false) => {
     try {
-      if (manualFinish) {
+      // Refresh-only path (edit modal save, manual finish): re-sync from
+      // server without any toggle side effects. No toast here — the caller
+      // owns its success message.
+      if (refreshOnly) {
         await loadTasks();
-        toast.success("Task marked as finished manually");
         return;
       }
 
@@ -588,22 +590,27 @@ const Dashboard = () => {
           );
 
           if (shouldStop) {
-            // Stop the currently active task
-            await taskService.updateTask(currentlyActiveTask._id, {
+            // Stop the currently active task (patch local state — no reload)
+            const stopped = await taskService.updateTask(currentlyActiveTask._id, {
               isActive: false,
             });
+            setTasks((prev) =>
+              prev.map((t) => (t._id === currentlyActiveTask._id ? stopped : t)),
+            );
           }
         }
       }
 
-      await taskService.updateTask(taskId, { isActive });
-
-      // Reload all tasks to get fresh data
-      await loadTasks();
+      // Optimistic-ish toggle: patch the single task from the server
+      // response. No loadTasks() here — a full week refetch + global loading
+      // flash on every start/stop is what made the page feel like reloading.
+      const updated = await taskService.updateTask(taskId, { isActive });
+      setTasks((prev) => prev.map((t) => (t._id === taskId ? updated : t)));
 
       toast.success(isActive ? "Task started" : "Task stopped");
     } catch (error) {
       toast.error("Failed to update task");
+      await loadTasks(); // re-sync with server on failure only
     }
   };
 

@@ -129,9 +129,8 @@ const TaskItem = ({
       await manualFinishTask(task._id);
       if (typeof onToggle === "function") {
         await onToggle(task._id, false, true);
-      } else {
-        toast.success("Task marked as finished!");
       }
+      toast.success("Task marked as finished!");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to finish task");
     } finally {
