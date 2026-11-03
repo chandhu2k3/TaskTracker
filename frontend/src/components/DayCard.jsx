@@ -16,7 +16,6 @@ const DayCard = forwardRef(
       onDeleteDayTasks,
       onToggleNotification,
       onReorderTasks,
-      onMarkMissed,
       onCalendarChange,
       onHeaderClick,
       isAddingTask = false,
@@ -310,7 +309,6 @@ const DayCard = forwardRef(
                   onToggle={onToggleTask}
                   onDelete={onDeleteTask}
                   onToggleNotification={onToggleNotification}
-                  onMarkMissed={onMarkMissed}
                   onCalendarChange={onCalendarChange}
                   onDragStart={handleDragStart}
                   onDragOver={handleDragOver}

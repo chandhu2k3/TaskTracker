@@ -12,7 +12,6 @@ const TaskItem = ({
   onToggle,
   onDelete,
   onToggleNotification,
-  onMarkMissed,
   onCalendarChange,
   categoryColor,
   categoryIcon,
@@ -25,7 +24,6 @@ const TaskItem = ({
   isDeleting = false,
 }) => {
   const [isFinishing, setIsFinishing] = useState(false);
-  const [isMarkingMissed, setIsMarkingMissed] = useState(false);
 
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -135,21 +133,6 @@ const TaskItem = ({
       toast.error(err?.response?.data?.message || "Failed to finish task");
     } finally {
       setIsFinishing(false);
-    }
-  };
-
-  // Handler for marking missed
-  const handleMarkMissed = async () => {
-    setIsMarkingMissed(true);
-    try {
-      const newMissed = !task.missed;
-      if (typeof onMarkMissed === "function") {
-        await onMarkMissed(task._id, newMissed);
-      }
-    } catch (err) {
-      toast.error("Failed to update missed status");
-    } finally {
-      setIsMarkingMissed(false);
     }
   };
 
@@ -514,7 +497,7 @@ const TaskItem = ({
     <div
       className={`task-item ${task.isActive ? "active" : ""} ${
         isManuallyCompleted ? "completed" : ""
-      } ${isDragging ? "dragging" : ""} ${task.missed ? "missed" : ""}`}
+      } ${isDragging ? "dragging" : ""}`}
       draggable="true"
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -530,11 +513,6 @@ const TaskItem = ({
           </span>
           <span className="task-category-icon">{categoryIcon || "📋"}</span>
           {task.name}
-          {task.missed && (
-            <span className="missed-badge" title="Marked as missed">
-              ✗ Missed
-            </span>
-          )}
           {totalSessionCount > 0 && (
             <span className="task-sessions">
               🔄 {totalSessionCount} session{totalSessionCount > 1 ? "s" : ""}
@@ -561,7 +539,7 @@ const TaskItem = ({
         </div>
         <div className="task-controls" draggable="false">
           {/* Manual Finish Button: Only show if not active and not finished */}
-          {!task.isActive && task.totalTime === 0 && !isFinishing && !task.missed && (
+          {!task.isActive && task.totalTime === 0 && !isFinishing && (
             <button
               className="btn-manual-finish"
               onClick={handleManualFinish}
@@ -585,18 +563,6 @@ const TaskItem = ({
               draggable="false"
             >
               ✎
-            </button>
-          )}
-          {/* Mark Missed Button: show if not active and not manually completed */}
-          {!task.isActive && !isFinishing && (
-            <button
-              className={`btn-mark-missed ${task.missed ? "active-missed" : ""}`}
-              onClick={handleMarkMissed}
-              disabled={isMarkingMissed}
-              title={task.missed ? "Remove missed mark" : "Mark as missed"}
-              draggable="false"
-            >
-              {isMarkingMissed ? "..." : task.missed ? "↺ Undo" : "✗ Missed"}
             </button>
           )}
           <div className="calendar-btn-wrapper">
@@ -822,7 +788,7 @@ const TaskItem = ({
               </label>
 
               <label className="task-edit-field">
-                <span>Time spent <small>(drag the bar or type — fixes missed on/off)</small></span>
+                <span>Time spent <small>(correct if timer ran too long)</small></span>
                 <input
                   type="range"
                   className="task-edit-slider"

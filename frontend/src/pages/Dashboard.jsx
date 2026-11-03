@@ -1356,17 +1356,6 @@ const Dashboard = () => {
     }
   };
 
-  // Mark task as missed / undo missed
-  const handleMarkTaskMissed = async (taskId, missed) => {
-    try {
-      const updated = await taskService.markTaskMissed(taskId, missed);
-      setTasks((prev) => prev.map((t) => (t._id === taskId ? updated : t)));
-      toast.info(missed ? "Task marked as missed" : "Missed mark removed");
-    } catch (error) {
-      toast.error("Failed to update missed status");
-    }
-  };
-
   // Mark todo as missed / undo missed
   const handleMarkTodoMissed = async (todoId, missed) => {
     try {
@@ -1452,7 +1441,7 @@ const Dashboard = () => {
             title="Go to Home"
           >
             <img
-              src="\logo.svg"
+              src="/logo.svg"
               alt="Tracku Logo"
               className="app-logo"
             />
@@ -1837,7 +1826,6 @@ const Dashboard = () => {
                             onDeleteTask={handleDeleteTask}
                             onDeleteDayTasks={handleDeleteDayTasks}
                             onToggleNotification={handleToggleNotification}
-                            onMarkMissed={handleMarkTaskMissed}
                             onCalendarChange={handleTaskCalendarChange}
                             onReorderTasks={handleReorderTasks}
                             isToday={selectedTask.date === todayStr}
@@ -1903,7 +1891,6 @@ const Dashboard = () => {
                         onDeleteTask={handleDeleteTask}
                         onDeleteDayTasks={handleDeleteDayTasks}
                         onReorderTasks={handleReorderTasks}
-                        onMarkMissed={handleMarkTaskMissed}
                         onCalendarChange={handleTaskCalendarChange}
                         isAddingTask={addingTask}
                         deletingTask={deletingTask}
