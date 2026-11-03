@@ -13,6 +13,8 @@ const TodoList = ({
   onToggleTodo,
   onDeleteTodo,
   onMarkTodoMissed,
+  onRescheduleTodo,
+  onClearMissed,
   onDeleteAll,
   onClearCompleted,
   onEditTodo,
@@ -31,6 +33,10 @@ const TodoList = ({
   const [calendarStatuses, setCalendarStatuses] = useState({});
   const [showPickerForTodo, setShowPickerForTodo] = useState(null);
   const [calendarForm, setCalendarForm] = useState({ date: "", time: "14:00", reminderMinutes: 15 });
+  // Missed handling: bottom tray + re-remind prompt
+  const [showMissed, setShowMissed] = useState(false); // collapsed by default so missed never overshadows to-dos
+  const [missedPrompt, setMissedPrompt] = useState(null); // todo object awaiting re-remind choice
+  const [remindDate, setRemindDate] = useState("");
 
   // Drag-and-drop state
   const [orderedTodos, setOrderedTodos] = useState(null); // null = use prop sort
@@ -74,12 +80,16 @@ const TodoList = ({
   // Compute today string for overdue comparison (YYYY-MM-DD) - use local timezone
   const todayStr = getTodayString();
 
-  // Build display list: prefer user-dragged order, else sort by sortOrder or date
+  // Build display list: prefer user-dragged order, else sort by sortOrder or date.
+  // Missed always sink to the bottom (above completed) so a pile of missed
+  // items never overshadows the need-to-do ones.
   const sortedTodos = orderedTodos ?? [...todos].sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    if (a.completed && b.completed) return 0;
+    if (!!a.missed !== !!b.missed) return a.missed ? 1 : -1;
     const anyHasOrder = todos.some(t => t.sortOrder && t.sortOrder !== 0);
     if (anyHasOrder) return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
-    if (!a.completed && !b.completed) {
+    if (!a.completed && !b.completed && !a.missed && !b.missed) {
       const aDate = a.deadline || todayStr;
       const bDate = b.deadline || todayStr;
       const aIsToday = aDate === todayStr, bIsToday = bDate === todayStr;
@@ -93,6 +103,62 @@ const TodoList = ({
     }
     return 0;
   });
+
+  const activeTodos = sortedTodos.filter((t) => !t.completed && !t.missed);
+  const missedTodos = sortedTodos.filter((t) => !t.completed && t.missed);
+  const completedTodos = sortedTodos.filter((t) => t.completed);
+
+  const getTomorrowStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const handleMissedClick = async (todo) => {
+    if (todo.missed) {
+      // Undo missed
+      if (onMarkTodoMissed) await onMarkTodoMissed(todo._id, false);
+      return;
+    }
+    if (onMarkTodoMissed) await onMarkTodoMissed(todo._id, true);
+    setRemindDate(getTomorrowStr());
+    setMissedPrompt(todo);
+  };
+
+  const handleRemindConfirm = async (mode) => {
+    const target = missedPrompt;
+    if (!target) return;
+    try {
+      const dateToUse = mode === "tomorrow" ? getTomorrowStr() : (remindDate || getTomorrowStr());
+      if (typeof onRescheduleTodo === "function") {
+        await onRescheduleTodo(target._id, dateToUse);
+      } else {
+        await todoService.rescheduleTodo(target._id, dateToUse);
+      }
+      toast.success(`🔔 Will remind on ${dateToUse}`);
+    } catch {
+      toast.error("Couldn't set re-reminder — try again");
+    } finally {
+      setMissedPrompt(null);
+    }
+  };
+
+  const handleMissedDismiss = () => {
+    // "No re-remind" — just keep it sunk at the bottom tray (collapsed).
+    // It no longer clutters the need-to-do list above.
+    setMissedPrompt(null);
+    toast.info("Kept in Missed tray below — clear it anytime");
+  };
+
+  const handleMissedRemove = async () => {
+    const target = missedPrompt;
+    if (!target) return;
+    setMissedPrompt(null);
+    if (onDeleteTodo) await onDeleteTodo(target._id);
+  };
 
   // DnD handlers
   const handleDragStart = useCallback((e, id) => {
@@ -540,7 +606,19 @@ const TodoList = ({
             <p>No todos yet. Add one above!</p>
           </div>
         ) : (
-          sortedTodos
+          <>
+          {activeTodos.length === 0 && missedTodos.length === 0 && completedTodos.length > 0 ? (
+            <div className="todo-empty todo-all-done">
+              <span>🎉</span>
+              <p>All done for today!</p>
+            </div>
+          ) : activeTodos.length === 0 && missedTodos.length > 0 ? (
+            <div className="todo-empty todo-all-done">
+              <span>👍</span>
+              <p>Nothing to-do — missed items are parked below.</p>
+            </div>
+          ) : null}
+          {activeTodos
             .map((todo) => {
               const todoTagDate = todo.deadline || todo.date || todayStr;
               const isTodayTag = todoTagDate === todayStr;
@@ -769,10 +847,10 @@ const TodoList = ({
                         ✎
                       </button>
                     )}
-                    {/* Mark Missed Button */}
+                    {/* Mark Missed Button — opens re-remind prompt */}
                     {!todo.completed && (
                       <button
-                        onClick={() => onMarkTodoMissed && onMarkTodoMissed(todo._id, !todo.missed)}
+                        onClick={() => handleMissedClick(todo)}
                         className={`todo-missed-btn ${todo.missed ? "active-missed" : ""}`}
                         title={todo.missed ? "Remove missed mark" : "Mark as missed"}
                       >
@@ -790,9 +868,169 @@ const TodoList = ({
                   </div>
                 </div>
               );
-            })
+            })}
+
+          {/* Missed tray — sunk to the bottom, collapsed by default so a pile
+              of missed items never overshadows the need-to-do list above. */}
+          {missedTodos.length > 0 && (
+            <div className="todo-missed-section">
+              <button
+                type="button"
+                className="todo-missed-toggle"
+                onClick={() => setShowMissed((v) => !v)}
+                title={showMissed ? "Collapse missed" : "Expand missed"}
+              >
+                <span className="todo-missed-toggle-caret">{showMissed ? "▾" : "▸"}</span>
+                <span className="missed-todo-tag">MISSED</span>
+                <span className="todo-missed-count">
+                  {missedTodos.length} parked below — {showMissed ? "hide" : "review"}
+                </span>
+              </button>
+              {showMissed ? (
+                <div className="todo-missed-list">
+                  {missedTodos.map((todo) => (
+                    <div key={todo._id} className="todo-item missed-item missed-row">
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={() => onToggleTodo(todo._id)}
+                        className="todo-checkbox"
+                        disabled={togglingTodo[todo._id]}
+                        title="Mark done"
+                      />
+                      <span className="todo-text">
+                        <span className="missed-todo-tag">MISSED</span>
+                        {todo.text}
+                        {(todo.deadline || todo.date) && (
+                          <span className="todo-deadline-badge">
+                            {(todo.deadline || todo.date) === todayStr
+                              ? "Today"
+                              : new Date((todo.deadline || todo.date) + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
+                        )}
+                      </span>
+                      <div className="todo-actions" style={{ opacity: 1, transform: "none" }}>
+                        <button
+                          className="todo-remind-btn"
+                          title="Re-remind tomorrow"
+                          onClick={() => { setRemindDate(getTomorrowStr()); setMissedPrompt(todo); }}
+                        >
+                          🔔
+                        </button>
+                        <button
+                          className="todo-missed-btn active-missed"
+                          title="Undo missed — back to to-do"
+                          onClick={() => onMarkTodoMissed && onMarkTodoMissed(todo._id, false)}
+                        >
+                          ↺
+                        </button>
+                        <button
+                          onClick={() => onDeleteTodo(todo._id)}
+                          className="todo-delete-btn"
+                          title="Remove missed"
+                          disabled={deletingTodo[todo._id]}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="todo-missed-footer">
+                    <span>Missed items stay here until you re-remind or clear them.</span>
+                    <button
+                      type="button"
+                      className="todo-clear-btn"
+                      onClick={() => onClearMissed && onClearMissed()}
+                    >
+                      Clear missed ({missedTodos.length})
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Completed — always last */}
+          {completedTodos.map((todo) => {
+            const todoTagDate = todo.deadline || todo.date || todayStr;
+            return (
+              <div key={todo._id} className="todo-item completed">
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={() => onToggleTodo(todo._id)}
+                  className="todo-checkbox"
+                  disabled={togglingTodo[todo._id]}
+                />
+                <span className="todo-text">
+                  {todo.text}
+                  {todoTagDate && (
+                    <span className="todo-deadline-badge">
+                      {new Date(todoTagDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  )}
+                </span>
+                <div className="todo-actions" style={{ opacity: 1, transform: "none" }}>
+                  <button
+                    onClick={() => onDeleteTodo(todo._id)}
+                    className="todo-delete-btn"
+                    title="Delete todo"
+                    disabled={deletingTodo[todo._id]}
+                  >
+                    {deletingTodo[todo._id] ? "..." : "×"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          </>
         )}
       </div>
+
+      {/* Re-remind prompt — shown right after pressing Missed.
+          Pick a date to bring it back, or dismiss to leave it parked below.
+          Dismissing keeps the top list clean; Remove deletes it. */}
+      {missedPrompt && ReactDOM.createPortal(
+        <div className="calendar-picker-overlay" onClick={handleMissedDismiss}>
+          <div className="calendar-reminder-picker missed-prompt" onClick={(e) => e.stopPropagation()}>
+            <div className="calendar-picker-title">Marked as missed</div>
+            <div className="calendar-picker-context">
+              <div className="calendar-picker-context-label">You missed</div>
+              <div className="calendar-picker-context-title">{missedPrompt.text}</div>
+              <div className="calendar-picker-context-meta">
+                Want a re-reminder? Pick a day to bring it back to your to-do list.
+                If not, it stays parked in the Missed tray below (out of the way).
+              </div>
+            </div>
+            <label className="calendar-picker-field">
+              <span>Remind on</span>
+              <input
+                type="date"
+                value={remindDate}
+                min={todayStr}
+                onChange={(e) => setRemindDate(e.target.value)}
+              />
+            </label>
+            <div className="missed-prompt-actions">
+              <button type="button" className="btn-add" onClick={() => handleRemindConfirm("tomorrow")}>
+                🔔 Tomorrow
+              </button>
+              <button type="button" className="btn-add" onClick={() => handleRemindConfirm("custom")}>
+                📅 {remindDate || "Pick date"}
+              </button>
+            </div>
+            <div className="calendar-picker-actions">
+              <button type="button" className="btn-cancel" onClick={handleMissedDismiss}>
+                No, keep parked
+              </button>
+              <button type="button" className="btn-add btn-remove-calendar" onClick={handleMissedRemove}>
+                🗑 Remove
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {todos.length > 0 && (
         <div className="todo-stats">

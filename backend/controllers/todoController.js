@@ -49,9 +49,18 @@ const getTodos = async (req, res) => {
       }),
     );
 
-    // Sort: user-defined sortOrder first (when set), else existing date/overdue logic
+    // Sort: completed last, missed second-last (bottom, never overshadows
+    // need-to-do), then user sortOrder / overdue / deadline logic for actives.
     updatedTodos.sort((a, b) => {
-      // If either has a non-zero sortOrder, use it
+      // Completed always at the very bottom
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      if (a.completed && b.completed) {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+      // Missed sink below all active todos
+      if (a.missed !== b.missed) return a.missed ? 1 : -1;
+      // If either has a non-zero sortOrder, use it (actives only reach here
+      // when neither/both are missed, so missed never jump above actives)
       const aHasOrder = typeof a.sortOrder === 'number' && a.sortOrder !== 0;
       const bHasOrder = typeof b.sortOrder === 'number' && b.sortOrder !== 0;
       if (aHasOrder || bHasOrder) {
@@ -124,6 +133,20 @@ const updateTodo = async (req, res) => {
     }
     if (req.body.text) {
       todo.text = req.body.text.trim();
+    }
+    // Allow rescheduling a missed todo (re-remind) and manual missed edits
+    if (req.body.hasOwnProperty("deadline")) {
+      todo.deadline = req.body.deadline || null;
+    }
+    if (req.body.hasOwnProperty("date")) {
+      todo.date = req.body.date;
+    }
+    if (req.body.hasOwnProperty("missed")) {
+      todo.missed = !!req.body.missed;
+      todo.missedAt = todo.missed ? new Date() : null;
+    }
+    if (req.body.hasOwnProperty("sortOrder")) {
+      todo.sortOrder = Number(req.body.sortOrder) || 0;
     }
 
     await todo.save();
@@ -274,6 +297,26 @@ const getMissedTodos = async (req, res) => {
   }
 };
 
+// @desc    Clear/dismiss all missed todos (soft delete — removes them from
+//          the daily list so they stop overshadowing need-to-do items)
+// @route   DELETE /api/todos/clear-missed
+// @access  Private
+const clearMissed = async (req, res) => {
+  try {
+    const result = await Todo.updateMany(
+      { user: req.user._id, missed: true, completed: false, deleted: { $ne: true } },
+      { $set: { deleted: true, deletedAt: new Date() } },
+    );
+    await invalidateCache(`user:${req.user._id}:todos*`);
+    res.json({
+      message: `Dismissed ${result.modifiedCount} missed todo(s)`,
+      deletedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Reorder todos (drag and drop)
 // @route   PUT /api/todos/reorder
 // @access  Private
@@ -308,5 +351,6 @@ module.exports = {
   restoreTodo,
   markTodoMissed,
   getMissedTodos,
+  clearMissed,
   reorderTodos,
 };

@@ -119,6 +119,7 @@ app.use("/api/sleep", require("./routes/sleepRoutes"));
 app.use("/api/todos", require("./routes/todos"));
 app.use("/api/calendar", require("./routes/calendar"));
 app.use("/api/assistant", require("./routes/assistant"));
+app.use("/api/assistant/template-sessions", require("./routes/templateBuilder"));
 
 // Health check
 app.get("/", (req, res) => {

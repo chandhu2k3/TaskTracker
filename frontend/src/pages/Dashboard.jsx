@@ -337,13 +337,15 @@ const Dashboard = () => {
     }
   }, []);
 
-  const loadTasks = useCallback(async () => {
+  const loadTasks = useCallback(async ({ silent = false } = {}) => {
     if (!selectedDate || selectedDate.month === null || !selectedDate.week) {
       console.log("Cannot load tasks: incomplete date selection", selectedDate);
       return;
     }
 
-    setLoading(true);
+    // Silent refreshes re-sync in the background without swapping the whole
+    // week view for the "Loading tasks..." screen.
+    if (!silent) setLoading(true);
     try {
       console.log("Loading tasks for:", selectedDate);
       const data = await taskService.getTasksByWeek(
@@ -356,12 +358,14 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Load tasks error:", error.response || error);
       toast.error(error.response?.data?.message || "Failed to load tasks");
-      setTasks([]); // Set empty array on error to prevent undefined errors
+      // Keep whatever is on screen during a silent refresh; only clear on a
+      // full load so the view never blanks out.
+      if (!silent) setTasks([]);
       if (error.response?.status === 401) {
         navigate("/login");
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [selectedDate, navigate]);
 
@@ -556,15 +560,15 @@ const Dashboard = () => {
   };
 
   const handleToggleTask = async (taskId, isActive, refreshOnly = false) => {
-    try {
-      // Refresh-only path (edit modal save, manual finish): re-sync from
-      // server without any toggle side effects. No toast here — the caller
-      // owns its success message.
-      if (refreshOnly) {
-        await loadTasks();
-        return;
-      }
+    // Refresh-only path (edit modal save, manual finish): re-sync from
+    // server without any toggle side effects. Silent so the week view keeps
+    // its content instead of flashing to "Loading tasks...".
+    if (refreshOnly) {
+      await loadTasks({ silent: true });
+      return;
+    }
 
+    try {
       // If trying to start a task while sleep mode is active, prompt to turn off sleep
       if (isActive && sleepMode) {
         const shouldWakeUp = window.confirm(
@@ -578,6 +582,9 @@ const Dashboard = () => {
         }
       }
 
+      const targetTask = tasks.find((task) => task._id === taskId);
+      if (!targetTask) return;
+
       // If trying to start a task, check if another task is running
       if (isActive) {
         const currentlyActiveTask = tasks.find(
@@ -590,27 +597,70 @@ const Dashboard = () => {
           );
 
           if (shouldStop) {
-            // Stop the currently active task (patch local state — no reload)
-            const stopped = await taskService.updateTask(currentlyActiveTask._id, {
-              isActive: false,
-            });
+            // Patch locally first, revert just this task if the server rejects
             setTasks((prev) =>
-              prev.map((t) => (t._id === currentlyActiveTask._id ? stopped : t)),
+              prev.map((t) =>
+                t._id === currentlyActiveTask._id
+                  ? { ...t, isActive: false }
+                  : t,
+              ),
             );
+            try {
+              const stopped = await taskService.updateTask(
+                currentlyActiveTask._id,
+                { isActive: false },
+              );
+              setTasks((prev) =>
+                prev.map((t) =>
+                  t._id === currentlyActiveTask._id ? stopped : t,
+                ),
+              );
+            } catch {
+              setTasks((prev) =>
+                prev.map((t) =>
+                  t._id === currentlyActiveTask._id ? currentlyActiveTask : t,
+                ),
+              );
+            }
           }
         }
       }
 
-      // Optimistic-ish toggle: patch the single task from the server
-      // response. No loadTasks() here — a full week refetch + global loading
-      // flash on every start/stop is what made the page feel like reloading.
-      const updated = await taskService.updateTask(taskId, { isActive });
-      setTasks((prev) => prev.map((t) => (t._id === taskId ? updated : t)));
+      // Optimistic toggle: update this one task instantly, then confirm with
+      // the server. Never refetch the week here — that global refetch + the
+      // loading flag is what made the page feel like it was reloading.
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t._id !== taskId) return t;
+          const optimistic = { ...t, isActive };
+          if (isActive) {
+            optimistic.startTime = t.startTime || new Date().toISOString();
+          } else if (t.isActive && t.startTime) {
+            optimistic.totalTime =
+              (t.totalTime || 0) +
+              Math.max(0, Date.now() - new Date(t.startTime).getTime());
+            optimistic.startTime = null;
+          }
+          return optimistic;
+        }),
+      );
 
-      toast.success(isActive ? "Task started" : "Task stopped");
+      try {
+        const updated = await taskService.updateTask(taskId, { isActive });
+        setTasks((prev) => prev.map((t) => (t._id === taskId ? updated : t)));
+        toast.success(isActive ? "Task started" : "Task stopped");
+      } catch (error) {
+        // Revert only the affected task instead of refetching everything
+        setTasks((prev) =>
+          prev.map((t) => (t._id === taskId ? targetTask : t)),
+        );
+        toast.error(
+          error.response?.data?.message ||
+            "Couldn't save task state — reverted",
+        );
+      }
     } catch (error) {
-      toast.error("Failed to update task");
-      await loadTasks(); // re-sync with server on failure only
+      toast.error(error.response?.data?.message || "Failed to update task");
     }
   };
 
@@ -1038,7 +1088,7 @@ const Dashboard = () => {
         setSleepMode(false);
         setActiveSleepSession(null);
         setSleepDuration(0);
-        loadTasks(); // Reload to include sleep in analytics
+        loadTasks({ silent: true }); // background sync, no full-page flash
       } else {
         // Pause all active tasks before starting sleep
         const activeTasks = tasks.filter((task) => task.isActive);
@@ -1046,12 +1096,15 @@ const Dashboard = () => {
           toast.info(`Pausing ${activeTasks.length} active task(s)...`);
           try {
             for (const task of activeTasks) {
-              await taskService.stopTask(task._id);
+              const stopped = await taskService.stopTask(task._id);
+              setTasks((prev) =>
+                prev.map((t) => (t._id === task._id ? stopped : t)),
+              );
             }
-            await loadTasks(); // Reload tasks to show updated state
           } catch (error) {
             console.error("Error pausing tasks:", error);
             toast.error("Failed to pause some tasks");
+            loadTasks({ silent: true });
             return; // Don't start sleep if pausing failed
           }
         }
@@ -1319,9 +1372,44 @@ const Dashboard = () => {
     try {
       const updated = await todoService.markTodoMissed(todoId, missed);
       setTodos((prev) => prev.map((t) => (t._id === todoId ? updated : t)));
-      toast.info(missed ? "Todo marked as missed" : "Missed mark removed");
+      if (!missed) toast.info("Missed mark removed — back to to-do");
+      // When marking missed, the re-remind prompt in TodoList handles the toast
+      // so we stay silent here to avoid double-toasting.
     } catch (error) {
       toast.error("Failed to update missed status");
+    }
+  };
+
+  // Re-remind a missed todo on a new date (brings it back to the to-do list)
+  const handleRescheduleTodo = async (todoId, newDate) => {
+    try {
+      const updated = await todoService.rescheduleTodo(todoId, newDate);
+      setTodos((prev) => prev.map((t) => (t._id === todoId ? updated : t)));
+      // Reload to re-apply carryover/sort from the server
+      await loadTodos();
+    } catch (error) {
+      toast.error("Failed to set re-reminder");
+      throw error;
+    }
+  };
+
+  // Dismiss all missed todos at once — clears the bottom tray so a pile of
+  // missed items never overshadows the need-to-do ones
+  const handleClearMissedTodos = async () => {
+    const missedCount = todos.filter((t) => t.missed && !t.completed).length;
+    if (missedCount === 0) {
+      toast.info("No missed todos to clear.");
+      return;
+    }
+    if (!window.confirm(`Dismiss ${missedCount} missed todo(s)? They'll be removed from this list.`)) return;
+    try {
+      await todoService.clearMissed();
+      await loadTodos();
+      toast.success(`${missedCount} missed todo(s) dismissed!`);
+    } catch (error) {
+      console.error("Clear missed error:", error);
+      toast.error("Failed to clear missed todos");
+      await loadTodos();
     }
   };
 
@@ -1787,6 +1875,8 @@ const Dashboard = () => {
                         onToggleTodo={handleToggleTodo}
                         onDeleteTodo={handleDeleteTodo}
                         onMarkTodoMissed={handleMarkTodoMissed}
+                        onRescheduleTodo={handleRescheduleTodo}
+                        onClearMissed={handleClearMissedTodos}
                         onDeleteAll={handleDeleteAllTodos}
                         onClearCompleted={handleClearCompletedTodos}
                         onEditTodo={handleEditTodo}
@@ -1853,6 +1943,7 @@ const Dashboard = () => {
               onUpdateTemplate={handleUpdateTemplate}
               onDeleteTemplate={handleDeleteTemplate}
               onApplyTemplate={handleApplyTemplate}
+              onTemplatesChanged={loadTemplates}
               isApplyingTemplate={loading}
               isCreatingTemplate={creatingTemplate}
               updatingTemplate={updatingTemplate}

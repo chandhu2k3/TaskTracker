@@ -84,6 +84,19 @@ const todoService = {
     const response = await api.get(`/api/todos/missed`, getConfig());
     return response.data;
   },
+  clearMissed: async () => {
+    const response = await api.delete(`/api/todos/clear-missed`, getConfig());
+    return response.data;
+  },
+  rescheduleTodo: async (id, deadline) => {
+    // Re-remind: move to a new date and clear the missed flag
+    const response = await api.put(
+      `/api/todos/${id}`,
+      { deadline, date: deadline, missed: false },
+      getConfig()
+    );
+    return response.data;
+  },
   reorderTodos: async (order) => {
     // order = [{ id, sortOrder }, ...]
     const response = await api.put(`/api/todos/reorder`, { order }, getConfig());

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import "./TemplateSetup.css";
 import templateService from "../services/templateService";
+import TemplateAIBuilder from "./TemplateAIBuilder";
 
 const TemplateSetup = ({
   categories,
@@ -14,6 +15,7 @@ const TemplateSetup = ({
   isCreatingTemplate = false,
   updatingTemplate = {},
   deletingTemplate = {},
+  onTemplatesChanged,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -487,9 +489,17 @@ const TemplateSetup = ({
             {templates.length} template{templates.length !== 1 ? "s" : ""} saved
           </p>
         </div>
-        <button onClick={openNewTemplate} className="btn-new-template">
-          + New Template
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <button onClick={openNewTemplate} className="btn-new-template">
+            + New Template
+          </button>
+          <TemplateAIBuilder
+            categories={categories}
+            selectedTemplate={selectedTemplate}
+            onApplyTemplate={onApplyTemplate}
+            onSaved={() => { if (onTemplatesChanged) onTemplatesChanged(); }}
+          />
+        </div>
       </div>
 
       {templates.length > 0 && (

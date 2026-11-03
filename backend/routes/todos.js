@@ -12,6 +12,7 @@ const {
   restoreTodo,
   markTodoMissed,
   getMissedTodos,
+  clearMissed,
   reorderTodos,
 } = require("../controllers/todoController");
 
@@ -22,6 +23,7 @@ router.route("/").get(getTodos).post(createTodo);
 
 // Specific routes MUST come before /:id wildcard
 router.delete("/clear-completed", clearCompleted);
+router.delete("/clear-missed", clearMissed);
 router.delete("/delete-all", deleteAllTodos);
 router.get("/deleted", getDeletedTodos);
 router.get("/missed", getMissedTodos);
